@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="LottieSheet" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+		The [LottieSheet] class handles Lottie animations.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_duration">
+			<return type="float" />
+			<description>
+				Returns the total duration of the Lottie animation in seconds.
+			</description>
+		</method>
+		<method name="get_frame_image">
+			<return type="Image" />
+			<param index="0" name="frame" type="float" />
+			<description>
+				Returns an [Image] representing the specified frame of the Lottie animation.
+			</description>
+		</method>
+		<method name="get_image">
+			<return type="Image" />
+			<description>
+				Returns an [Image] representing the current frame of the Lottie animation.
+			</description>
+		</method>
+		<method name="get_image_size">
+			<return type="Vector2i" />
+			<description>
+				Returns the size of the images used in the Lottie animation as a [Vector2i].
+			</description>
+		</method>
+		<method name="get_total_frame">
+			<return type="float" />
+			<description>
+				Returns the total number of frames in the Lottie animation.
+			</description>
+		</method>
+		<method name="load_json" qualifiers="static">
+			<return type="LottieSheet" />
+			<param index="0" name="p_json" type="JSON" />
+			<param index="1" name="p_scale" type="float" default="1" />
+			<description>
+				Loads a Lottie animation from a JSON file. The scale parameter allows you to adjust the size of the animation.
+			</description>
+		</method>
+		<method name="load_string" qualifiers="static">
+			<return type="LottieSheet" />
+			<param index="0" name="p_string" type="String" />
+			<param index="1" name="p_scale" type="float" default="1" />
+			<description>
+				Loads a Lottie animation from a string. The scale parameter allows you to adjust the size of the animation.
+			</description>
+		</method>
+		<method name="update_frame">
+			<return type="void" />
+			<param index="0" name="frame" type="float" />
+			<description>
+				Updates the current frame of the Lottie animation.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="json" type="JSON" setter="set_json" getter="get_json">
+			The JSON data representing the Lottie animation.
+		</member>
+		<member name="scale" type="float" setter="set_scale" getter="get_scale" default="0.0">
+			The scale factor for the Lottie animation.
+		</member>
+	</members>
+</class>
