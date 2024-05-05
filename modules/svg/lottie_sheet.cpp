@@ -180,6 +180,6 @@ void LottieSheet::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_total_frame"), &LottieSheet::get_total_frame);
 	ClassDB::bind_method(D_METHOD("get_duration"), &LottieSheet::get_duration);
 
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "json"), "set_json", "get_json");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "json", PROPERTY_HINT_RESOURCE_TYPE, "JSON"), "set_json", "get_json");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "scale"), "set_scale", "get_scale");
 }
