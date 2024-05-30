@@ -4206,6 +4206,13 @@ void Main::cleanup(bool p_force) {
 	ResourceLoader::clear_translation_remaps();
 	ResourceLoader::clear_path_remaps();
 
+	if (audio_server) {
+		audio_server->finish();
+		memdelete(audio_server);
+	}
+
+	finalize_theme_db();
+
 	ScriptServer::finish_languages();
 
 	// Sync pending commands that may have been queued from a different thread during ScriptServer finalization
@@ -4238,8 +4245,6 @@ void Main::cleanup(bool p_force) {
 	unregister_driver_types();
 	unregister_scene_types();
 
-	finalize_theme_db();
-
 	// Before deinitializing server extensions, finalize servers which may be loaded as extensions.
 	finalize_navigation_server();
 	finalize_physics();
@@ -4255,11 +4260,6 @@ void Main::cleanup(bool p_force) {
 		memdelete(xr_server);
 	}
 #endif // _3D_DISABLED
-
-	if (audio_server) {
-		audio_server->finish();
-		memdelete(audio_server);
-	}
 
 	if (camera_server) {
 		memdelete(camera_server);
