@@ -31,7 +31,7 @@
 #include "lottie_texture.h"
 #include "core/os/memory.h"
 #include "modules/a_lz4/gd_lz4.h"
-#include "modules/a_rust/resource_loader_jsonz.h"
+#include "modules/a_lz4/resource_loader_jsonz.h"
 
 #include <thorvg.h>
 

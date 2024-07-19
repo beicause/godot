@@ -29,26 +29,18 @@
 /**************************************************************************/
 
 #include "register_types.h"
-#include "gd_lz4.h"
-#include "resource_loader_jsonz.h"
+#include "mcu.h"
 
-Ref<ResourceFormatLoaderJSONZ> resource_loader_jsonz;
-
-void initialize_a_lz4_module(ModuleInitializationLevel p_level) {
+void initialize_a_mcu_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-	ClassDB::register_class<Lz4>();
-	ClassDB::register_class<Lz4File>();
-
-	resource_loader_jsonz.instantiate();
-	ResourceLoader::add_resource_format_loader(resource_loader_jsonz);
+	ClassDB::register_class<Mcu>();
+	ClassDB::register_class<Hct>();
 }
 
-void uninitialize_a_lz4_module(ModuleInitializationLevel p_level) {
+void uninitialize_a_mcu_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-	ResourceLoader::remove_resource_format_loader(resource_loader_jsonz);
-	resource_loader_jsonz.unref();
 }

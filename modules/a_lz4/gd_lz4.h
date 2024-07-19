@@ -131,7 +131,10 @@ public:
 		}
 	}
 
-	size_t write(PackedByteArray data) {
+	int write(PackedByteArray data) {
+		if (data.size() == 0) {
+			return 0;
+		}
 		if (lz4fWrite == nullptr) {
 			ERR_PRINT("LZ4 writer is null, please open write first");
 			returnErrorCode(LZ4F_ERROR_parameter_null);
