@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  register_types.cpp                                                    */
+/*  resource_loader_jsonz.h                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,27 +28,19 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-#include "gd_lz4.h"
-#include "resource_loader_jsonz.h"
+#ifndef RESOURCE_LOADER_JSONZ_H
+#define RESOURCE_LOADER_JSONZ_H
+#include "core/io/json.h"
+#include "core/io/resource_loader.h"
 
-Ref<ResourceFormatLoaderJSONZ> resource_loader_jsonz;
+class ResourceFormatLoaderJSONZ : public ResourceFormatLoader {
+public:
+	static Ref<JSON> load(const PackedByteArray &p_bytes, Error *r_error = nullptr);
 
-void initialize_a_lz4_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
-	ClassDB::register_class<Lz4>();
-	ClassDB::register_class<Lz4File>();
+	virtual Ref<Resource> load(const String &p_path, const String &p_original_path = "", Error *r_error = nullptr, bool p_use_sub_threads = false, float *r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
+	virtual void get_recognized_extensions(List<String> *p_extensions) const override;
+	virtual bool handles_type(const String &p_type) const override;
+	virtual String get_resource_type(const String &p_path) const override;
+};
 
-	resource_loader_jsonz.instantiate();
-	ResourceLoader::add_resource_format_loader(resource_loader_jsonz);
-}
-
-void uninitialize_a_lz4_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
-	ResourceLoader::remove_resource_format_loader(resource_loader_jsonz);
-	resource_loader_jsonz.unref();
-}
+#endif // RESOURCE_LOADER_JSONZ_H

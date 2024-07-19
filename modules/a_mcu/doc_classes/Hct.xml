@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="Hct" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="from_argb" qualifiers="static">
+			<return type="Hct" />
+			<param index="0" name="argb" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="from_color" qualifiers="static">
+			<return type="Hct" />
+			<param index="0" name="c" type="Color" />
+			<description>
+			</description>
+		</method>
+		<method name="from_hct" qualifiers="static">
+			<return type="Hct" />
+			<param index="0" name="hue" type="float" />
+			<param index="1" name="chroma" type="float" />
+			<param index="2" name="tone" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="to_argb">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="to_color">
+			<return type="Color" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="chroma" type="float" setter="set_chroma" getter="get_chroma" default="0.0">
+		</member>
+		<member name="hue" type="float" setter="set_hue" getter="get_hue" default="0.0">
+		</member>
+		<member name="tone" type="float" setter="set_tone" getter="get_tone" default="0.0">
+		</member>
+	</members>
+</class>
