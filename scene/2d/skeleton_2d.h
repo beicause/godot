@@ -32,7 +32,6 @@
 #define SKELETON_2D_H
 
 #include "scene/2d/node_2d.h"
-#include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
 
 class Skeleton2D;
 
@@ -98,7 +97,7 @@ public:
 	~Bone2D();
 };
 
-class SkeletonModificationStack2D;
+class SkeletonModifier3D;
 
 class Skeleton2D : public Node2D {
 	GDCLASS(Skeleton2D, Node2D);
@@ -116,11 +115,6 @@ class Skeleton2D : public Node2D {
 		int parent_index = 0;
 		Transform2D accum_transform;
 		Transform2D rest_inverse;
-
-		//Transform2D local_pose_cache;
-		Transform2D local_pose_override;
-		real_t local_pose_override_amount = 0;
-		bool local_pose_override_persistent = false;
 	};
 
 	Vector<Bone> bones;
@@ -135,8 +129,6 @@ class Skeleton2D : public Node2D {
 
 	RID skeleton;
 
-	Ref<SkeletonModificationStack2D> modification_stack;
-
 	///////////////////////////////////////////////////////
 	// INTERPOLATION
 	struct InterpolationData {
@@ -145,34 +137,69 @@ class Skeleton2D : public Node2D {
 		uint32_t last_update_physics_tick = UINT32_MAX; // Ensure tick 0 is detected as a change.
 	} _interpolation_data;
 
-	void _update_process_mode();
 	void _ensure_update_interpolation_data();
+
+	enum UpdateFlag {
+		UPDATE_FLAG_NONE = 1,
+		UPDATE_FLAG_MODIFIER = 2,
+		UPDATE_FLAG_POSE = 4,
+	};
+
+	void _update_deferred(UpdateFlag p_update_flag = UPDATE_FLAG_POSE);
+	uint8_t update_flags = UPDATE_FLAG_NONE;
+	bool updating = false; // Is updating now?
 
 protected:
 	virtual void _physics_interpolated_changed() override;
-	///////////////////////////////////////////////////////
 
 	void _notification(int p_what);
 	static void _bind_methods();
-	bool _set(const StringName &p_path, const Variant &p_value);
-	bool _get(const StringName &p_path, Variant &r_ret) const;
+
 	void _get_property_list(List<PropertyInfo> *p_list) const;
 
 public:
+	enum ModifierCallbackModeProcess {
+		MODIFIER_CALLBACK_MODE_PROCESS_PHYSICS,
+		MODIFIER_CALLBACK_MODE_PROCESS_IDLE,
+	};
+	enum {
+		NOTIFICATION_UPDATE_SKELETON = 50
+	};
+
 	int get_bone_count() const;
 	Bone2D *get_bone(int p_idx);
 
 	RID get_skeleton() const;
 
-	void set_bone_local_pose_override(int p_bone_idx, Transform2D p_override, real_t p_amount, bool p_persistent = true);
-	Transform2D get_bone_local_pose_override(int p_bone_idx);
+	// To process modifiers.
+	ModifierCallbackModeProcess modifier_callback_mode_process = MODIFIER_CALLBACK_MODE_PROCESS_IDLE;
+	LocalVector<ObjectID> modifiers;
+	bool modifiers_dirty = false;
+	void _find_modifiers();
+	void _process_modifiers();
+	void _process_changed();
+	void _make_modifiers_dirty();
 
-	Ref<SkeletonModificationStack2D> get_modification_stack() const;
-	void set_modification_stack(Ref<SkeletonModificationStack2D> p_stack);
-	void execute_modifications(real_t p_delta, int p_execution_mode);
+	// Posing API
+	Transform2D get_bone_pose(int p_bone) const;
+	Vector2 get_bone_pose_position(int p_bone) const;
+	real_t get_bone_pose_rotation(int p_bone) const;
+	Vector2 get_bone_pose_scale(int p_bone) const;
+	void set_bone_pose(int p_bone, const Transform2D &p_pose);
+	void set_bone_pose_position(int p_bone, const Vector2 &p_position);
+	void set_bone_pose_rotation(int p_bone, const real_t &p_rotation);
+	void set_bone_pose_scale(int p_bone, const Vector2 &p_scale);
+
+	Transform2D get_bone_global_pose(int p_bone) const;
+	void set_bone_global_pose(int p_bone, const Transform2D &p_pose);
+
+	void reset_bone_pose(int p_bone);
+	void reset_bone_poses();
 
 	Skeleton2D();
 	~Skeleton2D();
 };
+
+VARIANT_ENUM_CAST(Skeleton2D::ModifierCallbackModeProcess);
 
 #endif // SKELETON_2D_H
