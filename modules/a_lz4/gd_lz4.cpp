@@ -50,6 +50,9 @@ void LZ4_free(void *p) {
 
 PackedByteArray Lz4::decompress_block(const PackedByteArray &data, int dst_capacity) {
 	PackedByteArray dst = PackedByteArray();
+	if (data.size() == 0) {
+		return dst;
+	}
 	if (dst_capacity <= 0) {
 		memcpy(&dst_capacity, data.ptr(), sizeof(int));
 	}
@@ -65,6 +68,9 @@ PackedByteArray Lz4::decompress_block(const PackedByteArray &data, int dst_capac
 }
 PackedByteArray Lz4::compress_block_prepend_size(const PackedByteArray &data, int compression_level) {
 	PackedByteArray dst = PackedByteArray();
+	if (data.size() == 0) {
+		return dst;
+	}
 	dst.resize(LZ4_compressBound(data.size()) + sizeof(int));
 	int compressed_size;
 	if (compression_level > 0) {
@@ -88,6 +94,9 @@ struct LZ4_read_buffer {
 };
 
 PackedByteArray Lz4::decompress_frame(PackedByteArray data) {
+	if (data.size() == 0) {
+		return PackedByteArray();
+	}
 	LZ4_read_buffer lz4fRead;
 	size_t consumedSize;
 	LZ4F_errorCode_t err_code;
@@ -192,6 +201,9 @@ PackedByteArray Lz4::decompress_frame(PackedByteArray data) {
 
 PackedByteArray Lz4::compress_frame(PackedByteArray data, int compression_level) {
 	PackedByteArray ret;
+	if (data.size() == 0) {
+		return ret;
+	}
 	LZ4F_preferences_t prefs = LZ4F_INIT_PREFERENCES;
 	prefs.compressionLevel = compression_level;
 	size_t size_bound = LZ4F_compressFrameBound(data.size(), &prefs);

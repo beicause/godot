@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  register_types.cpp                                                    */
+/*  register_types.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,27 +28,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-#include "gd_lz4.h"
-#include "resource_loader_jsonz.h"
+#ifndef A_MCU_REGISTER_TYPES_H
+#define A_MCU_REGISTER_TYPES_H
 
-Ref<ResourceFormatLoaderJSONZ> resource_loader_jsonz;
+#include "core/object/class_db.h"
+#include "modules/register_module_types.h"
 
-void initialize_a_lz4_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
-	ClassDB::register_class<Lz4>();
-	ClassDB::register_class<Lz4File>();
+using namespace godot;
 
-	resource_loader_jsonz.instantiate();
-	ResourceLoader::add_resource_format_loader(resource_loader_jsonz);
-}
+void initialize_a_mcu_module(ModuleInitializationLevel p_level);
+void uninitialize_a_mcu_module(ModuleInitializationLevel p_level);
 
-void uninitialize_a_lz4_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
-	}
-	ResourceLoader::remove_resource_format_loader(resource_loader_jsonz);
-	resource_loader_jsonz.unref();
-}
+#endif // A_MCU_REGISTER_TYPES_H

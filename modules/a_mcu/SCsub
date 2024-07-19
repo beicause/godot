@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+
+Import("env")
+Import("env_modules")
+
+env_module = env_modules.Clone()
+
+# Thirdparty source files
+
+thirdparty_obj = []
+
+thirdparty_dir = "thirdparty/material_color_utilities/"
+thirdparty_sources = [
+    "blend/blend.cc",
+    "cam/cam.cc",
+    "cam/hct_solver.cc",
+    "cam/hct.cc",
+    "cam/viewing_conditions.cc",
+    "contrast/contrast.cc",
+    "dislike/dislike.cc",
+    "dynamiccolor/dynamic_color.cc",
+    "dynamiccolor/dynamic_scheme.cc",
+    "dynamiccolor/material_dynamic_colors.cc",
+    "palettes/core.cc",
+    "palettes/tones.cc",
+    "quantize/lab.cc",
+    "quantize/wu.cc",
+    "scheme/scheme_content.cc",
+    "scheme/scheme_expressive.cc",
+    "scheme/scheme_fidelity.cc",
+    "scheme/scheme_fruit_salad.cc",
+    "scheme/scheme_monochrome.cc",
+    "scheme/scheme_neutral.cc",
+    "scheme/scheme_rainbow.cc",
+    "scheme/scheme_tonal_spot.cc",
+    "scheme/scheme_vibrant.cc",
+    "scheme/scheme.cc",
+    "score/score.cc",
+    "temperature/temperature_cache.cc",
+    "utils/utils.cc",
+]
+thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources]
+
+env_module.Append(CPPPATH=[thirdparty_dir])
+
+env_thirdparty = env_module.Clone()
+env_thirdparty.Append(CPPDEFINES=["_USE_MATH_DEFINES"])
+env_thirdparty.disable_warnings()
+env_thirdparty.add_source_files(thirdparty_obj, thirdparty_sources)
+env.modules_sources += thirdparty_obj
+
+# Godot source files
+
+module_obj = []
+
+env_module.add_source_files(module_obj, "*.cpp")
+env.modules_sources += module_obj
+
+# Needed to force rebuilding the module files when the thirdparty library is updated.
+env.Depends(module_obj, thirdparty_obj)
