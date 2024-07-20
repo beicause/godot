@@ -150,8 +150,8 @@ void SkeletonModification2DTwoBoneIK::_execute(float p_delta) {
 	float joint_one_to_target = target_difference.length();
 	float angle_atan = target_difference.angle();
 
-	float bone_one_length = joint_one_bone->get_length() * MIN(joint_one_bone->get_global_scale().x, joint_one_bone->get_global_scale().y);
-	float bone_two_length = joint_two_bone->get_length() * MIN(joint_two_bone->get_global_scale().x, joint_two_bone->get_global_scale().y);
+	float bone_one_length = joint_one_bone->get_bone_length() * MIN(joint_one_bone->get_global_scale().x, joint_one_bone->get_global_scale().y);
+	float bone_two_length = joint_two_bone->get_bone_length() * MIN(joint_two_bone->get_global_scale().x, joint_two_bone->get_global_scale().y);
 	bool override_angles_due_to_out_of_range = false;
 
 	if (joint_one_to_target < target_minimum_distance) {
@@ -222,10 +222,10 @@ void SkeletonModification2DTwoBoneIK::_draw_editor_gizmo() {
 
 	if (flip_bend_direction) {
 		float angle = -(Math_PI * 0.5) + operation_bone_one->get_bone_angle();
-		stack->skeleton->draw_line(Vector2(0, 0), Vector2(Math::cos(angle), sin(angle)) * (operation_bone_one->get_length() * 0.5), bone_ik_color, 2.0);
+		stack->skeleton->draw_line(Vector2(0, 0), Vector2(Math::cos(angle), sin(angle)) * (operation_bone_one->get_bone_length() * 0.5), bone_ik_color, 2.0);
 	} else {
 		float angle = (Math_PI * 0.5) + operation_bone_one->get_bone_angle();
-		stack->skeleton->draw_line(Vector2(0, 0), Vector2(Math::cos(angle), sin(angle)) * (operation_bone_one->get_length() * 0.5), bone_ik_color, 2.0);
+		stack->skeleton->draw_line(Vector2(0, 0), Vector2(Math::cos(angle), sin(angle)) * (operation_bone_one->get_bone_length() * 0.5), bone_ik_color, 2.0);
 	}
 
 #ifdef TOOLS_ENABLED
@@ -292,7 +292,7 @@ void SkeletonModification2DTwoBoneIK::update_joint_one_bone2d_cache() {
 
 				Bone2D *bone = Object::cast_to<Bone2D>(node);
 				if (bone) {
-					joint_one_bone_idx = bone->get_index_in_skeleton();
+					joint_one_bone_idx = bone->get_bone_idx();
 				} else {
 					ERR_FAIL_MSG("Update joint one Bone2D cache: Nodepath to Bone2D is not a Bone2D node!");
 				}
@@ -322,7 +322,7 @@ void SkeletonModification2DTwoBoneIK::update_joint_two_bone2d_cache() {
 
 				Bone2D *bone = Object::cast_to<Bone2D>(node);
 				if (bone) {
-					joint_two_bone_idx = bone->get_index_in_skeleton();
+					joint_two_bone_idx = bone->get_bone_idx();
 				} else {
 					ERR_FAIL_MSG("Update joint two Bone2D cache: Nodepath to Bone2D is not a Bone2D node!");
 				}

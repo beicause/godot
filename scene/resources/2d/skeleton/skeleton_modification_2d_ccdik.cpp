@@ -332,7 +332,7 @@ void SkeletonModification2DCCDIK::ccdik_joint_update_bone2d_cache(int p_joint_id
 
 				Bone2D *bone = Object::cast_to<Bone2D>(node);
 				if (bone) {
-					ccdik_data_chain.write[p_joint_idx].bone_idx = bone->get_index_in_skeleton();
+					ccdik_data_chain.write[p_joint_idx].bone_idx = bone->get_bone_idx();
 				} else {
 					ERR_FAIL_MSG("CCDIK joint " + itos(p_joint_idx) + " Bone2D cache: Nodepath to Bone2D is not a Bone2D node!");
 				}
