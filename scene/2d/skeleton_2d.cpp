@@ -330,10 +330,6 @@ PackedStringArray Bone2D::get_configuration_warnings() const {
 		warnings.push_back(RTR("A Bone2D only works with a Skeleton2D or another Bone2D as parent node."));
 	}
 
-	if (rest == Transform2D(0, 0, 0, 0, 0, 0)) {
-		warnings.push_back(RTR("This bone lacks a proper REST pose. Go to the Skeleton2D node and set one."));
-	}
-
 	return warnings;
 }
 
@@ -383,8 +379,6 @@ real_t Bone2D::get_bone_length() const {
 Bone2D::Bone2D() {
 	set_notify_local_transform(true);
 	set_hide_clip_children(true);
-	//this is a clever hack so the bone knows no rest has been set yet, allowing to show an error.
-	rest = Transform2D(0, 0, 0, 0, 0, 0);
 }
 
 Bone2D::~Bone2D() {
