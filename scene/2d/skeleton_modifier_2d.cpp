@@ -133,6 +133,3 @@ void SkeletonModifier2D::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("modification_processed"));
 	GDVIRTUAL_BIND(_process_modification);
 }
-
-SkeletonModifier2D::SkeletonModifier2D() {
-}
