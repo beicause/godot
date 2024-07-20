@@ -70,6 +70,7 @@ public:
 	void apply_rest();
 
 	Transform2D get_accum_transform() const;
+	Transform2D get_skeleton_rest() const;
 
 	PackedStringArray get_configuration_warnings() const override;
 

@@ -72,8 +72,6 @@ public:
 	Skeleton2D *get_skeleton() const;
 
 	void process_modification();
-
-	SkeletonModifier2D();
 };
 
 #endif // SKELETON_MODIFIER_2D_H
