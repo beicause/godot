@@ -279,21 +279,6 @@ bool Bone2D::_editor_get_show_bone_gizmo() const {
 }
 #endif // TOOLS_ENABLED
 
-void Bone2D::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_rest", "rest"), &Bone2D::set_rest);
-	ClassDB::bind_method(D_METHOD("get_rest"), &Bone2D::get_rest);
-	ClassDB::bind_method(D_METHOD("apply_rest"), &Bone2D::apply_rest);
-
-	ClassDB::bind_method(D_METHOD("set_autocalculate_length_and_angle", "auto_calculate"), &Bone2D::set_autocalculate_length_and_angle);
-	ClassDB::bind_method(D_METHOD("get_autocalculate_length_and_angle"), &Bone2D::get_autocalculate_length_and_angle);
-	ClassDB::bind_method(D_METHOD("set_bone_length", "length"), &Bone2D::set_bone_length);
-	ClassDB::bind_method(D_METHOD("get_bone_length"), &Bone2D::get_bone_length);
-
-	ADD_PROPERTY(PropertyInfo(Variant::TRANSFORM2D, "rest", PROPERTY_HINT_NONE, "suffix:px"), "set_rest", "get_rest");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "autocalculate_length_and_angle"), "set_autocalculate_length_and_angle", "get_autocalculate_length_and_angle");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "bone_length"), "set_bone_length", "get_bone_length");
-}
-
 void Bone2D::set_rest(const Transform2D &p_rest) {
 	rest = p_rest;
 	if (skeleton) {
@@ -313,6 +298,14 @@ void Bone2D::apply_rest() {
 
 Transform2D Bone2D::get_accum_transform() const {
 	return accum_transform;
+}
+
+Transform2D Bone2D::get_skeleton_rest() const {
+	if (parent_bone) {
+		return parent_bone->get_skeleton_rest() * rest;
+	} else {
+		return rest;
+	}
 }
 
 int Bone2D::get_bone_idx() const {
@@ -388,6 +381,24 @@ Bone2D::~Bone2D() {
 		RenderingServer::get_singleton()->free(editor_gizmo_rid);
 	}
 #endif // TOOLS_ENABLED
+}
+
+void Bone2D::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_rest", "rest"), &Bone2D::set_rest);
+	ClassDB::bind_method(D_METHOD("get_rest"), &Bone2D::get_rest);
+	ClassDB::bind_method(D_METHOD("apply_rest"), &Bone2D::apply_rest);
+
+	ClassDB::bind_method(D_METHOD("get_accum_transform"), &Bone2D::get_accum_transform);
+	ClassDB::bind_method(D_METHOD("get_skeleton_rest"), &Bone2D::get_skeleton_rest);
+
+	ClassDB::bind_method(D_METHOD("set_autocalculate_length_and_angle", "auto_calculate"), &Bone2D::set_autocalculate_length_and_angle);
+	ClassDB::bind_method(D_METHOD("get_autocalculate_length_and_angle"), &Bone2D::get_autocalculate_length_and_angle);
+	ClassDB::bind_method(D_METHOD("set_bone_length", "length"), &Bone2D::set_bone_length);
+	ClassDB::bind_method(D_METHOD("get_bone_length"), &Bone2D::get_bone_length);
+
+	ADD_PROPERTY(PropertyInfo(Variant::TRANSFORM2D, "rest", PROPERTY_HINT_NONE, "suffix:px"), "set_rest", "get_rest");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "autocalculate_length_and_angle"), "set_autocalculate_length_and_angle", "get_autocalculate_length_and_angle");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "bone_length"), "set_bone_length", "get_bone_length");
 }
 
 //////////////////////////////////////
@@ -487,7 +498,7 @@ void Skeleton2D::_update_transform() {
 	}
 
 	for (int i = 0; i < bones.size(); i++) {
-		Transform2D rest_inverse = bones[i]->rest.affine_inverse();
+		Transform2D rest_inverse = bones[i]->get_skeleton_rest().affine_inverse();
 		Transform2D final_xform = bones[i]->accum_transform * rest_inverse;
 		RS::get_singleton()->skeleton_bone_set_transform_2d(skeleton, i, final_xform);
 	}
