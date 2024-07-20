@@ -1276,7 +1276,7 @@ void Polygon2DEditor::_uv_draw() {
 
 						found_child = true;
 
-						Transform2D bone_xform = node->get_global_transform().affine_inverse().translated(-node->get_offset()) * (skeleton->get_global_transform() * bone->get_skeleton_rest());
+						Transform2D bone_xform = node->get_global_transform().affine_inverse().translated(-node->get_offset()) * bone->get_global_transform();
 						Transform2D endpoint_xform = bone_xform * n->get_transform();
 
 						Color color = current ? Color(1, 1, 1) : Color(0.5, 0.5, 0.5);
@@ -1286,8 +1286,8 @@ void Polygon2DEditor::_uv_draw() {
 
 					if (!found_child) {
 						//draw normally
-						Transform2D bone_xform = node->get_global_transform().affine_inverse().translated(-node->get_offset()) * (skeleton->get_global_transform() * bone->get_skeleton_rest());
-						Transform2D endpoint_xform = bone_xform * Transform2D(0, Vector2(bone->get_length(), 0));
+						Transform2D bone_xform = node->get_global_transform().affine_inverse().translated(-node->get_offset()) * bone->get_global_transform();
+						Transform2D endpoint_xform = bone_xform * Transform2D(0, Vector2(bone->get_bone_length(), 0));
 
 						Color color = current ? Color(1, 1, 1) : Color(0.5, 0.5, 0.5);
 						uv_edit_draw->draw_line(mtx.xform(bone_xform.get_origin()), mtx.xform(endpoint_xform.get_origin()), Color(0, 0, 0), Math::round((current ? 5 : 4) * EDSCALE));

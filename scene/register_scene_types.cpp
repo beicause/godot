@@ -33,6 +33,7 @@
 #include "core/config/project_settings.h"
 #include "core/object/class_db.h"
 #include "core/os/os.h"
+#include "scene/2d/skeleton_modifier_2d.h"
 #include "scene/animation/animation_blend_space_1d.h"
 #include "scene/animation/animation_blend_space_2d.h"
 #include "scene/animation/animation_blend_tree.h"
@@ -802,6 +803,7 @@ void register_scene_types() {
 	GDREGISTER_CLASS(Polygon2D);
 	GDREGISTER_CLASS(Skeleton2D);
 	GDREGISTER_CLASS(Bone2D);
+	GDREGISTER_CLASS(SkeletonModifier2D);
 	GDREGISTER_ABSTRACT_CLASS(Light2D);
 	GDREGISTER_CLASS(PointLight2D);
 	GDREGISTER_CLASS(DirectionalLight2D);
@@ -831,17 +833,17 @@ void register_scene_types() {
 	GDREGISTER_CLASS(TouchScreenButton);
 	GDREGISTER_CLASS(RemoteTransform2D);
 
-	GDREGISTER_CLASS(SkeletonModificationStack2D);
-	GDREGISTER_CLASS(SkeletonModification2D);
-	GDREGISTER_CLASS(SkeletonModification2DLookAt);
-	GDREGISTER_CLASS(SkeletonModification2DCCDIK);
-	GDREGISTER_CLASS(SkeletonModification2DFABRIK);
-	GDREGISTER_CLASS(SkeletonModification2DJiggle);
-	GDREGISTER_CLASS(SkeletonModification2DTwoBoneIK);
-	GDREGISTER_CLASS(SkeletonModification2DStackHolder);
+	// GDREGISTER_CLASS(SkeletonModificationStack2D);
+	// GDREGISTER_CLASS(SkeletonModification2D);
+	// GDREGISTER_CLASS(SkeletonModification2DLookAt);
+	// GDREGISTER_CLASS(SkeletonModification2DCCDIK);
+	// GDREGISTER_CLASS(SkeletonModification2DFABRIK);
+	// GDREGISTER_CLASS(SkeletonModification2DJiggle);
+	// GDREGISTER_CLASS(SkeletonModification2DTwoBoneIK);
+	// GDREGISTER_CLASS(SkeletonModification2DStackHolder);
 
-	GDREGISTER_CLASS(PhysicalBone2D);
-	GDREGISTER_CLASS(SkeletonModification2DPhysicalBones);
+	// GDREGISTER_CLASS(PhysicalBone2D);
+	// GDREGISTER_CLASS(SkeletonModification2DPhysicalBones);
 
 	OS::get_singleton()->yield(); // may take time to init
 

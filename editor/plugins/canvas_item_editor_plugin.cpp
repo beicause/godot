@@ -4070,8 +4070,8 @@ void CanvasItemEditor::_notification(int p_what) {
 				}
 
 				Bone2D *bone = Object::cast_to<Bone2D>(b);
-				if (bone && bone->get_length() != E.value.length) {
-					E.value.length = bone->get_length();
+				if (bone && bone->get_bone_length() != E.value.length) {
+					E.value.length = bone->get_bone_length();
 					viewport->queue_redraw();
 				}
 			}
