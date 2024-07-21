@@ -38,10 +38,9 @@ class SkeletonModifier2DFABRIK : public SkeletonModifier2D {
 private:
 	struct FABRJoint {
 		int bone_idx = -1;
-		NodePath bone_node;
+		NodePath bone_node_path;
 		ObjectID bone_node_id;
-
-		Vector2 magnet_position = Vector2(0, 0);
+		Vector2 magnet = Vector2(0, 0);
 	};
 
 	Vector<FABRJoint> fabrik_data_chain;
@@ -52,7 +51,7 @@ private:
 	// For this reason, this modification stores a vector of Transform2Ds used for the calculations, which are then applied at the end.
 	Vector<Transform2D> fabrik_transform_chain;
 
-	NodePath target_node;
+	NodePath target_node_path;
 	ObjectID target_node_id;
 
 	bool tip_use_target_rotation = false;
@@ -73,8 +72,7 @@ private:
 protected:
 	static void _bind_methods();
 	virtual void _setup_modification() override;
-	virtual void _process_modification() override;
-	virtual void _set_active(bool p_active) override;
+	virtual void _process_modification(real_t p_delta) override;
 
 public:
 	void set_target_node(const NodePath &p_target_node);

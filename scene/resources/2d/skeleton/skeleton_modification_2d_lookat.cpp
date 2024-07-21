@@ -219,7 +219,7 @@ void SkeletonModification2DLookAt::update_bone2d_cache() {
 
 				Bone2D *bone = Object::cast_to<Bone2D>(node);
 				if (bone) {
-					bone_idx = bone->get_bone_idx();
+					bone_idx = bone->get_index_in_skeleton();
 				} else {
 					ERR_FAIL_MSG("Error Bone2D cache: Nodepath to Bone2D is not a Bone2D node!");
 				}

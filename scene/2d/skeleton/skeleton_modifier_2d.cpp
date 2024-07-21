@@ -38,7 +38,12 @@ PackedStringArray SkeletonModifier2D::get_configuration_warnings() const {
 	return warnings;
 }
 
-/* Skeleton2D */
+void SkeletonModifier2D::set_execution_mode(SkeletonModifier2D::ExecutionMode p_execution_mode) {
+	execution_mode = p_execution_mode;
+}
+SkeletonModifier2D::ExecutionMode SkeletonModifier2D::get_execution_mode() const {
+	return execution_mode;
+}
 
 Skeleton2D *SkeletonModifier2D::get_skeleton() const {
 	return Object::cast_to<Skeleton2D>(ObjectDB::get_instance(skeleton_id));
@@ -64,6 +69,7 @@ void SkeletonModifier2D::_update_skeleton() {
 	if (old_sk != new_sk) {
 		_skeleton_changed(old_sk, new_sk);
 	}
+	new_sk->connect("ready", callable_mp(this, &SkeletonModifier2D::setup_modification));
 	update_configuration_warnings();
 }
 
@@ -97,11 +103,13 @@ real_t SkeletonModifier2D::get_influence() const {
 	return influence;
 }
 
-void SkeletonModifier2D::process_modification() {
+void SkeletonModifier2D::process_modification(real_t p_delta) {
 	if (!active) {
 		return;
 	}
-	_process_modification();
+
+	_process_modification(p_delta);
+
 	emit_signal(SNAME("modification_processed"));
 }
 
@@ -114,8 +122,8 @@ void SkeletonModifier2D::_setup_modification() {
 	GDVIRTUAL_CALL(_setup_modification);
 }
 
-void SkeletonModifier2D::_process_modification() {
-	GDVIRTUAL_CALL(_process_modification);
+void SkeletonModifier2D::_process_modification(real_t p_delta) {
+	GDVIRTUAL_CALL(_process_modification, p_delta);
 }
 
 void SkeletonModifier2D::_notification(int p_what) {
@@ -123,6 +131,16 @@ void SkeletonModifier2D::_notification(int p_what) {
 		case NOTIFICATION_ENTER_TREE:
 		case NOTIFICATION_PARENTED: {
 			_update_skeleton();
+		} break;
+		case NOTIFICATION_INTERNAL_PROCESS: {
+			if (get_execution_mode() == ExecutionMode::EXECUTION_MODE_PROCESS_IDLE) {
+				process_modification(get_process_delta_time());
+			}
+		} break;
+		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
+			if (get_execution_mode() == ExecutionMode::EXECUTION_MODE_PROCESS_PHYSICS) {
+				process_modification(get_physics_process_delta_time());
+			}
 		} break;
 	}
 }
@@ -136,8 +154,15 @@ void SkeletonModifier2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_influence", "influence"), &SkeletonModifier2D::set_influence);
 	ClassDB::bind_method(D_METHOD("get_influence"), &SkeletonModifier2D::get_influence);
 
+	ClassDB::bind_method(D_METHOD("set_execution_mode", "execution_mode"), &SkeletonModifier2D::set_execution_mode);
+	ClassDB::bind_method(D_METHOD("get_execution_mode"), &SkeletonModifier2D::get_execution_mode);
+
+	BIND_ENUM_CONSTANT(ExecutionMode::EXECUTION_MODE_PROCESS_IDLE);
+	BIND_ENUM_CONSTANT(ExecutionMode::EXECUTION_MODE_PROCESS_PHYSICS);
+
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "active"), "set_active", "is_active");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "influence", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_influence", "get_influence");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "execution_mode", PROPERTY_HINT_ENUM), "set_execution_mode", "get_execution_mode");
 
 	ADD_SIGNAL(MethodInfo("modification_processed"));
 	ADD_SIGNAL(MethodInfo("modification_setup"));
