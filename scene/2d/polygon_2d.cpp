@@ -260,7 +260,7 @@ void Polygon2D::_notification(int p_what) {
 						continue;
 					}
 
-					int bone_index = bone->get_bone_idx();
+					int bone_index = bone->get_index_in_skeleton();
 					const float *r = bone_weights[i].weights.ptr();
 					for (int j = 0; j < vc; j++) {
 						if (r[j] == 0.0) {
