@@ -226,10 +226,11 @@ void SkeletonModifier2DFABRIK::update_target_node() {
 
 void SkeletonModifier2DFABRIK::fabrik_joint_update_node(int p_joint_idx) {
 	fabrik_data_chain.write[p_joint_idx].bone_node_id = ObjectID();
+	NodePath node_path = fabrik_data_chain[p_joint_idx].bone_node_path;
 	ERR_FAIL_COND_MSG(get_skeleton() == nullptr || !get_skeleton()->is_inside_tree(), "Skeleton is not in scene tree");
-	ERR_FAIL_COND_MSG(!has_node(target_node_path), "FABRIK joint node " + target_node_path + " not found in skeleton");
+	ERR_FAIL_COND_MSG(!has_node(node_path), "FABRIK joint node " + node_path + " not found in skeleton");
 
-	Bone2D *node = Object::cast_to<Bone2D>(get_node(target_node_path));
+	Bone2D *node = Object::cast_to<Bone2D>(get_node(node_path));
 	ERR_FAIL_COND_MSG(node == nullptr, "FABRIK joint node is not a Bone2D");
 	fabrik_data_chain.write[p_joint_idx].bone_node_id = node->get_instance_id();
 	fabrik_data_chain.write[p_joint_idx].bone_idx = node->get_index_in_skeleton();
@@ -303,6 +304,9 @@ bool SkeletonModifier2DFABRIK::is_tip_use_target_rotation() const {
 }
 
 void SkeletonModifier2DFABRIK::set_joint_bones(Array p_node_paths) {
+	if (get_skeleton() == nullptr || !get_skeleton()->is_inside_tree()) {
+		return;
+	}
 	set_bone_chain_size(p_node_paths.size());
 	for (int i = 0; i < p_node_paths.size(); i++) {
 		set_joint_bone(i, p_node_paths[i]);
