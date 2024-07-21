@@ -141,7 +141,7 @@ public:
 	// To process modifiers.
 	ModifierCallbackModeProcess modifier_callback_mode_process = MODIFIER_CALLBACK_MODE_PROCESS_IDLE;
 	LocalVector<ObjectID> modifiers;
-	bool modifiers_dirty = false;
+	bool modifiers_dirty = true;
 	void _find_modifiers();
 	void _process_modifiers();
 	void _process_changed();

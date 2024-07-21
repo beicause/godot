@@ -55,8 +55,10 @@ protected:
 	static void _bind_methods();
 
 	virtual void _set_active(bool p_active);
-
+	virtual void _setup_modification();
 	virtual void _process_modification();
+
+	GDVIRTUAL0(_setup_modification);
 	GDVIRTUAL0(_process_modification);
 
 public:
@@ -72,6 +74,7 @@ public:
 	Skeleton2D *get_skeleton() const;
 
 	void process_modification();
+	void setup_modification();
 };
 
 #endif // SKELETON_MODIFIER_2D_H

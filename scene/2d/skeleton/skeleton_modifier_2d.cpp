@@ -105,6 +105,15 @@ void SkeletonModifier2D::process_modification() {
 	emit_signal(SNAME("modification_processed"));
 }
 
+void SkeletonModifier2D::setup_modification() {
+	_setup_modification();
+	emit_signal(SNAME("modification_setup"));
+}
+
+void SkeletonModifier2D::_setup_modification() {
+	GDVIRTUAL_CALL(_setup_modification);
+}
+
 void SkeletonModifier2D::_process_modification() {
 	GDVIRTUAL_CALL(_process_modification);
 }
@@ -131,5 +140,8 @@ void SkeletonModifier2D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "influence", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_influence", "get_influence");
 
 	ADD_SIGNAL(MethodInfo("modification_processed"));
+	ADD_SIGNAL(MethodInfo("modification_setup"));
+
 	GDVIRTUAL_BIND(_process_modification);
+	GDVIRTUAL_BIND(_setup_modification);
 }
