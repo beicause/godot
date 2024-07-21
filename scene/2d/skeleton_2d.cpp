@@ -137,6 +137,7 @@ void Bone2D::_notification(int p_what) {
 
 			Color bone_color1 = EDITOR_GET("editors/2d/bone_color1");
 			Color bone_color2 = EDITOR_GET("editors/2d/bone_color2");
+			Color bone_ik_color = EDITOR_GET("editors/2d/bone_ik_color");
 			Color bone_outline_color = EDITOR_GET("editors/2d/bone_outline_color");
 			Color bone_selected_color = EDITOR_GET("editors/2d/bone_selected_color");
 
@@ -155,11 +156,17 @@ void Bone2D::_notification(int p_what) {
 				_editor_get_bone_shape(&bone_shape, &bone_shape_outline, child_node);
 
 				Vector<Color> colors;
-				colors.push_back(bone_color1);
-				colors.push_back(bone_color2);
-				colors.push_back(bone_color1);
-				colors.push_back(bone_color2);
-
+				if (has_meta("_bone_ik_color_enabled_")) {
+					colors.push_back(bone_ik_color);
+					colors.push_back(bone_ik_color);
+					colors.push_back(bone_ik_color);
+					colors.push_back(bone_ik_color);
+				} else {
+					colors.push_back(bone_color1);
+					colors.push_back(bone_color2);
+					colors.push_back(bone_color1);
+					colors.push_back(bone_color2);
+				}
 				Vector<Color> outline_colors;
 				if (CanvasItemEditor::get_singleton()->editor_selection->is_selected(this)) {
 					outline_colors.push_back(bone_selected_color);
@@ -188,11 +195,17 @@ void Bone2D::_notification(int p_what) {
 				_editor_get_bone_shape(&bone_shape, &bone_shape_outline, nullptr);
 
 				Vector<Color> colors;
-
-				colors.push_back(bone_color1);
-				colors.push_back(bone_color2);
-				colors.push_back(bone_color1);
-				colors.push_back(bone_color2);
+				if (has_meta("_bone_ik_color_enabled_")) {
+					colors.push_back(bone_ik_color);
+					colors.push_back(bone_ik_color);
+					colors.push_back(bone_ik_color);
+					colors.push_back(bone_ik_color);
+				} else {
+					colors.push_back(bone_color1);
+					colors.push_back(bone_color2);
+					colors.push_back(bone_color1);
+					colors.push_back(bone_color2);
+				}
 
 				Vector<Color> outline_colors;
 				if (CanvasItemEditor::get_singleton()->editor_selection->is_selected(this)) {
@@ -220,7 +233,7 @@ void Bone2D::_notification(int p_what) {
 }
 
 #ifdef TOOLS_ENABLED
-bool Bone2D::_editor_get_bone_shape(Vector<Vector2> *p_shape, Vector<Vector2> *p_outline_shape, Bone2D *p_other_bone) {
+bool Bone2D::_editor_get_bone_shape(Vector<Vector2> *r_shape, Vector<Vector2> *r_outline_shape, Bone2D *p_other_bone) {
 	float bone_width = EDITOR_GET("editors/2d/bone_width");
 	float bone_outline_width = EDITOR_GET("editors/2d/bone_outline_size");
 
@@ -236,8 +249,8 @@ bool Bone2D::_editor_get_bone_shape(Vector<Vector2> *p_shape, Vector<Vector2> *p
 		rel = (p_other_bone->get_global_position() - get_global_position());
 		rel = rel.rotated(-get_global_rotation()); // Undo Bone2D node's rotation so its drawn correctly regardless of the node's rotation
 	} else {
-		real_t angle_to_use = get_rotation();
-		rel = Vector2(cos(angle_to_use), sin(angle_to_use)) * (bone_length * MIN(get_global_scale().x, get_global_scale().y));
+		real_t angle_to_use = get_rotation_degrees();
+		rel = Vector2::from_angle(angle_to_use) * (bone_length * MIN(get_global_scale().x, get_global_scale().y));
 		rel = rel.rotated(-get_rotation()); // Undo Bone2D node's rotation so its drawn correctly regardless of the node's rotation
 	}
 
@@ -245,22 +258,22 @@ bool Bone2D::_editor_get_bone_shape(Vector<Vector2> *p_shape, Vector<Vector2> *p
 	Vector2 reln = rel.normalized();
 	Vector2 reltn = relt.normalized();
 
-	if (p_shape) {
-		p_shape->clear();
-		p_shape->push_back(Vector2(0, 0));
-		p_shape->push_back(rel * 0.2 + relt);
-		p_shape->push_back(rel);
-		p_shape->push_back(rel * 0.2 - relt);
+	if (r_shape) {
+		r_shape->clear();
+		r_shape->push_back(Vector2(0, 0));
+		r_shape->push_back(rel * 0.2 + relt);
+		r_shape->push_back(rel);
+		r_shape->push_back(rel * 0.2 - relt);
 	}
 
-	if (p_outline_shape) {
-		p_outline_shape->clear();
-		p_outline_shape->push_back((-reln - reltn) * bone_outline_width);
-		p_outline_shape->push_back((-reln + reltn) * bone_outline_width);
-		p_outline_shape->push_back(rel * 0.2 + relt + reltn * bone_outline_width);
-		p_outline_shape->push_back(rel + (reln + reltn) * bone_outline_width);
-		p_outline_shape->push_back(rel + (reln - reltn) * bone_outline_width);
-		p_outline_shape->push_back(rel * 0.2 - relt - reltn * bone_outline_width);
+	if (r_outline_shape) {
+		r_outline_shape->clear();
+		r_outline_shape->push_back((-reln - reltn) * bone_outline_width);
+		r_outline_shape->push_back((-reln + reltn) * bone_outline_width);
+		r_outline_shape->push_back(rel * 0.2 + relt + reltn * bone_outline_width);
+		r_outline_shape->push_back(rel + (reln + reltn) * bone_outline_width);
+		r_outline_shape->push_back(rel + (reln - reltn) * bone_outline_width);
+		r_outline_shape->push_back(rel * 0.2 - relt - reltn * bone_outline_width);
 	}
 	return true;
 }
@@ -326,19 +339,16 @@ void Bone2D::calculate_length_and_rotation() {
 	// If there is at least a single child Bone2D node, we can calculate
 	// the length and direction. We will always just use the first Bone2D for this.
 	int child_count = get_child_count();
-	Transform2D global_inv = get_global_transform().affine_inverse();
 
 	for (int i = 0; i < child_count; i++) {
 		Bone2D *child = Object::cast_to<Bone2D>(get_child(i));
 		if (child) {
-			Vector2 child_local_pos = global_inv.xform(child->get_global_position());
+			Vector2 child_local_pos = child->get_position();
 			bone_length = child_local_pos.length();
-			set_rotation(child_local_pos.angle());
+			set_rotation_degrees(child_local_pos.angle());
 			return; // Finished!
 		}
 	}
-
-	WARN_PRINT("No Bone2D children of node " + get_name() + ". Cannot calculate bone length or angle reliably.\nUsing transform rotation for bone angle.");
 }
 
 void Bone2D::set_autocalculate_length_and_angle(bool p_autocalculate) {
@@ -346,7 +356,6 @@ void Bone2D::set_autocalculate_length_and_angle(bool p_autocalculate) {
 	if (autocalculate_length_and_angle) {
 		calculate_length_and_rotation();
 	}
-	notify_property_list_changed();
 }
 
 bool Bone2D::get_autocalculate_length_and_angle() const {
@@ -505,7 +514,6 @@ void Skeleton2D::_notification(int p_what) {
 			if (transform_dirty) {
 				_update_transform();
 			}
-			_make_modifiers_dirty();
 		} break;
 
 		case NOTIFICATION_ENTER_TREE: {
@@ -520,29 +528,12 @@ void Skeleton2D::_notification(int p_what) {
 		case NOTIFICATION_INTERNAL_PHYSICS_PROCESS: {
 			_find_modifiers();
 			if (!modifiers.is_empty()) {
-				_update_skeleton_deferred();
-			}
-		} break;
-
-		case NOTIFICATION_UPDATE_SKELETON: {
-			// Process modifiers.
-			_find_modifiers();
-			if (!modifiers.is_empty()) {
 				_process_modifiers();
 			}
-
-			emit_signal(SceneStringName(skeleton_updated));
-
 		} break;
 	}
 }
-void Skeleton2D::_update_skeleton_deferred() {
-	if (is_inside_tree()) {
-		if (!updating) {
-			notify_deferred_thread_group(NOTIFICATION_UPDATE_SKELETON); // It must never be called more than once in a single frame.
-		}
-	}
-}
+
 void Skeleton2D::_process_changed() {
 	if (modifier_callback_mode_process == MODIFIER_CALLBACK_MODE_PROCESS_IDLE) {
 		set_process_internal(true);
@@ -598,11 +589,6 @@ void Skeleton2D::_process_modifiers() {
 		}
 		_make_transform_dirty();
 	}
-}
-
-void Skeleton2D::_make_modifiers_dirty() {
-	modifiers_dirty = true;
-	_update_skeleton_deferred();
 }
 
 RID Skeleton2D::get_skeleton() const {
@@ -694,9 +680,7 @@ void Skeleton2D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "modifier_callback_mode_process", PROPERTY_HINT_ENUM, "Physics,Idle"), "set_modifier_callback_mode_process", "get_modifier_callback_mode_process");
 
 	ADD_SIGNAL(MethodInfo("bone_setup_changed"));
-	ADD_SIGNAL(MethodInfo("skeleton_updated"));
 
-	BIND_CONSTANT(NOTIFICATION_UPDATE_SKELETON);
 	BIND_ENUM_CONSTANT(MODIFIER_CALLBACK_MODE_PROCESS_PHYSICS);
 	BIND_ENUM_CONSTANT(MODIFIER_CALLBACK_MODE_PROCESS_IDLE);
 }

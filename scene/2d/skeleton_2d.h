@@ -117,9 +117,6 @@ class Skeleton2D : public Node2D {
 
 	RID skeleton;
 
-	void _update_skeleton_deferred();
-	bool updating = false; // Is updating now?
-
 protected:
 	void _notification(int p_what);
 	static void _bind_methods();
@@ -128,9 +125,6 @@ public:
 	enum ModifierCallbackModeProcess {
 		MODIFIER_CALLBACK_MODE_PROCESS_PHYSICS,
 		MODIFIER_CALLBACK_MODE_PROCESS_IDLE,
-	};
-	enum {
-		NOTIFICATION_UPDATE_SKELETON = 50
 	};
 
 	int get_bone_count() const;
@@ -145,7 +139,6 @@ public:
 	void _find_modifiers();
 	void _process_modifiers();
 	void _process_changed();
-	void _make_modifiers_dirty();
 
 	void set_modifier_callback_mode_process(ModifierCallbackModeProcess p_mode);
 	ModifierCallbackModeProcess get_modifier_callback_mode_process() const;

@@ -74,6 +74,7 @@ protected:
 	static void _bind_methods();
 	virtual void _setup_modification() override;
 	virtual void _process_modification() override;
+	virtual void _set_active(bool p_active) override;
 
 public:
 	void set_target_node(const NodePath &p_target_node);

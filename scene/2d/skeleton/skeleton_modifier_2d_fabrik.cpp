@@ -41,7 +41,7 @@ void SkeletonModifier2DFABRIK::_process_modification() {
 		return;
 	}
 	if (!has_node(target_node)) {
-		ERR_PRINT_ONCE("Target node " + target_node + " not found in skeleton");
+		ERR_PRINT_ONCE("Target node " + target_node + " not found");
 		return;
 	}
 
@@ -55,7 +55,7 @@ void SkeletonModifier2DFABRIK::_process_modification() {
 		return;
 	}
 
-	Bone2D *target = Object::cast_to<Bone2D>(ObjectDB::get_instance(target_node_id));
+	Node2D *target = Object::cast_to<Node2D>(ObjectDB::get_instance(target_node_id));
 	if (!target || !target->is_inside_tree()) {
 		ERR_PRINT_ONCE("Target node is not in the scene tree. Cannot execute modification!");
 		return;
@@ -94,12 +94,9 @@ void SkeletonModifier2DFABRIK::_process_modification() {
 	}
 
 	Bone2D *final_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[fabrik_data_chain.size() - 1].bone_node_id));
-	float final_bone2d_angle = final_bone2d_node->get_global_rotation();
-	if (tip_use_target_rotation) {
-		final_bone2d_angle = target_global_pose.get_rotation();
-	}
-	Vector2 final_bone2d_direction = Vector2(Math::cos(final_bone2d_angle), Math::sin(final_bone2d_angle));
-	float final_bone2d_length = final_bone2d_node->get_bone_length() * MIN(final_bone2d_node->get_global_scale().x, final_bone2d_node->get_global_scale().y);
+	float final_bone2d_angle = tip_use_target_rotation ? target_global_pose.get_rotation() : final_bone2d_node->get_global_rotation();
+	Vector2 final_bone2d_direction = Vector2::from_angle(final_bone2d_angle);
+	float final_bone2d_length = final_bone2d_node->get_bone_length();
 	float target_distance = (final_bone2d_node->get_global_position() + (final_bone2d_direction * final_bone2d_length)).distance_to(target->get_global_position());
 	chain_iterations = 0;
 
@@ -107,11 +104,9 @@ void SkeletonModifier2DFABRIK::_process_modification() {
 		chain_backwards();
 		chain_forwards();
 
-		final_bone2d_angle = final_bone2d_node->get_global_rotation();
-		if (tip_use_target_rotation) {
-			final_bone2d_angle = target_global_pose.get_rotation();
-		}
-		final_bone2d_direction = Vector2(Math::cos(final_bone2d_angle), Math::sin(final_bone2d_angle));
+		final_bone2d_angle = tip_use_target_rotation ? target_global_pose.get_rotation() : final_bone2d_node->get_global_rotation();
+
+		final_bone2d_direction = Vector2::from_angle(final_bone2d_angle);
 		target_distance = (final_bone2d_node->get_global_position() + (final_bone2d_direction * final_bone2d_length)).distance_to(target->get_global_position());
 
 		chain_iterations += 1;
@@ -139,16 +134,30 @@ void SkeletonModifier2DFABRIK::_process_modification() {
 				chain_trans = chain_trans.looking_at(target_global_pose.get_origin());
 			}
 		}
-		// Adjust for the bone angle
-		chain_trans.set_rotation(chain_trans.get_rotation() - joint_bone2d_node->get_rotation());
-
-		// Reset scale
-		chain_trans.set_scale(joint_bone2d_node->get_global_scale());
-
-		// Apply to the bone, and to the override
+		// Apply to the bone
 		joint_bone2d_node->set_global_transform(chain_trans);
-		get_skeleton()->set_bone_pose(fabrik_data_chain[i].bone_idx, joint_bone2d_node->get_transform());
 	}
+}
+
+void SkeletonModifier2DFABRIK::_set_active(bool p_active) {
+#ifdef TOOLS_ENABLED
+	if (!p_active) {
+		for (FABRJoint &data : fabrik_data_chain) {
+			if (data.bone_node_id.is_valid()) {
+				ObjectDB::get_instance(data.bone_node_id)->remove_meta("_bone_ik_color_enabled_");
+			}
+		}
+	} else {
+		for (FABRJoint &data : fabrik_data_chain) {
+			if (data.bone_node_id.is_valid()) {
+				ObjectDB::get_instance(data.bone_node_id)->set_meta("_bone_ik_color_enabled_", true);
+			}
+		}
+	}
+	if (get_skeleton()) {
+		get_skeleton()->queue_redraw();
+	}
+#endif
 }
 
 void SkeletonModifier2DFABRIK::chain_backwards() {
@@ -165,12 +174,10 @@ void SkeletonModifier2DFABRIK::chain_backwards() {
 	final_bone2d_trans = final_bone2d_trans.looking_at(target_global_pose.get_origin());
 
 	// Set the position of the tip bone
-	float final_bone2d_angle = final_bone2d_trans.get_rotation();
-	if (tip_use_target_rotation) {
-		final_bone2d_angle = target_global_pose.get_rotation();
-	}
-	Vector2 final_bone2d_direction = Vector2(Math::cos(final_bone2d_angle), Math::sin(final_bone2d_angle));
-	float final_bone2d_length = final_bone2d_node->get_bone_length() * MIN(final_bone2d_node->get_global_scale().x, final_bone2d_node->get_global_scale().y);
+	float final_bone2d_angle = tip_use_target_rotation ? target_global_pose.get_rotation() : final_bone2d_trans.get_rotation();
+
+	Vector2 final_bone2d_direction = Vector2::from_angle(final_bone2d_angle);
+	float final_bone2d_length = final_bone2d_node->get_bone_length();
 	final_bone2d_trans.set_origin(target_global_pose.get_origin() - (final_bone2d_direction * final_bone2d_length));
 
 	// Save the transform
@@ -188,7 +195,7 @@ void SkeletonModifier2DFABRIK::chain_backwards() {
 			current_pose.set_origin(current_pose.get_origin() + fabrik_data_chain[i].magnet_position);
 		}
 
-		float current_bone2d_node_length = current_bone2d_node->get_bone_length() * MIN(current_bone2d_node->get_global_scale().x, current_bone2d_node->get_global_scale().y);
+		float current_bone2d_node_length = current_bone2d_node->get_bone_length();
 		float length = current_bone2d_node_length / (current_pose.get_origin().distance_to(previous_pose.get_origin()));
 		Vector2 finish_position = previous_pose.get_origin().lerp(current_pose.get_origin(), length);
 		current_pose.set_origin(finish_position);
@@ -209,7 +216,7 @@ void SkeletonModifier2DFABRIK::chain_forwards() {
 		Transform2D current_pose = fabrik_transform_chain[i];
 		Transform2D next_pose = fabrik_transform_chain[i + 1];
 
-		float current_bone2d_node_length = current_bone2d_node->get_bone_length() * MIN(current_bone2d_node->get_global_scale().x, current_bone2d_node->get_global_scale().y);
+		float current_bone2d_node_length = current_bone2d_node->get_bone_length();
 		float length = current_bone2d_node_length / (next_pose.get_origin().distance_to(current_pose.get_origin()));
 		Vector2 finish_position = current_pose.get_origin().lerp(next_pose.get_origin(), length);
 		current_pose.set_origin(finish_position);
@@ -227,18 +234,12 @@ void SkeletonModifier2DFABRIK::_update_bones_id() {
 }
 
 void SkeletonModifier2DFABRIK::update_target_node() {
-	target_node_id = ObjectID();
-	ERR_FAIL_COND_MSG(get_skeleton() == nullptr || !get_skeleton()->is_inside_tree(),
-			"Skeleton is not in scene tree");
-	ERR_FAIL_COND_MSG(!has_node(target_node), "Target node " + target_node + " not found in skeleton");
-
-	Bone2D *node = Object::cast_to<Bone2D>(get_node(target_node));
-	ERR_FAIL_COND_MSG(node == nullptr, "Target node is not a Bone2D");
+	Node2D *node = Object::cast_to<Node2D>(get_node(target_node));
+	ERR_FAIL_COND_MSG(node == nullptr, "Target node is not a Node2D");
 	target_node_id = node->get_instance_id();
 }
 
 void SkeletonModifier2DFABRIK::fabrik_joint_update_node(int p_joint_idx) {
-	fabrik_data_chain.write[p_joint_idx].bone_node_id = ObjectID();
 	ERR_FAIL_COND_MSG(get_skeleton() == nullptr || !get_skeleton()->is_inside_tree(),
 			"Skeleton is not in scene tree");
 	NodePath joint_bone = fabrik_data_chain[p_joint_idx].bone_node;
@@ -246,6 +247,17 @@ void SkeletonModifier2DFABRIK::fabrik_joint_update_node(int p_joint_idx) {
 
 	Bone2D *node = Object::cast_to<Bone2D>(get_node(joint_bone));
 	ERR_FAIL_COND_MSG(node == nullptr, "FABRIK joint node is not a Bone2D");
+
+#ifdef TOOLS_ENABLED
+	ObjectID old_node = fabrik_data_chain[p_joint_idx].bone_node_id;
+	if (old_node.is_valid()) {
+		ObjectDB::get_instance(old_node)->remove_meta("_bone_ik_color_enabled_");
+	}
+	node->set_meta("_bone_ik_color_enabled_", true);
+	if (get_skeleton()) {
+		get_skeleton()->queue_redraw();
+	}
+#endif
 	fabrik_data_chain.write[p_joint_idx].bone_node_id = node->get_instance_id();
 	fabrik_data_chain.write[p_joint_idx].bone_idx = node->get_bone_idx();
 }
@@ -262,6 +274,17 @@ NodePath SkeletonModifier2DFABRIK::get_target_node() const {
 }
 
 void SkeletonModifier2DFABRIK::set_bone_chain_size(int p_length) {
+#ifdef TOOLS_ENABLED
+	for (int i = p_length; i < fabrik_data_chain.size(); i++) {
+		ObjectID old_node = fabrik_data_chain[i].bone_node_id;
+		if (old_node.is_valid()) {
+			ObjectDB::get_instance(old_node)->remove_meta("_bone_ik_color_enabled_");
+		}
+	}
+	if (get_skeleton()) {
+		get_skeleton()->queue_redraw();
+	}
+#endif
 	fabrik_data_chain.resize(p_length);
 }
 
@@ -363,7 +386,7 @@ void SkeletonModifier2DFABRIK::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_joint_magnets", "p_magnets"), &SkeletonModifier2DFABRIK::set_joint_magnets);
 	ClassDB::bind_method(D_METHOD("get_joint_magnets"), &SkeletonModifier2DFABRIK::get_joint_magnets);
 
-	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "target_node", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "Bone2D"), "set_target_node", "get_target_node");
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "target_node", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "Node2D"), "set_target_node", "get_target_node");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "bone_chain_size", PROPERTY_HINT_RANGE, "0, 100, 1"), "set_bone_chain_size", "get_bone_chain_size");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "tip_use_target_rotation"), "set_tip_use_target_rotation", "is_tip_use_target_rotation");
 
