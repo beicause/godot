@@ -39,12 +39,19 @@
 class SkeletonModifier2D : public Node2D {
 	GDCLASS(SkeletonModifier2D, Node2D);
 
+public:
+	enum ExecutionMode {
+		EXECUTION_MODE_PROCESS_IDLE,
+		EXECUTION_MODE_PROCESS_PHYSICS,
+	};
+
 protected:
 	bool active = true;
 	real_t influence = 1.0;
 
 	// Cache them for the performance reason since finding node with NodePath is slow.
 	ObjectID skeleton_id;
+	ExecutionMode execution_mode = ExecutionMode::EXECUTION_MODE_PROCESS_IDLE;
 
 	void _update_skeleton();
 	void _update_skeleton_path();
@@ -55,13 +62,14 @@ protected:
 	static void _bind_methods();
 
 	virtual void _set_active(bool p_active);
+	virtual void _setup_modification();
+	virtual void _process_modification(real_t p_delta);
 
-	virtual void _process_modification();
-	GDVIRTUAL0(_process_modification);
+	GDVIRTUAL0(_setup_modification);
+	GDVIRTUAL1(_process_modification, real_t);
 
 public:
 	virtual PackedStringArray get_configuration_warnings() const override;
-	virtual bool has_process() const { return false; } // Return true if modifier needs to modify bone pose without external animation such as physics, jiggle and etc.
 
 	void set_active(bool p_active);
 	bool is_active() const;
@@ -69,9 +77,15 @@ public:
 	void set_influence(real_t p_influence);
 	real_t get_influence() const;
 
+	void set_execution_mode(ExecutionMode p_execution_mode);
+	ExecutionMode get_execution_mode() const;
+
 	Skeleton2D *get_skeleton() const;
 
-	void process_modification();
+	void process_modification(real_t p_delta);
+	void setup_modification();
 };
+
+VARIANT_ENUM_CAST(SkeletonModifier2D::ExecutionMode);
 
 #endif // SKELETON_MODIFIER_2D_H
