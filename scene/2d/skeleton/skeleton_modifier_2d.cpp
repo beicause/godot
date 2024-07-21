@@ -64,6 +64,9 @@ void SkeletonModifier2D::_update_skeleton() {
 		return;
 	}
 	Skeleton2D *old_sk = get_skeleton();
+	if (old_sk && old_sk->is_connected("ready", callable_mp(this, &SkeletonModifier2D::setup_modification))) {
+		old_sk->disconnect("ready", callable_mp(this, &SkeletonModifier2D::setup_modification));
+	}
 	_update_skeleton_path();
 	Skeleton2D *new_sk = get_skeleton();
 	if (old_sk != new_sk) {
@@ -80,10 +83,9 @@ void SkeletonModifier2D::_skeleton_changed(Skeleton2D *p_old, Skeleton2D *p_new)
 /* Process */
 
 void SkeletonModifier2D::set_active(bool p_active) {
-	if (active == p_active) {
-		return;
-	}
 	active = p_active;
+	set_process_internal(active);
+	set_physics_process_internal(active);
 	_set_active(active);
 }
 
@@ -114,6 +116,7 @@ void SkeletonModifier2D::process_modification(real_t p_delta) {
 }
 
 void SkeletonModifier2D::setup_modification() {
+	set_active(is_active());
 	_setup_modification();
 	emit_signal(SNAME("modification_setup"));
 }
@@ -162,7 +165,7 @@ void SkeletonModifier2D::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "active"), "set_active", "is_active");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "influence", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_influence", "get_influence");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "execution_mode", PROPERTY_HINT_ENUM), "set_execution_mode", "get_execution_mode");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "execution_mode", PROPERTY_HINT_ENUM, "IDLE,Physics"), "set_execution_mode", "get_execution_mode");
 
 	ADD_SIGNAL(MethodInfo("modification_processed"));
 	ADD_SIGNAL(MethodInfo("modification_setup"));

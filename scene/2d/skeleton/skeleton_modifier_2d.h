@@ -51,7 +51,7 @@ protected:
 
 	// Cache them for the performance reason since finding node with NodePath is slow.
 	ObjectID skeleton_id;
-	ExecutionMode execution_mode;
+	ExecutionMode execution_mode = ExecutionMode::EXECUTION_MODE_PROCESS_IDLE;
 
 	void _update_skeleton();
 	void _update_skeleton_path();
