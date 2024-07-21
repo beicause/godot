@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  skeleton_ik_2d_fabr.h                                                 */
+/*  skeleton_modifier_2d_fabrik.h                                         */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,12 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef SKELETON_IK_2D_FABR_H
-#define SKELETON_IK_2D_FABR_H
-#include "scene/2d/skeleton_modifier_2d.h"
+#ifndef SKELETON_MODIFIER_2D_FABRIK_H
+#define SKELETON_MODIFIER_2D_FABRIK_H
+#include "scene/2d/skeleton/skeleton_modifier_2d.h"
 
-class SkeletonIK2DFABR : public SkeletonModifier2D {
-	GDCLASS(SkeletonIK2DFABR, SkeletonModifier2D);
+class SkeletonModifier2DFABRIK : public SkeletonModifier2D {
+	GDCLASS(SkeletonModifier2DFABRIK, SkeletonModifier2D);
 
 private:
 	struct FABRJoint {
@@ -65,20 +65,17 @@ private:
 	Transform2D target_global_pose;
 	Transform2D origin_global_pose;
 
-	void _update_bone_id();
-
 	void fabrik_joint_update_node(int p_joint_idx);
 	void chain_backwards();
 	void chain_forwards();
+	void _update_bones_id();
 
 protected:
 	static void _bind_methods();
-	virtual void _skeleton_changed(Skeleton2D *p_old, Skeleton2D *p_new) override;
-	void _notification(int p_what);
-
-public:
+	virtual void _setup_modification() override;
 	virtual void _process_modification() override;
 
+public:
 	void set_target_node(const NodePath &p_target_node);
 	NodePath get_target_node() const;
 
@@ -104,4 +101,4 @@ public:
 	PackedVector2Array get_joint_magnets() const;
 };
 
-#endif // SKELETON_IK_2D_FABR_H
+#endif // SKELETON_MODIFIER_2D_FABRIK_H

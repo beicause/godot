@@ -30,7 +30,7 @@
 
 #include "skeleton_2d.h"
 #include "core/math/transform_interpolator.h"
-#include "scene/2d/skeleton_modifier_2d.h"
+#include "scene/2d/skeleton/skeleton_modifier_2d.h"
 
 #ifdef TOOLS_ENABLED
 #include "editor/editor_data.h"
@@ -433,6 +433,12 @@ void Skeleton2D::_update_bone_setup() {
 
 	transform_dirty = true;
 	_update_transform();
+	for (ObjectID modifier : modifiers) {
+		SkeletonModifier2D *mod = Object::cast_to<SkeletonModifier2D>(ObjectDB::get_instance(modifier));
+		if (mod) {
+			mod->setup_modification();
+		}
+	}
 	emit_signal(SNAME("bone_setup_changed"));
 }
 
@@ -499,7 +505,7 @@ void Skeleton2D::_notification(int p_what) {
 			if (transform_dirty) {
 				_update_transform();
 			}
-			request_ready();
+			_make_modifiers_dirty();
 		} break;
 
 		case NOTIFICATION_ENTER_TREE: {
