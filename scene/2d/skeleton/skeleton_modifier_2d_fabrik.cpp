@@ -96,7 +96,8 @@ void SkeletonModifier2DFABRIK::_process_modification(real_t p_delta) {
 	Bone2D *final_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[fabrik_data_chain.size() - 1].bone_node_cache));
 	float final_bone2d_angle = tip_use_target_rotation ? target_global_pose.get_rotation() : final_bone2d_node->get_global_rotation();
 	Vector2 final_bone2d_direction = Vector2::from_angle(final_bone2d_angle);
-	float final_bone2d_length = final_bone2d_node->get_length();
+	float final_bone2d_length = final_bone2d_node->get_length() * MIN(final_bone2d_node->get_global_scale().x, final_bone2d_node->get_global_scale().y);
+	;
 	float target_distance = (final_bone2d_node->get_global_position() + (final_bone2d_direction * final_bone2d_length)).distance_to(target->get_global_position());
 	chain_iterations = 0;
 
@@ -137,6 +138,9 @@ void SkeletonModifier2DFABRIK::_process_modification(real_t p_delta) {
 		// Adjust for the bone angle
 		chain_trans.set_rotation(chain_trans.get_rotation() - joint_bone2d_node->get_bone_angle());
 
+		// Reset scale
+		chain_trans.set_scale(joint_bone2d_node->get_global_scale());
+
 		// Apply to the bone, and to the override
 		joint_bone2d_node->set_global_transform(chain_trans);
 		get_skeleton()->set_bone_local_pose_override(fabrik_data_chain[i].bone_idx, joint_bone2d_node->get_transform(), get_influence(), true);
@@ -160,7 +164,8 @@ void SkeletonModifier2DFABRIK::chain_backwards() {
 	float final_bone2d_angle = tip_use_target_rotation ? target_global_pose.get_rotation() : final_bone2d_trans.get_rotation();
 
 	Vector2 final_bone2d_direction = Vector2::from_angle(final_bone2d_angle);
-	float final_bone2d_length = final_bone2d_node->get_length();
+	float final_bone2d_length = final_bone2d_node->get_length() * MIN(final_bone2d_node->get_global_scale().x, final_bone2d_node->get_global_scale().y);
+	;
 	final_bone2d_trans.set_origin(target_global_pose.get_origin() - (final_bone2d_direction * final_bone2d_length));
 
 	// Save the transform
@@ -178,7 +183,8 @@ void SkeletonModifier2DFABRIK::chain_backwards() {
 			current_pose.set_origin(current_pose.get_origin() + fabrik_data_chain[i].magnet);
 		}
 
-		float current_bone2d_node_length = current_bone2d_node->get_length();
+		float current_bone2d_node_length = current_bone2d_node->get_length() * MIN(current_bone2d_node->get_global_scale().x, current_bone2d_node->get_global_scale().y);
+		;
 		float length = current_bone2d_node_length / (current_pose.get_origin().distance_to(previous_pose.get_origin()));
 		Vector2 finish_position = previous_pose.get_origin().lerp(current_pose.get_origin(), length);
 		current_pose.set_origin(finish_position);
@@ -199,7 +205,8 @@ void SkeletonModifier2DFABRIK::chain_forwards() {
 		Transform2D current_pose = fabrik_transform_chain[i];
 		Transform2D next_pose = fabrik_transform_chain[i + 1];
 
-		float current_bone2d_node_length = current_bone2d_node->get_length();
+		float current_bone2d_node_length = current_bone2d_node->get_length() * MIN(current_bone2d_node->get_global_scale().x, current_bone2d_node->get_global_scale().y);
+		;
 		float length = current_bone2d_node_length / (next_pose.get_origin().distance_to(current_pose.get_origin()));
 		Vector2 finish_position = current_pose.get_origin().lerp(next_pose.get_origin(), length);
 		current_pose.set_origin(finish_position);
@@ -247,8 +254,8 @@ NodePath SkeletonModifier2DFABRIK::get_target_node() const {
 	return target_node;
 }
 
-void SkeletonModifier2DFABRIK::set_bone_chain_size(int p_length) {
-	fabrik_data_chain.resize(p_length);
+void SkeletonModifier2DFABRIK::set_bone_chain_size(int p_size) {
+	fabrik_data_chain.resize(p_size);
 }
 
 int SkeletonModifier2DFABRIK::get_bone_chain_size() {
@@ -258,7 +265,9 @@ int SkeletonModifier2DFABRIK::get_bone_chain_size() {
 void SkeletonModifier2DFABRIK::set_joint_bone(int p_joint_idx, const NodePath &p_bone) {
 	ERR_FAIL_INDEX_MSG(p_joint_idx, fabrik_data_chain.size(), "FABRIK joint out of range!");
 	fabrik_data_chain.write[p_joint_idx].bone_node = p_bone;
-	fabrik_joint_update_node(p_joint_idx);
+	if (get_skeleton() && get_skeleton()->is_inside_tree()) {
+		fabrik_joint_update_node(p_joint_idx);
+	}
 }
 
 NodePath SkeletonModifier2DFABRIK::get_joint_bone(int p_joint_idx) const {
@@ -303,29 +312,27 @@ bool SkeletonModifier2DFABRIK::is_tip_use_target_rotation() const {
 	return tip_use_target_rotation;
 }
 
-void SkeletonModifier2DFABRIK::set_joint_bones(TypedArray<NodePath> p_node_paths) {
-	if (get_skeleton() == nullptr || !get_skeleton()->is_inside_tree()) {
-		return;
-	}
+void SkeletonModifier2DFABRIK::set_all_bones(TypedArray<NodePath> p_node_paths) {
 	set_bone_chain_size(p_node_paths.size());
 	for (int i = 0; i < p_node_paths.size(); i++) {
 		set_joint_bone(i, p_node_paths[i]);
 	}
 }
-TypedArray<NodePath> SkeletonModifier2DFABRIK::get_joint_bones() const {
+TypedArray<NodePath> SkeletonModifier2DFABRIK::get_all_bones() const {
 	TypedArray<NodePath> ret;
 	for (int i = 0; i < fabrik_data_chain.size(); i++) {
 		ret.push_back(get_joint_bone(i));
 	}
 	return ret;
 }
-void SkeletonModifier2DFABRIK::set_joint_magnets(PackedVector2Array p_magnets) {
+
+void SkeletonModifier2DFABRIK::set_all_magnets(PackedVector2Array p_magnets) {
 	int size = MIN(get_bone_chain_size(), p_magnets.size());
 	for (int i = 0; i < size; i++) {
 		set_joint_magnet(i, p_magnets[i]);
 	}
 }
-PackedVector2Array SkeletonModifier2DFABRIK::get_joint_magnets() const {
+PackedVector2Array SkeletonModifier2DFABRIK::get_all_magnets() const {
 	PackedVector2Array ret;
 	for (int i = 0; i < fabrik_data_chain.size(); i++) {
 		ret.push_back(get_joint_magnet(i));
@@ -345,15 +352,15 @@ void SkeletonModifier2DFABRIK::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_joint_magnet", "p_joint_idx"), &SkeletonModifier2DFABRIK::get_joint_magnet);
 	ClassDB::bind_method(D_METHOD("set_tip_use_target_rotation", "p_tip_use_target_rotation"), &SkeletonModifier2DFABRIK::set_tip_use_target_rotation);
 	ClassDB::bind_method(D_METHOD("is_tip_use_target_rotation"), &SkeletonModifier2DFABRIK::is_tip_use_target_rotation);
-	ClassDB::bind_method(D_METHOD("set_joint_bones", "p_node_paths"), &SkeletonModifier2DFABRIK::set_joint_bones);
-	ClassDB::bind_method(D_METHOD("get_joint_bones"), &SkeletonModifier2DFABRIK::get_joint_bones);
-	ClassDB::bind_method(D_METHOD("set_joint_magnets", "p_magnets"), &SkeletonModifier2DFABRIK::set_joint_magnets);
-	ClassDB::bind_method(D_METHOD("get_joint_magnets"), &SkeletonModifier2DFABRIK::get_joint_magnets);
+	ClassDB::bind_method(D_METHOD("set_all_bones", "p_node_paths"), &SkeletonModifier2DFABRIK::set_all_bones);
+	ClassDB::bind_method(D_METHOD("get_all_bones"), &SkeletonModifier2DFABRIK::get_all_bones);
+	ClassDB::bind_method(D_METHOD("set_all_magnets", "p_magnets"), &SkeletonModifier2DFABRIK::set_all_magnets);
+	ClassDB::bind_method(D_METHOD("get_all_magnets"), &SkeletonModifier2DFABRIK::get_all_magnets);
 
 	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "target_node", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "Node2D"), "set_target_node", "get_target_node");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "bone_chain_size", PROPERTY_HINT_RANGE, "0, 100, 1"), "set_bone_chain_size", "get_bone_chain_size");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "tip_use_target_rotation"), "set_tip_use_target_rotation", "is_tip_use_target_rotation");
 
-	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "joint_bones", PROPERTY_HINT_ARRAY_TYPE, "NodePath"), "set_joint_bones", "get_joint_bones");
-	ADD_PROPERTY(PropertyInfo(Variant::PACKED_VECTOR2_ARRAY, "joint_magnets"), "set_joint_magnets", "get_joint_magnets");
+	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "all_bones", PROPERTY_HINT_ARRAY_TYPE, "NodePath"), "set_all_bones", "get_all_bones");
+	ADD_PROPERTY(PropertyInfo(Variant::PACKED_VECTOR2_ARRAY, "all_magnets"), "set_all_magnets", "get_all_magnets");
 }

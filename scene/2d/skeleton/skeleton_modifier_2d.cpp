@@ -170,6 +170,6 @@ void SkeletonModifier2D::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("modification_processed"));
 	ADD_SIGNAL(MethodInfo("modification_setup"));
 
-	GDVIRTUAL_BIND(_process_modification);
+	GDVIRTUAL_BIND(_process_modification, "p_delta");
 	GDVIRTUAL_BIND(_setup_modification);
 }
