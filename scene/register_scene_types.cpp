@@ -35,6 +35,7 @@
 #include "core/os/os.h"
 #include "scene/2d/skeleton/skeleton_modifier_2d.h"
 #include "scene/2d/skeleton/skeleton_modifier_2d_fabrik.h"
+#include "scene/2d/skeleton/skeleton_modifier_2d_jiggle.h"
 #include "scene/animation/animation_blend_space_1d.h"
 #include "scene/animation/animation_blend_space_2d.h"
 #include "scene/animation/animation_blend_tree.h"
@@ -797,6 +798,7 @@ void register_scene_types() {
 	GDREGISTER_CLASS(Bone2D);
 	GDREGISTER_CLASS(SkeletonModifier2D);
 	GDREGISTER_CLASS(SkeletonModifier2DFABRIK);
+	GDREGISTER_CLASS(SkeletonModifier2DJiggle)
 	GDREGISTER_ABSTRACT_CLASS(Light2D);
 	GDREGISTER_CLASS(PointLight2D);
 	GDREGISTER_CLASS(DirectionalLight2D);
