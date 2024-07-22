@@ -40,12 +40,12 @@ void SkeletonModifier2DFABRIK::_process_modification(real_t p_delta) {
 		ERR_PRINT_ONCE("SkeletonIk2DFABR is not setup. Cannot execute modification!");
 		return;
 	}
-	if (!has_node(target_node_path)) {
-		ERR_PRINT_ONCE("Target node " + target_node_path + " not found");
+	if (!has_node(target_node)) {
+		ERR_PRINT_ONCE("Target node " + target_node + " not found");
 		return;
 	}
 
-	if (target_node_id.is_null()) {
+	if (target_node_cache.is_null()) {
 		update_target_node();
 		return;
 	}
@@ -55,19 +55,19 @@ void SkeletonModifier2DFABRIK::_process_modification(real_t p_delta) {
 		return;
 	}
 
-	Node2D *target = Object::cast_to<Node2D>(ObjectDB::get_instance(target_node_id));
+	Node2D *target = Object::cast_to<Node2D>(ObjectDB::get_instance(target_node_cache));
 	if (!target || !target->is_inside_tree()) {
 		ERR_PRINT_ONCE("Target node is not in the scene tree. Cannot execute modification!");
 		return;
 	}
 	target_global_pose = target->get_global_transform();
 
-	if (fabrik_data_chain[0].bone_node_id.is_null() && !fabrik_data_chain[0].bone_node_path.is_empty()) {
+	if (fabrik_data_chain[0].bone_node_cache.is_null() && !fabrik_data_chain[0].bone_node.is_empty()) {
 		fabrik_joint_update_node(0);
 		return;
 	}
 
-	Bone2D *origin_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[0].bone_node_id));
+	Bone2D *origin_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[0].bone_node_cache));
 	if (!origin_bone2d_node || !origin_bone2d_node->is_inside_tree()) {
 		ERR_PRINT_ONCE("Origin joint's Bone2D node is not in the scene tree. Cannot execute modification!");
 		return;
@@ -81,11 +81,11 @@ void SkeletonModifier2DFABRIK::_process_modification(real_t p_delta) {
 
 	for (int i = 0; i < fabrik_data_chain.size(); i++) {
 		// Update the transform chain
-		if (fabrik_data_chain[i].bone_node_id.is_null() && !fabrik_data_chain[i].bone_node_path.is_empty()) {
+		if (fabrik_data_chain[i].bone_node_cache.is_null() && !fabrik_data_chain[i].bone_node.is_empty()) {
 			WARN_PRINT_ONCE("Bone2D cache for joint " + itos(i) + " is out of date.. Attempting to update...");
 			fabrik_joint_update_node(i);
 		}
-		Bone2D *joint_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[i].bone_node_id));
+		Bone2D *joint_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[i].bone_node_cache));
 		if (!joint_bone2d_node) {
 			ERR_PRINT_ONCE("FABRIK Joint " + itos(i) + " does not have a Bone2D node set! Cannot execute modification!");
 			return;
@@ -93,7 +93,7 @@ void SkeletonModifier2DFABRIK::_process_modification(real_t p_delta) {
 		fabrik_transform_chain.write[i] = joint_bone2d_node->get_global_transform();
 	}
 
-	Bone2D *final_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[fabrik_data_chain.size() - 1].bone_node_id));
+	Bone2D *final_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[fabrik_data_chain.size() - 1].bone_node_cache));
 	float final_bone2d_angle = tip_use_target_rotation ? target_global_pose.get_rotation() : final_bone2d_node->get_global_rotation();
 	Vector2 final_bone2d_direction = Vector2::from_angle(final_bone2d_angle);
 	float final_bone2d_length = final_bone2d_node->get_length();
@@ -117,7 +117,7 @@ void SkeletonModifier2DFABRIK::_process_modification(real_t p_delta) {
 
 	// Apply all of the saved transforms to the Bone2D nodes
 	for (int i = 0; i < fabrik_data_chain.size(); i++) {
-		Bone2D *joint_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[i].bone_node_id));
+		Bone2D *joint_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[i].bone_node_cache));
 		if (!joint_bone2d_node) {
 			ERR_PRINT_ONCE("FABRIK Joint " + itos(i) + " does not have a Bone2D node set!");
 			continue;
@@ -145,7 +145,7 @@ void SkeletonModifier2DFABRIK::_process_modification(real_t p_delta) {
 
 void SkeletonModifier2DFABRIK::chain_backwards() {
 	int final_joint_index = fabrik_data_chain.size() - 1;
-	Bone2D *final_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[final_joint_index].bone_node_id));
+	Bone2D *final_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[final_joint_index].bone_node_cache));
 	Transform2D final_bone2d_trans = fabrik_transform_chain[final_joint_index];
 
 	// Apply magnet position
@@ -170,7 +170,7 @@ void SkeletonModifier2DFABRIK::chain_backwards() {
 	while (i >= 1) {
 		Transform2D previous_pose = fabrik_transform_chain[i];
 		i -= 1;
-		Bone2D *current_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[i].bone_node_id));
+		Bone2D *current_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[i].bone_node_cache));
 		Transform2D current_pose = fabrik_transform_chain[i];
 
 		// Apply magnet position
@@ -195,7 +195,7 @@ void SkeletonModifier2DFABRIK::chain_forwards() {
 	fabrik_transform_chain.write[0] = origin_bone2d_trans;
 
 	for (int i = 0; i < fabrik_data_chain.size() - 1; i++) {
-		Bone2D *current_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[i].bone_node_id));
+		Bone2D *current_bone2d_node = Object::cast_to<Bone2D>(ObjectDB::get_instance(fabrik_data_chain[i].bone_node_cache));
 		Transform2D current_pose = fabrik_transform_chain[i];
 		Transform2D next_pose = fabrik_transform_chain[i + 1];
 
@@ -217,34 +217,34 @@ void SkeletonModifier2DFABRIK::_update_bones_id() {
 }
 
 void SkeletonModifier2DFABRIK::update_target_node() {
-	target_node_id = ObjectID();
-	ERR_FAIL_COND_MSG(!has_node(target_node_path), "Target node " + target_node_path + " not found");
-	Node2D *node = Object::cast_to<Node2D>(get_node(target_node_path));
+	target_node_cache = ObjectID();
+	ERR_FAIL_COND_MSG(!has_node(target_node), "Target node " + target_node + " not found");
+	Node2D *node = Object::cast_to<Node2D>(get_node(target_node));
 	ERR_FAIL_COND_MSG(node == nullptr, "Target node is not a Node2D");
-	target_node_id = node->get_instance_id();
+	target_node_cache = node->get_instance_id();
 }
 
 void SkeletonModifier2DFABRIK::fabrik_joint_update_node(int p_joint_idx) {
-	fabrik_data_chain.write[p_joint_idx].bone_node_id = ObjectID();
-	NodePath node_path = fabrik_data_chain[p_joint_idx].bone_node_path;
+	fabrik_data_chain.write[p_joint_idx].bone_node_cache = ObjectID();
+	NodePath node_path = fabrik_data_chain[p_joint_idx].bone_node;
 	ERR_FAIL_COND_MSG(get_skeleton() == nullptr || !get_skeleton()->is_inside_tree(), "Skeleton is not in scene tree");
 	ERR_FAIL_COND_MSG(!has_node(node_path), "FABRIK joint node " + node_path + " not found in skeleton");
 
 	Bone2D *node = Object::cast_to<Bone2D>(get_node(node_path));
 	ERR_FAIL_COND_MSG(node == nullptr, "FABRIK joint node is not a Bone2D");
-	fabrik_data_chain.write[p_joint_idx].bone_node_id = node->get_instance_id();
+	fabrik_data_chain.write[p_joint_idx].bone_node_cache = node->get_instance_id();
 	fabrik_data_chain.write[p_joint_idx].bone_idx = node->get_index_in_skeleton();
 }
 
 void SkeletonModifier2DFABRIK::set_target_node(const NodePath &p_target_node) {
-	target_node_path = p_target_node;
+	target_node = p_target_node;
 	if (get_skeleton() && get_skeleton()->is_inside_tree()) {
 		update_target_node();
 	}
 }
 
 NodePath SkeletonModifier2DFABRIK::get_target_node() const {
-	return target_node_path;
+	return target_node;
 }
 
 void SkeletonModifier2DFABRIK::set_bone_chain_size(int p_length) {
@@ -257,13 +257,13 @@ int SkeletonModifier2DFABRIK::get_bone_chain_size() {
 
 void SkeletonModifier2DFABRIK::set_joint_bone(int p_joint_idx, const NodePath &p_bone) {
 	ERR_FAIL_INDEX_MSG(p_joint_idx, fabrik_data_chain.size(), "FABRIK joint out of range!");
-	fabrik_data_chain.write[p_joint_idx].bone_node_path = p_bone;
+	fabrik_data_chain.write[p_joint_idx].bone_node = p_bone;
 	fabrik_joint_update_node(p_joint_idx);
 }
 
 NodePath SkeletonModifier2DFABRIK::get_joint_bone(int p_joint_idx) const {
 	ERR_FAIL_INDEX_V_MSG(p_joint_idx, fabrik_data_chain.size(), NodePath(), "FABRIK joint out of range!");
-	return fabrik_data_chain[p_joint_idx].bone_node_path;
+	return fabrik_data_chain[p_joint_idx].bone_node;
 }
 
 void SkeletonModifier2DFABRIK::set_joint_bone_idx(int p_joint_idx, int p_bone_idx) {
@@ -272,8 +272,8 @@ void SkeletonModifier2DFABRIK::set_joint_bone_idx(int p_joint_idx, int p_bone_id
 	if (get_skeleton()) {
 		ERR_FAIL_INDEX_MSG(p_bone_idx, get_skeleton()->get_bone_count(), "Passed-in Bone index is out of range!");
 		fabrik_data_chain.write[p_joint_idx].bone_idx = p_bone_idx;
-		fabrik_data_chain.write[p_joint_idx].bone_node_id = get_skeleton()->get_bone(p_bone_idx)->get_instance_id();
-		fabrik_data_chain.write[p_joint_idx].bone_node_path = get_skeleton()->get_path_to(get_skeleton()->get_bone(p_bone_idx));
+		fabrik_data_chain.write[p_joint_idx].bone_node_cache = get_skeleton()->get_bone(p_bone_idx)->get_instance_id();
+		fabrik_data_chain.write[p_joint_idx].bone_node = get_skeleton()->get_path_to(get_skeleton()->get_bone(p_bone_idx));
 	} else {
 		WARN_PRINT("Cannot verify the FABRIK joint " + itos(p_joint_idx) + " bone index for this modification...");
 		fabrik_data_chain.write[p_joint_idx].bone_idx = p_bone_idx;
@@ -303,7 +303,7 @@ bool SkeletonModifier2DFABRIK::is_tip_use_target_rotation() const {
 	return tip_use_target_rotation;
 }
 
-void SkeletonModifier2DFABRIK::set_joint_bones(Array p_node_paths) {
+void SkeletonModifier2DFABRIK::set_joint_bones(TypedArray<NodePath> p_node_paths) {
 	if (get_skeleton() == nullptr || !get_skeleton()->is_inside_tree()) {
 		return;
 	}
@@ -312,8 +312,8 @@ void SkeletonModifier2DFABRIK::set_joint_bones(Array p_node_paths) {
 		set_joint_bone(i, p_node_paths[i]);
 	}
 }
-Array SkeletonModifier2DFABRIK::get_joint_bones() const {
-	Array ret;
+TypedArray<NodePath> SkeletonModifier2DFABRIK::get_joint_bones() const {
+	TypedArray<NodePath> ret;
 	for (int i = 0; i < fabrik_data_chain.size(); i++) {
 		ret.push_back(get_joint_bone(i));
 	}
