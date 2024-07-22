@@ -93,11 +93,11 @@ public:
 	void set_tip_use_target_rotation(bool p_tip_use_target_rotation);
 	bool is_tip_use_target_rotation() const;
 
-	void set_joint_bones(TypedArray<NodePath> p_node_paths);
-	TypedArray<NodePath> get_joint_bones() const;
+	void set_all_bones(TypedArray<NodePath> p_node_paths);
+	TypedArray<NodePath> get_all_bones() const;
 
-	void set_joint_magnets(PackedVector2Array p_magnets);
-	PackedVector2Array get_joint_magnets() const;
+	void set_all_magnets(PackedVector2Array p_magnets);
+	PackedVector2Array get_all_magnets() const;
 };
 
 #endif // SKELETON_MODIFIER_2D_FABRIK_H

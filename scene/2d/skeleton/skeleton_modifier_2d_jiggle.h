@@ -75,13 +75,12 @@ private:
 
 	void jiggle_joint_update_bone2d_cache(int p_joint_idx);
 	void _execute_jiggle_joint(int p_joint_idx, Node2D *p_target, float p_delta);
-	void _update_jiggle_joint_data();
 
 protected:
 	static void _bind_methods();
 
 public:
-	void _process_modification(float p_delta) override;
+	void _process_modification(real_t p_delta) override;
 	void _setup_modification() override;
 
 	void set_target_node(const NodePath &p_target_node);
@@ -104,25 +103,46 @@ public:
 	int get_collision_mask() const;
 
 	int get_bone_chain_size();
-	void set_data_chain_size(int p_new_length);
+	void set_bone_chain_size(int p_size);
 
 	void set_joint_bone(int p_joint_idx, const NodePath &p_target_node);
 	NodePath get_joint_bone(int p_joint_idx) const;
 	void set_joint_bone_idx(int p_joint_idx, int p_bone_idx);
 	int get_joint_bone_idx(int p_joint_idx) const;
 
-	void set_jiggle_joint_override(int p_joint_idx, bool p_override);
-	bool get_jiggle_joint_override(int p_joint_idx) const;
-	void set_jiggle_joint_stiffness(int p_joint_idx, float p_stiffness);
-	float get_jiggle_joint_stiffness(int p_joint_idx) const;
-	void set_jiggle_joint_mass(int p_joint_idx, float p_mass);
-	float get_jiggle_joint_mass(int p_joint_idx) const;
-	void set_jiggle_joint_damping(int p_joint_idx, float p_damping);
-	float get_jiggle_joint_damping(int p_joint_idx) const;
-	void set_jiggle_joint_use_gravity(int p_joint_idx, bool p_use_gravity);
-	bool get_jiggle_joint_use_gravity(int p_joint_idx) const;
-	void set_jiggle_joint_gravity(int p_joint_idx, Vector2 p_gravity);
-	Vector2 get_jiggle_joint_gravity(int p_joint_idx) const;
+	void set_joint_override(int p_joint_idx, bool p_override);
+	bool get_joint_override(int p_joint_idx) const;
+	void set_joint_stiffness(int p_joint_idx, float p_stiffness);
+	float get_joint_stiffness(int p_joint_idx) const;
+	void set_joint_mass(int p_joint_idx, float p_mass);
+	float get_joint_mass(int p_joint_idx) const;
+	void set_joint_damping(int p_joint_idx, float p_damping);
+	float get_joint_damping(int p_joint_idx) const;
+	void set_joint_use_gravity(int p_joint_idx, bool p_use_gravity);
+	bool get_joint_use_gravity(int p_joint_idx) const;
+	void set_joint_gravity(int p_joint_idx, Vector2 p_gravity);
+	Vector2 get_joint_gravity(int p_joint_idx) const;
+
+	void set_all_bones(TypedArray<NodePath> p_node_paths);
+	TypedArray<NodePath> get_all_bones() const;
+
+	void set_all_overrides(TypedArray<bool> p_overrides);
+	TypedArray<bool> get_all_overrides() const;
+
+	void set_all_stiffness(PackedFloat32Array p_stiffness);
+	PackedFloat32Array get_all_stiffness() const;
+
+	void set_all_mass(PackedFloat32Array p_mass);
+	PackedFloat32Array get_all_mass() const;
+
+	void set_all_dampings(PackedFloat32Array p_dampings);
+	PackedFloat32Array get_all_dampings() const;
+
+	void set_all_use_gravity(TypedArray<bool> p_use_gravity);
+	TypedArray<bool> get_all_use_gravity() const;
+
+	void set_all_gravities(PackedVector2Array p_gravities);
+	PackedVector2Array get_all_gravities() const;
 };
 
 #endif // SKELETON_MODIFIER_2D_JIGGLE_H
