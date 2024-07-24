@@ -31,6 +31,7 @@
 #include "bit_map.h"
 
 #include "core/io/image_loader.h"
+#include "core/math/geometry_2d.h"
 #include "core/variant/typed_array.h"
 
 void BitMap::create(const Size2i &p_size) {
@@ -552,6 +553,21 @@ Vector<Vector<Vector2>> BitMap::clip_opaque_to_polygons(const Rect2i &p_rect, fl
 	return polygons;
 }
 
+Vector<Vector2> BitMap::clip_opaque_to_concave_polygon(const Rect2i &p_rect, real_t p_threshold) const {
+	Rect2i r = Rect2i(0, 0, width, height).intersection(p_rect);
+	PackedVector2Array points;
+	for (int i = r.position.y; i < r.position.y + r.size.height; i++) {
+		for (int j = r.position.x; j < r.position.x + r.size.width; j++) {
+			if (get_bit(i, j)) {
+				// Flip xy for concave hull
+				points.push_back(Point2(i, j));
+			}
+		}
+	}
+	Vector<Vector2> ret = Geometry2D::concave_hull(points, p_threshold);
+	return ret;
+}
+
 void BitMap::grow_mask(int p_pixels, const Rect2i &p_rect) {
 	if (p_pixels == 0) {
 		return;
@@ -725,6 +741,7 @@ void BitMap::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("grow_mask", "pixels", "rect"), &BitMap::grow_mask);
 	ClassDB::bind_method(D_METHOD("convert_to_image"), &BitMap::convert_to_image);
 	ClassDB::bind_method(D_METHOD("opaque_to_polygons", "rect", "epsilon"), &BitMap::_opaque_to_polygons_bind, DEFVAL(2.0));
+	ClassDB::bind_method(D_METHOD("opaque_to_concave_polygon", "rect", "threshold"), &BitMap::clip_opaque_to_concave_polygon, DEFVAL(2), DEFVAL(0));
 
 	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_data", "_get_data");
 }

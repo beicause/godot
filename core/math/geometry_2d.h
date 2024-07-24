@@ -38,6 +38,7 @@
 #include "core/math/vector2i.h"
 #include "core/math/vector3.h"
 #include "core/math/vector3i.h"
+#include "core/templates/list.h"
 #include "core/templates/vector.h"
 
 class Geometry2D {
@@ -488,6 +489,8 @@ public:
 
 		return points;
 	}
+
+	static Vector<Point2> concave_hull(Vector<Point2> p_points, real_t p_threshold = 2.0);
 
 	static Vector<Vector<Vector2>> decompose_polygon_in_convex(const Vector<Point2> &polygon);
 

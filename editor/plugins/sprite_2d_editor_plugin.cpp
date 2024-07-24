@@ -191,7 +191,12 @@ void Sprite2DEditor::_update_mesh_data() {
 
 	float epsilon = simplification->get_value();
 
-	Vector<Vector<Vector2>> lines = bm->clip_opaque_to_polygons(rect, epsilon);
+	Vector<Vector<Vector2>> lines;
+	if (concave_hull->is_pressed()) {
+		lines.push_back(bm->clip_opaque_to_concave_polygon(rect, epsilon));
+	} else {
+		lines = bm->clip_opaque_to_polygons(rect, epsilon);
+	}
 
 	uv_lines.clear();
 
@@ -644,6 +649,10 @@ Sprite2DEditor::Sprite2DEditor() {
 	grow_pixels->set_step(1);
 	grow_pixels->set_value(2);
 	hb->add_child(grow_pixels);
+	hb->add_spacer();
+	concave_hull = memnew(CheckButton);
+	concave_hull->set_text(TTR("Concave Hull"));
+	hb->add_child(concave_hull);
 	hb->add_spacer();
 	update_preview = memnew(Button);
 	update_preview->set_text(TTR("Update Preview"));

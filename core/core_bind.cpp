@@ -778,6 +778,10 @@ Vector<Point2> Geometry2D::convex_hull(const Vector<Point2> &p_points) {
 	return ::Geometry2D::convex_hull(p_points);
 }
 
+Vector<Point2> Geometry2D::concave_hull(const Vector<Point2> &p_points, real_t p_threshold) {
+	return ::Geometry2D::concave_hull(p_points, p_threshold);
+}
+
 TypedArray<PackedVector2Array> Geometry2D::decompose_polygon_in_convex(const Vector<Vector2> &p_polygon) {
 	Vector<Vector<Point2>> decomp = ::Geometry2D::decompose_polygon_in_convex(p_polygon);
 
@@ -920,6 +924,7 @@ void Geometry2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("triangulate_polygon", "polygon"), &Geometry2D::triangulate_polygon);
 	ClassDB::bind_method(D_METHOD("triangulate_delaunay", "points"), &Geometry2D::triangulate_delaunay);
 	ClassDB::bind_method(D_METHOD("convex_hull", "points"), &Geometry2D::convex_hull);
+	ClassDB::bind_method(D_METHOD("concave_hull", "points", "threshold"), &Geometry2D::concave_hull);
 	ClassDB::bind_method(D_METHOD("decompose_polygon_in_convex", "polygon"), &Geometry2D::decompose_polygon_in_convex);
 
 	ClassDB::bind_method(D_METHOD("merge_polygons", "polygon_a", "polygon_b"), &Geometry2D::merge_polygons);

@@ -346,3 +346,97 @@ Vector<Vector3i> Geometry2D::partial_pack_rects(const Vector<Vector2i> &p_sizes,
 
 	return ret;
 }
+
+struct _Line {
+	Point2 a;
+	Point2 b;
+};
+
+Vector<Point2> Geometry2D::concave_hull(Vector<Point2> p_points, real_t p_threshold) {
+	// Adapted from "A New Concave Hull Algorithm and Concaveness Measure for n-dimensional Datasets" Park, Jin-Seo and Se-Jong Oh.
+	// 1. Preprocessing.
+	Vector<Point2> convex_hull = Geometry2D::convex_hull(p_points);
+	if (convex_hull.size() <= 5) {
+		return convex_hull;
+	}
+	Vector<_Line> concave_edges;
+	concave_edges.resize(convex_hull.size() - 1);
+	Vector<Point2> inner_points = p_points.duplicate();
+	for (int i = 0; i < convex_hull.size() - 1; i++) {
+		Point2 p_a = convex_hull[i];
+		Point2 p_b = convex_hull[i + 1];
+		concave_edges.set(i, _Line{ p_a, p_b });
+		// Remove points outside the convex hull.
+		for (int j = 0; j < inner_points.size(); j++) {
+			Point2 p = inner_points[j];
+			bool is_in_convex_hull = false;
+			if (p == p_a) {
+				is_in_convex_hull = true;
+			}
+			for (int k = 0; k < convex_hull.size() - 1; k++) {
+				Point2 a = convex_hull[k] - p;
+				Point2 b = convex_hull[k + 1] - p;
+				if (a.x * b.y == a.y * b.x) {
+					is_in_convex_hull = true;
+				}
+			}
+			if (is_in_convex_hull) {
+				inner_points.remove_at(j);
+				j--;
+			}
+		}
+	}
+	if (inner_points.size() == 0) {
+		return convex_hull;
+	}
+	// 2. Digging convex edges.
+	for (int i = 0; i < concave_edges.size(); i++) {
+		if (inner_points.size() == 0) {
+			break;
+		}
+		_Line edge = concave_edges[i];
+		Vector<real_t> angles;
+		angles.resize(inner_points.size());
+		// The following is optimized by using angle to avoid calculating length and distance to edge.
+		for (int i = 0; i < inner_points.size(); i++) {
+			Point2 p = inner_points[i];
+			real_t angle = (edge.a - p).angle_to(edge.b - p);
+			angles.set(i, angle);
+		}
+		real_t max_angle = -Math_PI;
+		int max_angle_index = 0;
+		for (int i = 0; i < angles.size(); i++) {
+			if (angles[i] > max_angle) {
+				max_angle = angles[i];
+				max_angle_index = i;
+			}
+		}
+		Point2 max_angle_point = inner_points[max_angle_index];
+		if (Math::cos(max_angle / 2) > (p_threshold / 10.0)) {
+			concave_edges.remove_at(i);
+			concave_edges.push_back(_Line{ edge.a, max_angle_point });
+			concave_edges.push_back(_Line{ max_angle_point, edge.b });
+			inner_points.erase(max_angle_point);
+			i--;
+		}
+	}
+
+	// 3. Convert lines back to polygon.
+	Vector<Point2> ret;
+	ret.resize(concave_edges.size());
+	_Line start_edge = concave_edges[0];
+	ret.set(0, start_edge.a);
+	ret.set(1, start_edge.b);
+	concave_edges.remove_at(0);
+	for (int i = 2; i < ret.size(); i++) {
+		for (int j = 0; j < concave_edges.size(); j++) {
+			if (concave_edges[j].a == ret[i - 1]) {
+				ret.set(i, concave_edges[j].b);
+				concave_edges.remove_at(j);
+				break;
+			}
+		}
+	}
+	ret.push_back(ret[0]);
+	return ret;
+}
