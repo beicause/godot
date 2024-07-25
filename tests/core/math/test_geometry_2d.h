@@ -815,6 +815,121 @@ TEST_CASE("[Geometry2D] Convex hull") {
 	}
 }
 
+TEST_CASE("[Geometry2D] Concave hull") {
+	Vector<Point2> a;
+	Vector<Point2> r;
+
+	a.push_back(Point2(-4, -8));
+	a.push_back(Point2(-10, -4));
+	a.push_back(Point2(8, 2));
+	a.push_back(Point2(-6, 10));
+	a.push_back(Point2(-12, 4));
+	a.push_back(Point2(10, -8));
+	a.push_back(Point2(4, 8));
+
+	SUBCASE("[Geometry2D] No points") {
+		r = Geometry2D::concave_hull(Vector<Vector2>());
+
+		CHECK_MESSAGE(r.is_empty(), "The concave hull should be empty if there are no input points.");
+	}
+
+	SUBCASE("[Geometry2D] Single point") {
+		Vector<Point2> b;
+		b.push_back(Point2(4, -3));
+
+		r = Geometry2D::concave_hull(b);
+		REQUIRE_MESSAGE(r.size() == 1, "Convex hull should contain 1 point.");
+		CHECK(r[0].is_equal_approx(b[0]));
+	}
+
+	SUBCASE("[Geometry2D] All points form the concave hull") {
+		r = Geometry2D::concave_hull(a);
+		REQUIRE_MESSAGE(r.size() == 8, "Convex hull should contain 8 points.");
+		CHECK(r[0].is_equal_approx(Point2(-12, 4)));
+		CHECK(r[1].is_equal_approx(Point2(-10, -4)));
+		CHECK(r[2].is_equal_approx(Point2(-4, -8)));
+		CHECK(r[3].is_equal_approx(Point2(10, -8)));
+		CHECK(r[4].is_equal_approx(Point2(8, 2)));
+		CHECK(r[5].is_equal_approx(Point2(4, 8)));
+		CHECK(r[6].is_equal_approx(Point2(-6, 10)));
+		CHECK(r[7].is_equal_approx(Point2(-12, 4)));
+	}
+
+	SUBCASE("[Geometry2D] Add extra points inside original concave hull with threshold 0") {
+		a.push_back(Point2(-10, 0));
+		a.push_back(Point2(-5, -5));
+		a.push_back(Point2(-4, 4));
+
+		r = Geometry2D::concave_hull(a, 0);
+		REQUIRE_MESSAGE(r.size() == 11, "Convex hull should contain 11 points.");
+		CHECK(r[0].is_equal_approx(Point2(-12, 4)));
+		CHECK(r[1].is_equal_approx(Point2(-10, 0)));
+		CHECK(r[2].is_equal_approx(Point2(-10, -4)));
+		CHECK(r[3].is_equal_approx(Point2(-5, -5)));
+		CHECK(r[4].is_equal_approx(Point2(-4, -8)));
+		CHECK(r[5].is_equal_approx(Point2(10, -8)));
+		CHECK(r[6].is_equal_approx(Point2(8, 2)));
+		CHECK(r[7].is_equal_approx(Point2(4, 8)));
+		CHECK(r[8].is_equal_approx(Point2(-4, -4)));
+		CHECK(r[9].is_equal_approx(Point2(-6, 10)));
+		CHECK(r[10].is_equal_approx(Point2(-12, 4)));
+	}
+
+	SUBCASE("[Geometry2D] Add extra points inside original concave hull with threshold 2") {
+		a.push_back(Point2(-10, 0));
+		a.push_back(Point2(-5, -5));
+		a.push_back(Point2(-4, 4));
+
+		r = Geometry2D::concave_hull(a, 2);
+		REQUIRE_MESSAGE(r.size() == 10, "Convex hull should contain 11 points.");
+		CHECK(r[0].is_equal_approx(Point2(-12, 4)));
+		CHECK(r[1].is_equal_approx(Point2(-10, -4)));
+		CHECK(r[2].is_equal_approx(Point2(-4, -8)));
+		CHECK(r[3].is_equal_approx(Point2(-2, -8)));
+		CHECK(r[4].is_equal_approx(Point2(10, -8)));
+		CHECK(r[5].is_equal_approx(Point2(9, -3)));
+		CHECK(r[6].is_equal_approx(Point2(8, 2)));
+		CHECK(r[7].is_equal_approx(Point2(4, 8)));
+		CHECK(r[8].is_equal_approx(Point2(-6, 10)));
+		CHECK(r[9].is_equal_approx(Point2(-12, 4)));
+	}
+
+	SUBCASE("[Geometry2D] Add extra points on border of original concave hull") {
+		a.push_back(Point2(9, -3));
+		a.push_back(Point2(-2, -8));
+
+		r = Geometry2D::concave_hull(a);
+		print_line(r);
+		REQUIRE_MESSAGE(r.size() == 10, "Convex hull should contain 8 points.");
+		CHECK(r[0].is_equal_approx(Point2(-12, 4)));
+		CHECK(r[1].is_equal_approx(Point2(-10, -4)));
+		CHECK(r[2].is_equal_approx(Point2(-4, -8)));
+		CHECK(r[3].is_equal_approx(Point2(10, -8)));
+		CHECK(r[4].is_equal_approx(Point2(8, 2)));
+		CHECK(r[5].is_equal_approx(Point2(4, 8)));
+		CHECK(r[6].is_equal_approx(Point2(-6, 10)));
+		CHECK(r[7].is_equal_approx(Point2(-12, 4)));
+	}
+
+	SUBCASE("[Geometry2D] Add extra points outside border of original concave hull") {
+		a.push_back(Point2(-11, -1));
+		a.push_back(Point2(7, 6));
+
+		r = Geometry2D::concave_hull(a);
+		REQUIRE_MESSAGE(r.size() == 10, "Convex hull should contain 10 points.");
+		CHECK(r[0].is_equal_approx(Point2(-12, 4)));
+		CHECK(r[1].is_equal_approx(Point2(-11, -1)));
+		CHECK(r[2].is_equal_approx(Point2(-10, -4)));
+		CHECK(r[3].is_equal_approx(Point2(-4, -8)));
+		CHECK(r[4].is_equal_approx(Point2(10, -8)));
+		CHECK(r[5].is_equal_approx(Point2(8, 2)));
+		CHECK(r[6].is_equal_approx(Point2(7, 6)));
+		CHECK(r[7].is_equal_approx(Point2(4, 8)));
+		CHECK(r[8].is_equal_approx(Point2(-6, 10)));
+		CHECK(r[9].is_equal_approx(Point2(-12, 4)));
+	}
+}
+
 TEST_CASE("[Geometry2D] Bresenham line") {
 	Vector<Vector2i> r;
 
