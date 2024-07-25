@@ -558,9 +558,8 @@ Vector<Vector2> BitMap::clip_opaque_to_convex_polygon(const Rect2i &p_rect) cons
 	PackedVector2Array points;
 	for (int i = r.position.y; i < r.position.y + r.size.height; i++) {
 		for (int j = r.position.x; j < r.position.x + r.size.width; j++) {
-			if (get_bit(i, j)) {
-				// Flips xy
-				points.push_back(Point2(i, j));
+			if (get_bit(j, i)) {
+				points.push_back(Point2(j, i));
 			}
 		}
 	}
@@ -568,6 +567,19 @@ Vector<Vector2> BitMap::clip_opaque_to_convex_polygon(const Rect2i &p_rect) cons
 	return ret;
 }
 
+Vector<Vector2> BitMap::clip_opaque_to_concave_polygon(const Rect2i &p_rect, float p_concavity, float p_length_threshold) const {
+	Rect2i r = Rect2i(0, 0, width, height).intersection(p_rect);
+	PackedVector2Array points;
+	for (int i = r.position.y; i < r.position.y + r.size.height; i++) {
+		for (int j = r.position.x; j < r.position.x + r.size.width; j++) {
+			if (get_bit(j, i)) {
+				points.push_back(Point2(j, i));
+			}
+		}
+	}
+	Vector<Vector2> ret = Geometry2D::concave_hull(points, p_concavity, p_length_threshold);
+	return ret;
+}
 void BitMap::grow_mask(int p_pixels, const Rect2i &p_rect) {
 	if (p_pixels == 0) {
 		return;
