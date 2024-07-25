@@ -38,9 +38,7 @@
 #include "core/math/vector2i.h"
 #include "core/math/vector3.h"
 #include "core/math/vector3i.h"
-#include "core/object/ref_counted.h"
 #include "core/templates/vector.h"
-#include "core/variant/variant.h"
 
 class Geometry2D {
 public:
