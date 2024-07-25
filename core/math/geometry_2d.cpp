@@ -40,7 +40,7 @@
 
 Vector<Point2> Geometry2D::concave_hull(Vector<Point2> p_points, real_t p_concavity, real_t p_length_threshold) {
 	Vector<Point2> convex_hull = Geometry2D::convex_hull(p_points);
-	Vector<Vector2> res = concaveman<real_t, 16>(p_points, convex_hull, p_concavity, p_length_threshold);
+	Vector<Vector2> res = concaveman(p_points, convex_hull, p_concavity, p_length_threshold);
 	return res;
 };
 
