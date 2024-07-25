@@ -838,13 +838,13 @@ TEST_CASE("[Geometry2D] Concave hull") {
 		b.push_back(Point2(4, -3));
 
 		r = Geometry2D::concave_hull(b);
-		REQUIRE_MESSAGE(r.size() == 1, "Convex hull should contain 1 point.");
+		REQUIRE_MESSAGE(r.size() == 1, "Concave hull should contain 1 point.");
 		CHECK(r[0].is_equal_approx(b[0]));
 	}
 
 	SUBCASE("[Geometry2D] All points form the concave hull") {
 		r = Geometry2D::concave_hull(a);
-		REQUIRE_MESSAGE(r.size() == 8, "Convex hull should contain 8 points.");
+		REQUIRE_MESSAGE(r.size() == 8, "Concave hull should contain 8 points.");
 		CHECK(r[0].is_equal_approx(Point2(-12, 4)));
 		CHECK(r[1].is_equal_approx(Point2(-10, -4)));
 		CHECK(r[2].is_equal_approx(Point2(-4, -8)));
@@ -861,7 +861,7 @@ TEST_CASE("[Geometry2D] Concave hull") {
 		a.push_back(Point2(-4, 4));
 
 		r = Geometry2D::concave_hull(a, 0);
-		REQUIRE_MESSAGE(r.size() == 11, "Convex hull should contain 11 points.");
+		REQUIRE_MESSAGE(r.size() == 11, "Concave hull should contain 11 points.");
 		CHECK(r[0].is_equal_approx(Point2(-12, 4)));
 		CHECK(r[1].is_equal_approx(Point2(-10, 0)));
 		CHECK(r[2].is_equal_approx(Point2(-10, -4)));
@@ -870,7 +870,7 @@ TEST_CASE("[Geometry2D] Concave hull") {
 		CHECK(r[5].is_equal_approx(Point2(10, -8)));
 		CHECK(r[6].is_equal_approx(Point2(8, 2)));
 		CHECK(r[7].is_equal_approx(Point2(4, 8)));
-		CHECK(r[8].is_equal_approx(Point2(-4, -4)));
+		CHECK(r[8].is_equal_approx(Point2(-4, 4)));
 		CHECK(r[9].is_equal_approx(Point2(-6, 10)));
 		CHECK(r[10].is_equal_approx(Point2(-12, 4)));
 	}
@@ -881,7 +881,25 @@ TEST_CASE("[Geometry2D] Concave hull") {
 		a.push_back(Point2(-4, 4));
 
 		r = Geometry2D::concave_hull(a, 2);
-		REQUIRE_MESSAGE(r.size() == 10, "Convex hull should contain 11 points.");
+		REQUIRE_MESSAGE(r.size() == 10, "Concave hull should contain 11 points.");
+		CHECK(r[0].is_equal_approx(Point2(-12, 4)));
+		CHECK(r[1].is_equal_approx(Point2(-10, 0)));
+		CHECK(r[2].is_equal_approx(Point2(-10, -4)));
+		CHECK(r[3].is_equal_approx(Point2(-5, -5)));
+		CHECK(r[4].is_equal_approx(Point2(-4, -8)));
+		CHECK(r[5].is_equal_approx(Point2(10, -8)));
+		CHECK(r[6].is_equal_approx(Point2(8, 2)));
+		CHECK(r[7].is_equal_approx(Point2(4, 8)));
+		CHECK(r[8].is_equal_approx(Point2(-6, 10)));
+		CHECK(r[9].is_equal_approx(Point2(-12, 4)));
+	}
+
+	SUBCASE("[Geometry2D] Add extra points on border of original concave hull") {
+		a.push_back(Point2(9, -3));
+		a.push_back(Point2(-2, -8));
+
+		r = Geometry2D::concave_hull(a);
+		REQUIRE_MESSAGE(r.size() == 10, "Concave hull should contain 8 points.");
 		CHECK(r[0].is_equal_approx(Point2(-12, 4)));
 		CHECK(r[1].is_equal_approx(Point2(-10, -4)));
 		CHECK(r[2].is_equal_approx(Point2(-4, -8)));
@@ -894,29 +912,12 @@ TEST_CASE("[Geometry2D] Concave hull") {
 		CHECK(r[9].is_equal_approx(Point2(-12, 4)));
 	}
 
-	SUBCASE("[Geometry2D] Add extra points on border of original concave hull") {
-		a.push_back(Point2(9, -3));
-		a.push_back(Point2(-2, -8));
-
-		r = Geometry2D::concave_hull(a);
-		print_line(r);
-		REQUIRE_MESSAGE(r.size() == 10, "Convex hull should contain 8 points.");
-		CHECK(r[0].is_equal_approx(Point2(-12, 4)));
-		CHECK(r[1].is_equal_approx(Point2(-10, -4)));
-		CHECK(r[2].is_equal_approx(Point2(-4, -8)));
-		CHECK(r[3].is_equal_approx(Point2(10, -8)));
-		CHECK(r[4].is_equal_approx(Point2(8, 2)));
-		CHECK(r[5].is_equal_approx(Point2(4, 8)));
-		CHECK(r[6].is_equal_approx(Point2(-6, 10)));
-		CHECK(r[7].is_equal_approx(Point2(-12, 4)));
-	}
-
 	SUBCASE("[Geometry2D] Add extra points outside border of original concave hull") {
 		a.push_back(Point2(-11, -1));
 		a.push_back(Point2(7, 6));
 
 		r = Geometry2D::concave_hull(a);
-		REQUIRE_MESSAGE(r.size() == 10, "Convex hull should contain 10 points.");
+		REQUIRE_MESSAGE(r.size() == 10, "Concave hull should contain 10 points.");
 		CHECK(r[0].is_equal_approx(Point2(-12, 4)));
 		CHECK(r[1].is_equal_approx(Point2(-11, -1)));
 		CHECK(r[2].is_equal_approx(Point2(-10, -4)));
