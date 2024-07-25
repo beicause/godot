@@ -197,10 +197,16 @@ void Sprite2DEditor::_update_mesh_data() {
 	float epsilon = simplification->get_value();
 
 	Vector<Vector<Vector2>> lines;
-	if (convex_hull->is_pressed()) {
-		lines.push_back(bm->clip_opaque_to_convex_polygon(rect));
-	} else {
-		lines = bm->clip_opaque_to_polygons(rect, epsilon);
+	switch (clip_mode->get_selected()) {
+		case CLIP_MODE_POLYGONS: {
+			lines = bm->clip_opaque_to_polygons(rect, epsilon);
+		} break;
+		case CLIP_MODE_CONVEX_HULL: {
+			lines.push_back(bm->clip_opaque_to_convex_polygon(rect));
+		} break;
+		case CLIP_MODE_CONCAVE_HULL: {
+			lines.push_back(bm->clip_opaque_to_concave_polygon(rect, epsilon, 0));
+		} break;
 	}
 
 	uv_lines.clear();
@@ -459,10 +465,6 @@ void Sprite2DEditor::_add_as_sibling_or_child(Node *p_own_node, Node *p_new_node
 	p_new_node->set_owner(get_tree()->get_edited_scene_root());
 }
 
-void Sprite2DEditor::_on_convex_hull_toggled(bool toggled_on) {
-	simplification->set_editable(!toggled_on);
-}
-
 void Sprite2DEditor::_debug_uv_input(const Ref<InputEvent> &p_input) {
 	if (panner->gui_input(p_input)) {
 		accept_event();
@@ -659,10 +661,13 @@ Sprite2DEditor::Sprite2DEditor() {
 	grow_pixels->set_value(2);
 	hb->add_child(grow_pixels);
 	hb->add_spacer();
-	convex_hull = memnew(CheckButton);
-	convex_hull->set_text(TTR("Convex Hull"));
-	convex_hull->connect(SNAME("toggled"), callable_mp(this, &Sprite2DEditor::_on_convex_hull_toggled));
-	hb->add_child(convex_hull);
+	clip_mode = memnew(OptionButton);
+	clip_mode->set_text(TTR("Clip Mode"));
+	clip_mode->add_item("Polygons", CLIP_MODE_POLYGONS);
+	clip_mode->add_item("Convex Hull", CLIP_MODE_CONVEX_HULL);
+	clip_mode->add_item("Concave Hull", CLIP_MODE_CONCAVE_HULL);
+	clip_mode->select(0);
+	hb->add_child(clip_mode);
 	hb->add_spacer();
 	update_preview = memnew(Button);
 	update_preview->set_text(TTR("Update Preview"));
