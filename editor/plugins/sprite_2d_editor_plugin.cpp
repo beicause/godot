@@ -205,7 +205,7 @@ void Sprite2DEditor::_update_mesh_data() {
 			lines.push_back(bm->clip_opaque_to_convex_polygon(rect));
 		} break;
 		case CLIP_MODE_CONCAVE_HULL: {
-			lines.push_back(bm->clip_opaque_to_concave_polygon(rect, epsilon, 0));
+			lines.push_back(bm->clip_opaque_to_concave_polygon(rect, concavity->get_value(), epsilon, 0));
 		} break;
 	}
 
@@ -465,6 +465,23 @@ void Sprite2DEditor::_add_as_sibling_or_child(Node *p_own_node, Node *p_new_node
 	p_new_node->set_owner(get_tree()->get_edited_scene_root());
 }
 
+void Sprite2DEditor::_on_clip_mode_selected(int idx) {
+	switch (idx) {
+		case CLIP_MODE_POLYGONS: {
+			concavity_label->set_visible(false);
+			concavity->set_visible(false);
+		} break;
+		case CLIP_MODE_CONVEX_HULL: {
+			concavity_label->set_visible(false);
+			concavity->set_visible(false);
+		} break;
+		case CLIP_MODE_CONCAVE_HULL: {
+			concavity_label->set_visible(true);
+			concavity->set_visible(true);
+		} break;
+	}
+}
+
 void Sprite2DEditor::_debug_uv_input(const Ref<InputEvent> &p_input) {
 	if (panner->gui_input(p_input)) {
 		accept_event();
@@ -637,6 +654,17 @@ Sprite2DEditor::Sprite2DEditor() {
 	debug_uv_dialog->connect(SceneStringName(confirmed), callable_mp(this, &Sprite2DEditor::_create_node));
 
 	HBoxContainer *hb = memnew(HBoxContainer);
+	concavity_label = memnew(Label(TTR("Concavity:")));
+	concavity_label->set_visible(false);
+	hb->add_child(concavity_label);
+	concavity = memnew(SpinBox);
+	concavity->set_min(0.01);
+	concavity->set_max(10.00);
+	concavity->set_step(0.01);
+	concavity->set_value(2);
+	concavity->set_visible(false);
+	hb->add_child(concavity);
+	hb->add_spacer();
 	hb->add_child(memnew(Label(TTR("Simplification:"))));
 	simplification = memnew(SpinBox);
 	simplification->set_min(0.01);
@@ -666,7 +694,8 @@ Sprite2DEditor::Sprite2DEditor() {
 	clip_mode->add_item("Polygons", CLIP_MODE_POLYGONS);
 	clip_mode->add_item("Convex Hull", CLIP_MODE_CONVEX_HULL);
 	clip_mode->add_item("Concave Hull", CLIP_MODE_CONCAVE_HULL);
-	clip_mode->select(0);
+	clip_mode->select(CLIP_MODE_POLYGONS);
+	clip_mode->connect(SceneStringName(item_selected), callable_mp(this, &Sprite2DEditor::_on_clip_mode_selected));
 	hb->add_child(clip_mode);
 	hb->add_spacer();
 	update_preview = memnew(Button);

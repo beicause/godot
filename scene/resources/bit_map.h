@@ -79,7 +79,7 @@ public:
 
 	Vector<Vector<Vector2>> clip_opaque_to_polygons(const Rect2i &p_rect, float p_epsilon = 2.0) const;
 	Vector<Vector2> clip_opaque_to_convex_polygon(const Rect2i &p_rect) const;
-	Vector<Vector2> clip_opaque_to_concave_polygon(const Rect2i &p_rect, float p_concavity = 2, float p_length_threshold = 0) const;
+	Vector<Vector2> clip_opaque_to_concave_polygon(const Rect2i &p_rect, float p_concavity = 2.0, float p_epsilon = 2.0, float p_length_threshold = 0) const;
 
 	BitMap();
 };
