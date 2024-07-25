@@ -79,6 +79,8 @@ class Sprite2DEditor : public Control {
 	Vector2 draw_offset;
 	real_t draw_zoom = 1.0;
 
+	Label *concavity_label = nullptr;
+	SpinBox *concavity = nullptr;
 	SpinBox *simplification = nullptr;
 	SpinBox *grow_pixels = nullptr;
 	SpinBox *shrink_pixels = nullptr;
@@ -106,6 +108,8 @@ class Sprite2DEditor : public Control {
 	void _create_light_occluder_2d_node();
 
 	void _add_as_sibling_or_child(Node *p_own_node, Node *p_new_node);
+
+	void _on_clip_mode_selected(int idx);
 
 	enum ClipMode {
 		CLIP_MODE_POLYGONS,

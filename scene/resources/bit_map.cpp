@@ -567,7 +567,7 @@ Vector<Vector2> BitMap::clip_opaque_to_convex_polygon(const Rect2i &p_rect) cons
 	return ret;
 }
 
-Vector<Vector2> BitMap::clip_opaque_to_concave_polygon(const Rect2i &p_rect, float p_concavity, float p_length_threshold) const {
+Vector<Vector2> BitMap::clip_opaque_to_concave_polygon(const Rect2i &p_rect, float p_concavity, float p_epsilon, float p_length_threshold) const {
 	Rect2i r = Rect2i(0, 0, width, height).intersection(p_rect);
 	PackedVector2Array points;
 	for (int i = r.position.y; i < r.position.y + r.size.height; i++) {
@@ -578,6 +578,7 @@ Vector<Vector2> BitMap::clip_opaque_to_concave_polygon(const Rect2i &p_rect, flo
 		}
 	}
 	Vector<Vector2> ret = Geometry2D::concave_hull(points, p_concavity, p_length_threshold);
+	ret = reduce(ret, r, p_epsilon);
 	return ret;
 }
 void BitMap::grow_mask(int p_pixels, const Rect2i &p_rect) {
@@ -753,7 +754,8 @@ void BitMap::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("grow_mask", "pixels", "rect"), &BitMap::grow_mask);
 	ClassDB::bind_method(D_METHOD("convert_to_image"), &BitMap::convert_to_image);
 	ClassDB::bind_method(D_METHOD("opaque_to_polygons", "rect", "epsilon"), &BitMap::_opaque_to_polygons_bind, DEFVAL(2.0));
-	ClassDB::bind_method(D_METHOD("opaque_to_concave_polygon", "rect"), &BitMap::clip_opaque_to_convex_polygon, DEFVAL(2), DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("opaque_to_convex_polygon", "rect"), &BitMap::clip_opaque_to_convex_polygon);
+	ClassDB::bind_method(D_METHOD("opaque_to_concave_polygon", "rect", "concavity", "length_threshold"), &BitMap::clip_opaque_to_concave_polygon, DEFVAL(2.0), DEFVAL(2.0), DEFVAL(0));
 
 	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_data", "_get_data");
 }
