@@ -29,7 +29,7 @@
 /**************************************************************************/
 
 #include "geometry_2d.h"
-#include "concaveman.h"
+#include "concave_hull.h"
 
 #include "thirdparty/clipper2/include/clipper2/clipper.h"
 #include "thirdparty/misc/polypartition.h"
@@ -39,16 +39,8 @@
 #define PRECISION 5 // Based on CMP_EPSILON.
 
 Vector<Point2> Geometry2D::concave_hull(Vector<Point2> p_points, real_t p_concavity, real_t p_length_threshold) {
-	std::vector<std::array<real_t, 2>> p;
-	for (int i = 0; i < p_points.size(); i++) {
-		p.push_back({ p_points[i].x, p_points[i].y });
-	}
-	std::vector<std::array<real_t, 2>> h;
-	Vector<Point2> hull = convex_hull(p_points);
-	for (int i = 0; i < hull.size(); i++) {
-		h.push_back({ hull[i].x, hull[i].y });
-	}
-	Vector<Vector2> res = _concaveman<real_t, 16>(p, h, p_concavity, p_length_threshold);
+	Vector<Point2> convex_hull = Geometry2D::convex_hull(p_points);
+	Vector<Vector2> res = concaveman(p_points, convex_hull, p_concavity, p_length_threshold);
 	return res;
 };
 
