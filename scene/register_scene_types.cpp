@@ -33,6 +33,9 @@
 #include "core/config/project_settings.h"
 #include "core/object/class_db.h"
 #include "core/os/os.h"
+#include "scene/2d/skeleton/skeleton_modifier_2d.h"
+#include "scene/2d/skeleton/skeleton_modifier_2d_fabrik.h"
+#include "scene/2d/skeleton/skeleton_modifier_2d_jiggle.h"
 #include "scene/animation/animation_blend_space_1d.h"
 #include "scene/animation/animation_blend_space_2d.h"
 #include "scene/animation/animation_blend_tree.h"
@@ -215,15 +218,6 @@
 #include "scene/resources/2d/rectangle_shape_2d.h"
 #include "scene/resources/2d/segment_shape_2d.h"
 #include "scene/resources/2d/separation_ray_shape_2d.h"
-#include "scene/resources/2d/skeleton/skeleton_modification_2d.h"
-#include "scene/resources/2d/skeleton/skeleton_modification_2d_ccdik.h"
-#include "scene/resources/2d/skeleton/skeleton_modification_2d_fabrik.h"
-#include "scene/resources/2d/skeleton/skeleton_modification_2d_jiggle.h"
-#include "scene/resources/2d/skeleton/skeleton_modification_2d_lookat.h"
-#include "scene/resources/2d/skeleton/skeleton_modification_2d_physicalbones.h"
-#include "scene/resources/2d/skeleton/skeleton_modification_2d_stackholder.h"
-#include "scene/resources/2d/skeleton/skeleton_modification_2d_twoboneik.h"
-#include "scene/resources/2d/skeleton/skeleton_modification_stack_2d.h"
 #include "scene/resources/2d/tile_set.h"
 #include "scene/resources/2d/world_boundary_shape_2d.h"
 
@@ -802,6 +796,9 @@ void register_scene_types() {
 	GDREGISTER_CLASS(Polygon2D);
 	GDREGISTER_CLASS(Skeleton2D);
 	GDREGISTER_CLASS(Bone2D);
+	GDREGISTER_CLASS(SkeletonModifier2D);
+	GDREGISTER_CLASS(SkeletonModifier2DFABRIK);
+	GDREGISTER_CLASS(SkeletonModifier2DJiggle)
 	GDREGISTER_ABSTRACT_CLASS(Light2D);
 	GDREGISTER_CLASS(PointLight2D);
 	GDREGISTER_CLASS(DirectionalLight2D);
@@ -831,17 +828,17 @@ void register_scene_types() {
 	GDREGISTER_CLASS(TouchScreenButton);
 	GDREGISTER_CLASS(RemoteTransform2D);
 
-	GDREGISTER_CLASS(SkeletonModificationStack2D);
-	GDREGISTER_CLASS(SkeletonModification2D);
-	GDREGISTER_CLASS(SkeletonModification2DLookAt);
-	GDREGISTER_CLASS(SkeletonModification2DCCDIK);
-	GDREGISTER_CLASS(SkeletonModification2DFABRIK);
-	GDREGISTER_CLASS(SkeletonModification2DJiggle);
-	GDREGISTER_CLASS(SkeletonModification2DTwoBoneIK);
-	GDREGISTER_CLASS(SkeletonModification2DStackHolder);
+	// GDREGISTER_CLASS(SkeletonModificationStack2D);
+	// GDREGISTER_CLASS(SkeletonModification2D);
+	// GDREGISTER_CLASS(SkeletonModification2DLookAt);
+	// GDREGISTER_CLASS(SkeletonModification2DCCDIK);
+	// GDREGISTER_CLASS(SkeletonModification2DFABRIK);
+	// GDREGISTER_CLASS(SkeletonModification2DJiggle);
+	// GDREGISTER_CLASS(SkeletonModification2DTwoBoneIK);
+	// GDREGISTER_CLASS(SkeletonModification2DStackHolder);
 
-	GDREGISTER_CLASS(PhysicalBone2D);
-	GDREGISTER_CLASS(SkeletonModification2DPhysicalBones);
+	// GDREGISTER_CLASS(PhysicalBone2D);
+	// GDREGISTER_CLASS(SkeletonModification2DPhysicalBones);
 
 	OS::get_singleton()->yield(); // may take time to init
 
