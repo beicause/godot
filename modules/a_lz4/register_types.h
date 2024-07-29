@@ -31,8 +31,8 @@
 #ifndef A_LZ4_REGISTER_TYPES_H
 #define A_LZ4_REGISTER_TYPES_H
 
-#include <core/object/class_db.h>
-#include <modules/register_module_types.h>
+#include "core/object/class_db.h"
+#include "modules/register_module_types.h"
 
 using namespace godot;
 

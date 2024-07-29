@@ -340,8 +340,8 @@ private:
 };
 
 struct _Node {
-	_Node(const Point2 &p) {
-		this->p = p;
+	_Node(const Point2 &p_point) {
+		p = p_point;
 	}
 
 	Point2 p;

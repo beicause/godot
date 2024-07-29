@@ -30,7 +30,7 @@
 
 #include "resource_loader_jsonz.h"
 #include "core/io/json.h"
-#include "gd_lz4.h"
+#include "modules/a_lz4/gd_lz4.h"
 
 Ref<JSON> ResourceFormatLoaderJSONZ::load(const PackedByteArray &p_bytes, Error *r_error) {
 	if (r_error) {
@@ -41,38 +41,9 @@ Ref<JSON> ResourceFormatLoaderJSONZ::load(const PackedByteArray &p_bytes, Error 
 	json.instantiate();
 
 	PackedByteArray bytes = p_bytes;
-	bytes.push_back(0);
-	String json_str_raw;
-	Error err = json_str_raw.validate_utf8(reinterpret_cast<const char *>(bytes.ptr()));
-	if (err == OK) {
-		json_str_raw.parse_utf8(reinterpret_cast<const char *>(bytes.ptr()));
-		err = json->parse(json_str_raw);
-		if (err != OK) {
-			String err_text = "Error parsing JSON file on line " + itos(json->get_error_line()) + ": " + json->get_error_message();
-			if (r_error) {
-				*r_error = err;
-			}
-			ERR_PRINT(err_text);
-			return Ref<Resource>();
-		}
-	}
-	if (err == OK) {
-		if (r_error) {
-			*r_error = OK;
-		}
-		return json;
-	}
+	String json_str = Lz4::parse_as_string(bytes);
 
-	bytes.resize(bytes.size() - 1);
-	PackedByteArray json_file = Lz4::decompress_frame(bytes);
-	json_file.push_back(0);
-	String json_str_z;
-	err = json_str_z.parse_utf8(reinterpret_cast<const char *>(json_file.ptr()));
-	if (err != OK) {
-		ERR_PRINT("Error parsing decompressed buffer to utf8 string");
-		return Ref<Resource>();
-	}
-	err = json->parse(json_str_z);
+	Error err = json->parse(json_str);
 	if (err != OK) {
 		String err_text = "Error parsing JSON file, on line " + itos(json->get_error_line()) + ": " + json->get_error_message();
 		if (r_error) {

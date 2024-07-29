@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="JSONNet" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="add_import_path">
+			<return type="void" />
+			<param index="0" name="path" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="bind_ext_code_var">
+			<return type="void" />
+			<param index="0" name="key" type="String" />
+			<param index="1" name="value" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="bind_ext_var">
+			<return type="void" />
+			<param index="0" name="key" type="String" />
+			<param index="1" name="value" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="bind_tla_code_var">
+			<return type="void" />
+			<param index="0" name="key" type="String" />
+			<param index="1" name="value" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="bind_tla_var">
+			<return type="void" />
+			<param index="0" name="key" type="String" />
+			<param index="1" name="value" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="evaluate_snippet">
+			<return type="String" />
+			<param index="0" name="filename" type="String" />
+			<param index="1" name="snippet" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="evaluate_snippet_multi">
+			<return type="Dictionary" />
+			<param index="0" name="filename" type="String" />
+			<param index="1" name="snippet" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="last_error" qualifiers="const">
+			<return type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="set_gc_growth_trigger">
+			<return type="void" />
+			<param index="0" name="growth" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="set_gc_min_objects">
+			<return type="void" />
+			<param index="0" name="objects" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="set_max_stack">
+			<return type="void" />
+			<param index="0" name="depth" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="set_max_trace">
+			<return type="void" />
+			<param index="0" name="lines" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="set_string_output">
+			<return type="void" />
+			<param index="0" name="string_output" type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="version" qualifiers="static">
+			<return type="String" />
+			<description>
+			</description>
+		</method>
+	</methods>
+</class>
