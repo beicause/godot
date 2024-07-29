@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  register_types.h                                                      */
+/*  gd_jsonnet.cpp                                                        */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,15 +28,38 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef A_LZ4_REGISTER_TYPES_H
-#define A_LZ4_REGISTER_TYPES_H
+#include "gd_jsonnet.h"
+#include "nlohmann/json.hpp"
+#include "ryml_all.hpp"
 
-#include "core/object/class_db.h"
-#include "modules/register_module_types.h"
+String ryml_json_to_yaml(String data) {
+	c4::yml::Tree tree = c4::yml::parse_in_arena(c4::to_csubstr(data.utf8().get_data()));
+	std::string ret = c4::yml::emitrs_yaml<std::string>(tree);
+	return ret.c_str();
+}
+String ryml_yaml_to_json(String data, bool pretty) {
+	c4::yml::Tree tree = c4::yml::parse_in_arena(c4::to_csubstr(data.utf8().get_data()));
+	std::string ret = c4::yml::emitrs_json<std::string>(tree);
+	if (pretty) {
+		nlohmann::json json = nlohmann::json::parse(ret);
+		ret = json.dump(2);
+	}
+	return ret.c_str();
+}
 
-using namespace godot;
-
-void initialize_a_lz4_module(ModuleInitializationLevel p_level);
-void uninitialize_a_lz4_module(ModuleInitializationLevel p_level);
-
-#endif // A_LZ4_REGISTER_TYPES_H
+void JSONNet::_bind_methods() {
+	ClassDB::bind_static_method("JSONNet", D_METHOD("version"), &JSONNet::version);
+	ClassDB::bind_method(D_METHOD("set_max_stack", "depth"), &JSONNet::set_max_stack);
+	ClassDB::bind_method(D_METHOD("set_gc_min_objects", "objects"), &JSONNet::set_gc_min_objects);
+	ClassDB::bind_method(D_METHOD("set_gc_growth_trigger", "growth"), &JSONNet::set_gc_growth_trigger);
+	ClassDB::bind_method(D_METHOD("set_string_output", "string_output"), &JSONNet::set_string_output);
+	ClassDB::bind_method(D_METHOD("set_max_trace", "lines"), &JSONNet::set_max_trace);
+	ClassDB::bind_method(D_METHOD("add_import_path", "path"), &JSONNet::add_import_path);
+	ClassDB::bind_method(D_METHOD("bind_tla_var", "key", "value"), &JSONNet::bind_tla_var);
+	ClassDB::bind_method(D_METHOD("bind_tla_code_var", "key", "value"), &JSONNet::bind_tla_code_var);
+	ClassDB::bind_method(D_METHOD("bind_ext_var", "key", "value"), &JSONNet::bind_ext_var);
+	ClassDB::bind_method(D_METHOD("bind_ext_code_var", "key", "value"), &JSONNet::bind_ext_code_var);
+	ClassDB::bind_method(D_METHOD("evaluate_snippet", "filename", "snippet"), &JSONNet::evaluate_snippet);
+	ClassDB::bind_method(D_METHOD("evaluate_snippet_multi", "filename", "snippet"), &JSONNet::evaluate_snippet_multi);
+	ClassDB::bind_method(D_METHOD("last_error"), &JSONNet::last_error);
+}

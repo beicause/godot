@@ -28,15 +28,15 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef A_LZ4_REGISTER_TYPES_H
-#define A_LZ4_REGISTER_TYPES_H
+#ifndef A_JSONNET_REGISTER_TYPES_H
+#define A_JSONNET_REGISTER_TYPES_H
 
 #include "core/object/class_db.h"
 #include "modules/register_module_types.h"
 
 using namespace godot;
 
-void initialize_a_lz4_module(ModuleInitializationLevel p_level);
-void uninitialize_a_lz4_module(ModuleInitializationLevel p_level);
+void initialize_a_jsonnet_module(ModuleInitializationLevel p_level);
+void uninitialize_a_jsonnet_module(ModuleInitializationLevel p_level);
 
-#endif // A_LZ4_REGISTER_TYPES_H
+#endif // A_JSONNET_REGISTER_TYPES_H

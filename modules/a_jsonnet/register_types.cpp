@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  register_types.h                                                      */
+/*  register_types.cpp                                                    */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,15 +28,18 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef A_LZ4_REGISTER_TYPES_H
-#define A_LZ4_REGISTER_TYPES_H
+#include "register_types.h"
+#include "gd_jsonnet.h"
 
-#include "core/object/class_db.h"
-#include "modules/register_module_types.h"
+void initialize_a_jsonnet_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+	ClassDB::register_class<JSONNet>();
+}
 
-using namespace godot;
-
-void initialize_a_lz4_module(ModuleInitializationLevel p_level);
-void uninitialize_a_lz4_module(ModuleInitializationLevel p_level);
-
-#endif // A_LZ4_REGISTER_TYPES_H
+void uninitialize_a_jsonnet_module(ModuleInitializationLevel p_level) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
+		return;
+	}
+}
