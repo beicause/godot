@@ -755,7 +755,7 @@ void BitMap::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("convert_to_image"), &BitMap::convert_to_image);
 	ClassDB::bind_method(D_METHOD("opaque_to_polygons", "rect", "epsilon"), &BitMap::_opaque_to_polygons_bind, DEFVAL(2.0));
 	ClassDB::bind_method(D_METHOD("opaque_to_convex_polygon", "rect"), &BitMap::clip_opaque_to_convex_polygon);
-	ClassDB::bind_method(D_METHOD("opaque_to_concave_polygon", "rect", "concavity", "length_threshold"), &BitMap::clip_opaque_to_concave_polygon, DEFVAL(2.0), DEFVAL(2.0), DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("opaque_to_concave_polygon", "rect", "concavity", "epsilon", "length_threshold"), &BitMap::clip_opaque_to_concave_polygon, DEFVAL(2), DEFVAL(2), DEFVAL(0));
 
 	ADD_PROPERTY(PropertyInfo(Variant::DICTIONARY, "data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR | PROPERTY_USAGE_INTERNAL), "_set_data", "_get_data");
 }

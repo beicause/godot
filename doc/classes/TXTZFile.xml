@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="TXTZFile" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_as_string">
+			<return type="String" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="compression" type="int" setter="set_compression" getter="get_compression" enum="TXTZFile.Compression" default="0">
+		</member>
+		<member name="data" type="PackedByteArray" setter="set_data" getter="get_data" default="PackedByteArray()">
+		</member>
+	</members>
+	<constants>
+		<constant name="UNKNOWN" value="0" enum="Compression">
+		</constant>
+		<constant name="COMPRESSED" value="1" enum="Compression">
+		</constant>
+		<constant name="UNCOMPRESSED" value="2" enum="Compression">
+		</constant>
+	</constants>
+</class>
