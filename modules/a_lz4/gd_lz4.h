@@ -46,6 +46,7 @@ protected:
 		ClassDB::bind_static_method("Lz4", D_METHOD("compress_block_prepend_size", "data", "compression_level"), &Lz4::compress_block_prepend_size, DEFVAL(0));
 		ClassDB::bind_static_method("Lz4", D_METHOD("decompress_frame", "data"), &Lz4::decompress_frame);
 		ClassDB::bind_static_method("Lz4", D_METHOD("compress_frame", "data", "compression_level"), &Lz4::compress_frame, DEFVAL(0));
+		ClassDB::bind_static_method("Lz4", D_METHOD("parse_as_string", "p_bytes", "p_hint_compressed"), &Lz4::parse_as_string, DEFVAL(false));
 	}
 
 public:
@@ -54,6 +55,26 @@ public:
 
 	static PackedByteArray decompress_frame(PackedByteArray data);
 	static PackedByteArray compress_frame(PackedByteArray data, int compression_level = 0);
+
+	static String parse_as_string(PackedByteArray p_bytes, bool p_hint_compressed = false) {
+		PackedByteArray bytes_null_term = p_bytes;
+		bytes_null_term.resize(bytes_null_term.size() + 1);
+		const char *chars_null_term = reinterpret_cast<const char *>(bytes_null_term.ptr());
+		String ret;
+		Error err;
+		if (!p_hint_compressed && ret.validate_utf8(chars_null_term, bytes_null_term.size())) {
+			err = ret.parse_utf8(chars_null_term);
+		} else {
+			bytes_null_term = Lz4::decompress_frame(p_bytes);
+			bytes_null_term.resize(bytes_null_term.size() + 1);
+			const char *decompressed_chars_null_term = reinterpret_cast<const char *>(bytes_null_term.ptr());
+			err = ret.parse_utf8(decompressed_chars_null_term);
+		}
+		if (err != OK) {
+			ERR_PRINT(vformat("lz4 parse utf8 string failed: %s", error_names[err]));
+		}
+		return ret;
+	}
 };
 
 class Lz4File : public RefCounted {

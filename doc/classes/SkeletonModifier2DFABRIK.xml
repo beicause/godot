@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SkeletonModifier2DFABRIK" inherits="SkeletonModifier2D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_joint_bone" qualifiers="const">
+			<return type="NodePath" />
+			<param index="0" name="p_joint_idx" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_joint_bone_idx" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="p_joint_idx" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_joint_magnet" qualifiers="const">
+			<return type="Vector2" />
+			<param index="0" name="p_joint_idx" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="set_joint_bone">
+			<return type="void" />
+			<param index="0" name="p_joint_idx" type="int" />
+			<param index="1" name="p_bone" type="NodePath" />
+			<description>
+			</description>
+		</method>
+		<method name="set_joint_bone_idx">
+			<return type="void" />
+			<param index="0" name="p_joint_idx" type="int" />
+			<param index="1" name="p_bone_idx" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="set_joint_magnet">
+			<return type="void" />
+			<param index="0" name="p_joint_idx" type="int" />
+			<param index="1" name="p_magnet_position" type="Vector2" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="all_bones" type="NodePath[]" setter="set_all_bones" getter="get_all_bones" default="[]">
+		</member>
+		<member name="all_magnets" type="PackedVector2Array" setter="set_all_magnets" getter="get_all_magnets" default="PackedVector2Array()">
+		</member>
+		<member name="bone_chain_size" type="int" setter="set_bone_chain_size" getter="get_bone_chain_size" default="0">
+		</member>
+		<member name="target_node" type="NodePath" setter="set_target_node" getter="get_target_node" default="NodePath(&quot;&quot;)">
+		</member>
+		<member name="tip_use_target_rotation" type="bool" setter="set_tip_use_target_rotation" getter="is_tip_use_target_rotation" default="false">
+		</member>
+	</members>
+</class>
