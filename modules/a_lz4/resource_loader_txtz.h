@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  register_types.cpp                                                    */
+/*  resource_loader_txtz.h                                                */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,34 +28,66 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "register_types.h"
-#include "gd_lz4.h"
-#include "resource_loader_jsonz.h"
-#include "resource_loader_txtz.h"
+#ifndef RESOURCE_LOADER_TXTZ_H
+#define RESOURCE_LOADER_TXTZ_H
+#include "core/io/resource_loader.h"
+#include "modules/a_lz4/gd_lz4.h"
 
-Ref<ResourceFormatLoaderJSONZ> resource_loader_jsonz;
-Ref<ResourceFormatLoaderTXTZ> resource_loader_txtz;
+class TXTZ : public Resource {
+	GDCLASS(TXTZ, Resource);
+	PackedByteArray bytes;
+	bool compress = true;
 
-void initialize_a_lz4_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
+protected:
+	static void _bind_methods();
+
+public:
+	String get_as_string() {
+		String ret;
+		const char *raw_bytes = reinterpret_cast<const char *>(bytes.ptr());
+		if ((!compress) && ret.validate_utf8(raw_bytes, bytes.size())) {
+			ret.parse_utf8(raw_bytes);
+		} else {
+			const char *compressed_bytes = reinterpret_cast<const char *>(Lz4::decompress_frame(bytes).ptr());
+			if (ret.validate_utf8(compressed_bytes, bytes.size())) {
+				ret.parse_utf8(compressed_bytes);
+			}
+		}
+		return ret;
 	}
-	ClassDB::register_class<Lz4>();
-	ClassDB::register_class<Lz4File>();
-	ClassDB::register_class<TXTZ>();
 
-	resource_loader_jsonz.instantiate();
-	resource_loader_txtz.instantiate();
-	ResourceLoader::add_resource_format_loader(resource_loader_jsonz);
-	ResourceLoader::add_resource_format_loader(resource_loader_txtz);
-}
-
-void uninitialize_a_lz4_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
+	PackedByteArray get_buffer(bool decompress = false) {
+		if (decompress) {
+			return Lz4::decompress_frame(bytes);
+		}
+		return bytes;
 	}
-	ResourceLoader::remove_resource_format_loader(resource_loader_jsonz);
-	ResourceLoader::remove_resource_format_loader(resource_loader_txtz);
-	resource_loader_jsonz.unref();
-	resource_loader_txtz.unref();
-}
+	void set_buffer(PackedByteArray p_buffer, bool compress = false) {
+		if (compress) {
+			bytes = Lz4::compress_frame(p_buffer);
+		} else {
+			bytes = p_buffer;
+		}
+	}
+	void write_string(String p_string) {
+		if (compress) {
+			bytes = Lz4::compress_frame(p_string.to_utf8_buffer());
+		} else {
+			bytes = p_string.to_utf8_buffer();
+		}
+	}
+	void set_compress(bool p_compress) { compress = p_compress; }
+	bool is_compress() { return compress; }
+};
+
+class ResourceFormatLoaderTXTZ : public ResourceFormatLoader {
+public:
+	static Ref<TXTZ> load(const PackedByteArray &p_bytes, Error *r_error = nullptr);
+
+	virtual Ref<Resource> load(const String &p_path, const String &p_original_path = "", Error *r_error = nullptr, bool p_use_sub_threads = false, float *r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
+	virtual void get_recognized_extensions(List<String> *p_extensions) const override;
+	virtual bool handles_type(const String &p_type) const override;
+	virtual String get_resource_type(const String &p_path) const override;
+};
+
+#endif // RESOURCE_LOADER_TXTZ_H

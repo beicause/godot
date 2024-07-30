@@ -1,12 +1,12 @@
 {
-  description = "C++ development environment + Filesystem Hierarchy Standard (FHS)";
+  description = "Godot development environment";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   };
 
   outputs =
-    { nixpkgs, ... }@inputs:
+    { nixpkgs, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -15,14 +15,11 @@
       };
     in
     {
-      # buildFHSEnv -> https://nixos.org/manual/nixpkgs/stable/#sec-fhs-environments
-      # The packages included in appimagetools.defaultFhsEnvArgs are:
-      # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/build-support/appimage/default.nix#L72-L208
-      devShells.${system}.default =
-        (pkgs.buildFHSEnv (
+      devShells."${system}".default =
+        (pkgs.buildFHSUserEnv (
           pkgs.appimageTools.defaultFhsEnvArgs
           // {
-            name = "dev";
+            name = "fhs-env";
             targetPkgs =
               pkgs: with pkgs; [
                 pkg-config
@@ -38,14 +35,17 @@
                 cargo-ndk
                 jdk17
                 android-studio-tools
+                # Install Android SDK:
+                # sdkmanager --sdk_root=<android_sdk_path> --licenses
+                # sdkmanager --sdk_root=<android_sdk_path> "platform-tools" "build-tools;34.0.0" "platforms;android-34" "cmdline-tools;latest" "cmake;3.10.2.4988404" "ndk;23.2.8568313"
               ];
             profile = ''
               echo ------Godot C++ Scons Development Environment-------
-              IN_NIX_SHELL=1 NIX_SHELL_NAME=gd-env ANDROID_NDK_HOME=~/Android/ndk/23.2.8568313/ exec fish
+              export IN_NIX_SHELL=1;
+              export ANDROID_NDK_HOME="~/Android/ndk/23.2.8568313/";
+              export NIX_SHELL_NAME="gd-env";
             '';
-            # Install Android SDK:
-            # sdkmanager --sdk_root=<android_sdk_path> --licenses
-            # sdkmanager --sdk_root=<android_sdk_path> "platform-tools" "build-tools;34.0.0" "platforms;android-34" "cmdline-tools;latest" "cmake;3.10.2.4988404" "ndk;23.2.8568313"
+            runScript = "fish";
           }
         )).env;
     };
