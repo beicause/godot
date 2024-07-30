@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  resource_loader_jsonz.cpp                                             */
+/*  resource_importer_txtz.h                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,63 +28,25 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "resource_loader_jsonz.h"
-#include "core/io/json.h"
-#include "modules/a_lz4/gd_lz4.h"
+#ifndef RESOURCE_IMPORTER_TXTZ_H
+#define RESOURCE_IMPORTER_TXTZ_H
 
-Ref<JSON> ResourceFormatLoaderJSONZ::load(const PackedByteArray &p_bytes, Error *r_error) {
-	if (r_error) {
-		*r_error = ERR_FILE_CANT_OPEN;
-	}
+#include "core/io/resource_importer.h"
 
-	Ref<JSON> json;
-	json.instantiate();
+class ResourceImporterTXTZ : public ResourceImporter {
+	GDCLASS(ResourceImporterTXTZ, ResourceImporter);
 
-	PackedByteArray bytes = p_bytes;
-	String json_str = Lz4::parse_as_string(bytes);
+public:
+	virtual String get_importer_name() const override;
+	virtual String get_visible_name() const override;
+	virtual String get_save_extension() const override;
+	virtual String get_resource_type() const override;
+	virtual int get_preset_count() const override;
+	virtual String get_preset_name(int p_idx) const override;
+	virtual void get_import_options(const String &p_path, List<ImportOption> *r_options, int p_preset = 0) const override;
+	virtual bool get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const override;
+	virtual void get_recognized_extensions(List<String> *p_extensions) const override;
+	virtual Error import(const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files = nullptr, Variant *r_metadata = nullptr) override;
+};
 
-	Error err = json->parse(json_str);
-	if (err != OK) {
-		String err_text = "Error parsing JSON file, on line " + itos(json->get_error_line()) + ": " + json->get_error_message();
-		if (r_error) {
-			*r_error = err;
-		}
-		ERR_PRINT(err_text);
-		return Ref<Resource>();
-	}
-
-	if (r_error) {
-		*r_error = OK;
-	}
-
-	return json;
-}
-
-Ref<Resource> ResourceFormatLoaderJSONZ::load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, CacheMode p_cache_mode) {
-	if (r_error) {
-		*r_error = ERR_FILE_CANT_OPEN;
-	}
-
-	if (!FileAccess::exists(p_path)) {
-		*r_error = ERR_FILE_NOT_FOUND;
-		return Ref<Resource>();
-	}
-
-	return load(FileAccess::get_file_as_bytes(p_path), r_error);
-}
-
-void ResourceFormatLoaderJSONZ::get_recognized_extensions(List<String> *p_extensions) const {
-	p_extensions->push_back("jsonz");
-}
-
-bool ResourceFormatLoaderJSONZ::handles_type(const String &p_type) const {
-	return (p_type == "JSON");
-}
-
-String ResourceFormatLoaderJSONZ::get_resource_type(const String &p_path) const {
-	String el = p_path.get_extension().to_lower();
-	if (el == "jsonz") {
-		return "JSON";
-	}
-	return "";
-}
+#endif // RESOURCE_IMPORTER_TXTZ_H

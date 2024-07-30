@@ -54,6 +54,25 @@ public:
 
 	static PackedByteArray decompress_frame(PackedByteArray data);
 	static PackedByteArray compress_frame(PackedByteArray data, int compression_level = 0);
+
+	static String parse_as_string(PackedByteArray p_bytes) {
+		PackedByteArray bytes_null_term = p_bytes;
+		bytes_null_term.resize(bytes_null_term.size() + 1);
+		const char *chars_null_term = reinterpret_cast<const char *>(bytes_null_term.ptr());
+		String ret;
+		if (ret.validate_utf8(chars_null_term, bytes_null_term.size())) {
+			ret.parse_utf8(chars_null_term);
+		} else {
+			bytes_null_term = Lz4::decompress_frame(p_bytes);
+			bytes_null_term.resize(bytes_null_term.size() + 1);
+			const char *decompressed_chars_null_term = reinterpret_cast<const char *>(bytes_null_term.ptr());
+
+			if (ret.validate_utf8(decompressed_chars_null_term)) {
+				ret.parse_utf8(decompressed_chars_null_term);
+			}
+		}
+		return ret;
+	}
 };
 
 class Lz4File : public RefCounted {

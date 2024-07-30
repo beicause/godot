@@ -30,36 +30,14 @@
 
 #include "resource_loader_txtz.h"
 
-void TXTZ::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_as_string"), &TXTZ::get_as_string);
-	ClassDB::bind_method(D_METHOD("get_buffer", "decompress"), &TXTZ::get_buffer, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("set_buffer", "p_buffer", "compress"), &TXTZ::set_buffer, DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("write_string", "p_string"), &TXTZ::write_string);
-	ClassDB::bind_method(D_METHOD("set_compress", "p_compress"), &TXTZ::set_compress);
-	ClassDB::bind_method(D_METHOD("is_compress"), &TXTZ::is_compress);
-}
-Ref<TXTZ> ResourceFormatLoaderTXTZ::load(const PackedByteArray &p_bytes, Error *r_error) {
+Ref<TXTZFile> ResourceFormatLoaderTXTZ::load(const PackedByteArray &p_bytes, Error *r_error) {
 	if (r_error) {
 		*r_error = ERR_FILE_CANT_OPEN;
 	}
-
-	PackedByteArray bytes = p_bytes;
-	Ref<TXTZ> ret;
-	String str_raw;
-	Error err = str_raw.validate_utf8(reinterpret_cast<const char *>(bytes.ptr()), bytes.size());
-	if (err == OK) {
-		err = str_raw.parse_utf8(reinterpret_cast<const char *>(bytes.ptr()), bytes.size());
-	}
-	if (err == OK) {
-		if (r_error) {
-			*r_error = OK;
-		}
-		ret->write_string(str_raw);
-		return ret;
-	}
-
-	ret->set_buffer(bytes);
-
+	Ref<TXTZFile> ret;
+	ret.instantiate();
+	ret->set_compression((TXTZFile::Compression)p_bytes[0]);
+	ret->set_data(p_bytes.slice(1));
 	if (r_error) {
 		*r_error = OK;
 	}
@@ -94,4 +72,33 @@ String ResourceFormatLoaderTXTZ::get_resource_type(const String &p_path) const {
 		return "TXTZ";
 	}
 	return "";
+}
+
+Error ResourceFormatSaverTXTZ::save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags) {
+	Ref<TXTZFile> txtz = p_resource;
+	ERR_FAIL_COND_V(txtz.is_null(), ERR_INVALID_PARAMETER);
+
+	Error err;
+	Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::WRITE, &err);
+	ERR_FAIL_COND_V_MSG(err, err, "Cannot open file '" + p_path + "'.");
+
+	file->store_8(txtz->get_compression());
+	file->store_buffer(txtz->get_data());
+
+	if (file->get_error() != OK && file->get_error() != ERR_FILE_EOF) {
+		return ERR_CANT_CREATE;
+	}
+
+	return OK;
+}
+
+void ResourceFormatSaverTXTZ::get_recognized_extensions(const Ref<Resource> &p_resource, List<String> *p_extensions) const {
+	Ref<TXTZFile> lottie = p_resource;
+	if (lottie.is_valid()) {
+		p_extensions->push_back("txtz");
+	}
+}
+
+bool ResourceFormatSaverTXTZ::recognize(const Ref<Resource> &p_resource) const {
+	return p_resource->is_class("TXTFile");
 }

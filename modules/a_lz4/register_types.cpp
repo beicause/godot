@@ -35,6 +35,12 @@
 
 Ref<ResourceFormatLoaderJSONZ> resource_loader_jsonz;
 Ref<ResourceFormatLoaderTXTZ> resource_loader_txtz;
+Ref<ResourceFormatSaverTXTZ> resource_saver_txtz;
+
+#ifdef TOOLS_ENABLED
+#include "editor/resource_importer_txtz.h"
+static Ref<ResourceImporterTXTZ> resource_importer_txtz;
+#endif // TOOLS_ENABLED
 
 void initialize_a_lz4_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
@@ -42,12 +48,19 @@ void initialize_a_lz4_module(ModuleInitializationLevel p_level) {
 	}
 	ClassDB::register_class<Lz4>();
 	ClassDB::register_class<Lz4File>();
-	ClassDB::register_class<TXTZ>();
+	ClassDB::register_class<TXTZFile>();
 
 	resource_loader_jsonz.instantiate();
 	resource_loader_txtz.instantiate();
+	resource_saver_txtz.instantiate();
 	ResourceLoader::add_resource_format_loader(resource_loader_jsonz);
 	ResourceLoader::add_resource_format_loader(resource_loader_txtz);
+	ResourceSaver::add_resource_format_saver(resource_saver_txtz);
+
+#ifdef TOOLS_ENABLED
+	resource_importer_txtz.instantiate();
+	ResourceFormatImporter::get_singleton()->add_importer(resource_importer_txtz);
+#endif // TOOLS_ENABLED
 }
 
 void uninitialize_a_lz4_module(ModuleInitializationLevel p_level) {
@@ -56,6 +69,13 @@ void uninitialize_a_lz4_module(ModuleInitializationLevel p_level) {
 	}
 	ResourceLoader::remove_resource_format_loader(resource_loader_jsonz);
 	ResourceLoader::remove_resource_format_loader(resource_loader_txtz);
+	ResourceSaver::remove_resource_format_saver(resource_saver_txtz);
 	resource_loader_jsonz.unref();
 	resource_loader_txtz.unref();
+	resource_saver_txtz.unref();
+
+#ifdef TOOLS_ENABLED
+	ResourceFormatImporter::get_singleton()->remove_importer(resource_importer_txtz);
+	resource_importer_txtz.unref();
+#endif
 }

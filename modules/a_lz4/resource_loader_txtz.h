@@ -31,58 +31,51 @@
 #ifndef RESOURCE_LOADER_TXTZ_H
 #define RESOURCE_LOADER_TXTZ_H
 #include "core/io/resource_loader.h"
-#include "modules/a_lz4/gd_lz4.h"
+#include "core/io/resource_saver.h"
 
-class TXTZ : public Resource {
-	GDCLASS(TXTZ, Resource);
-	PackedByteArray bytes;
-	bool compress = true;
-
-protected:
-	static void _bind_methods();
+class TXTZFile : public Resource {
+	GDCLASS(TXTZFile, Resource);
 
 public:
-	String get_as_string() {
-		String ret;
-		const char *raw_bytes = reinterpret_cast<const char *>(bytes.ptr());
-		if ((!compress) && ret.validate_utf8(raw_bytes, bytes.size())) {
-			ret.parse_utf8(raw_bytes);
-		} else {
-			const char *compressed_bytes = reinterpret_cast<const char *>(Lz4::decompress_frame(bytes).ptr());
-			if (ret.validate_utf8(compressed_bytes, bytes.size())) {
-				ret.parse_utf8(compressed_bytes);
-			}
-		}
-		return ret;
+	enum Compression {
+		UNKNOWN,
+		COMPRESSED,
+		UNCOMPRESSED
+	};
+
+private:
+	Compression compression;
+	PackedByteArray data;
+
+protected:
+	static void _bind_methods() {
+		ClassDB::bind_method(D_METHOD("set_compression", "p_compression"), &TXTZFile::set_compression);
+		ClassDB::bind_method(D_METHOD("get_compression"), &TXTZFile::get_compression);
+		ClassDB::bind_method(D_METHOD("set_data", "p_data"), &TXTZFile::set_data);
+		ClassDB::bind_method(D_METHOD("get_data"), &TXTZFile::get_data);
+
+		BIND_CONSTANT(TXTZFile::Compression::UNKNOWN);
+		BIND_CONSTANT(TXTZFile::Compression::COMPRESSED);
+		BIND_CONSTANT(TXTZFile::Compression::UNCOMPRESSED);
+
+		ADD_PROPERTY(PropertyInfo(Variant::INT, "compression", PROPERTY_HINT_ENUM, "	UNKNOWN,COMPRESSED,UNCOMPRESSED"), "set_compression", "get_compression");
+		ADD_PROPERTY(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "data"), "set_data", "get_data");
 	}
 
-	PackedByteArray get_buffer(bool decompress = false) {
-		if (decompress) {
-			return Lz4::decompress_frame(bytes);
-		}
-		return bytes;
+public:
+	void set_compression(Compression p_compression) {
+		compression = p_compression;
 	}
-	void set_buffer(PackedByteArray p_buffer, bool compress = false) {
-		if (compress) {
-			bytes = Lz4::compress_frame(p_buffer);
-		} else {
-			bytes = p_buffer;
-		}
-	}
-	void write_string(String p_string) {
-		if (compress) {
-			bytes = Lz4::compress_frame(p_string.to_utf8_buffer());
-		} else {
-			bytes = p_string.to_utf8_buffer();
-		}
-	}
-	void set_compress(bool p_compress) { compress = p_compress; }
-	bool is_compress() { return compress; }
+	Compression get_compression() { return compression; }
+	void set_data(PackedByteArray p_data) { data = p_data; }
+	PackedByteArray get_data() { return data; }
 };
+
+VARIANT_ENUM_CAST(TXTZFile::Compression);
 
 class ResourceFormatLoaderTXTZ : public ResourceFormatLoader {
 public:
-	static Ref<TXTZ> load(const PackedByteArray &p_bytes, Error *r_error = nullptr);
+	static Ref<TXTZFile> load(const PackedByteArray &p_bytes, Error *r_error = nullptr);
 
 	virtual Ref<Resource> load(const String &p_path, const String &p_original_path = "", Error *r_error = nullptr, bool p_use_sub_threads = false, float *r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
 	virtual void get_recognized_extensions(List<String> *p_extensions) const override;
@@ -90,4 +83,12 @@ public:
 	virtual String get_resource_type(const String &p_path) const override;
 };
 
+class ResourceFormatSaverTXTZ : public ResourceFormatSaver {
+	GDCLASS(ResourceFormatSaverTXTZ, ResourceFormatSaver);
+
+public:
+	virtual Error save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags = 0) override;
+	virtual void get_recognized_extensions(const Ref<Resource> &p_resource, List<String> *p_extensions) const override;
+	virtual bool recognize(const Ref<Resource> &p_resource) const override;
+};
 #endif // RESOURCE_LOADER_TXTZ_H

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="TXTZFile" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="compression" type="int" setter="set_compression" getter="get_compression" enum="TXTZFile.Compression" default="-321831232">
+		</member>
+		<member name="data" type="PackedByteArray" setter="set_data" getter="get_data" default="PackedByteArray()">
+		</member>
+	</members>
+	<constants>
+		<constant name="TXTZFile::Compression::UNKNOWN" value="0">
+		</constant>
+		<constant name="TXTZFile::Compression::COMPRESSED" value="1">
+		</constant>
+		<constant name="TXTZFile::Compression::UNCOMPRESSED" value="2">
+		</constant>
+	</constants>
+</class>

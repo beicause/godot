@@ -8,8 +8,7 @@ def configure(env):
 
 def get_doc_classes():
     return [
-        "Hct",
-        "Mcu",
+        "JSONNet",
     ]
 
 

@@ -12,9 +12,9 @@
             "args": [
                 "--editor",
                 "--path",
-                "~/game"
+                "/home/lzh/game"
             ],
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
         },
         {
             "type": "lldb",
@@ -22,9 +22,10 @@
             "name": "Debug game",
             "program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64.llvm",
             "args": [
-                "~/game"
+                "--path",
+                "/home/lzh/game"
             ],
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
         }
     ]
 }

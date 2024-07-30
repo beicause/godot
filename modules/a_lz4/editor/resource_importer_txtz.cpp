@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  resource_loader_jsonz.cpp                                             */
+/*  resource_importer_txtz.cpp                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,63 +28,54 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "resource_loader_jsonz.h"
-#include "core/io/json.h"
+#include "resource_importer_txtz.h"
 #include "modules/a_lz4/gd_lz4.h"
+#include "modules/a_lz4/resource_loader_txtz.h"
 
-Ref<JSON> ResourceFormatLoaderJSONZ::load(const PackedByteArray &p_bytes, Error *r_error) {
-	if (r_error) {
-		*r_error = ERR_FILE_CANT_OPEN;
-	}
-
-	Ref<JSON> json;
-	json.instantiate();
-
-	PackedByteArray bytes = p_bytes;
-	String json_str = Lz4::parse_as_string(bytes);
-
-	Error err = json->parse(json_str);
-	if (err != OK) {
-		String err_text = "Error parsing JSON file, on line " + itos(json->get_error_line()) + ": " + json->get_error_message();
-		if (r_error) {
-			*r_error = err;
-		}
-		ERR_PRINT(err_text);
-		return Ref<Resource>();
-	}
-
-	if (r_error) {
-		*r_error = OK;
-	}
-
-	return json;
+String ResourceImporterTXTZ::get_importer_name() const {
+	return "txtz";
+}
+String ResourceImporterTXTZ::get_visible_name() const {
+	return "TXTZ";
+}
+String ResourceImporterTXTZ::get_save_extension() const {
+	return "txtz";
 }
 
-Ref<Resource> ResourceFormatLoaderJSONZ::load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, CacheMode p_cache_mode) {
-	if (r_error) {
-		*r_error = ERR_FILE_CANT_OPEN;
-	}
-
-	if (!FileAccess::exists(p_path)) {
-		*r_error = ERR_FILE_NOT_FOUND;
-		return Ref<Resource>();
-	}
-
-	return load(FileAccess::get_file_as_bytes(p_path), r_error);
+String ResourceImporterTXTZ::get_resource_type() const {
+	return "TXTZ";
 }
 
-void ResourceFormatLoaderJSONZ::get_recognized_extensions(List<String> *p_extensions) const {
-	p_extensions->push_back("jsonz");
+int ResourceImporterTXTZ::get_preset_count() const {
+	return 0;
 }
-
-bool ResourceFormatLoaderJSONZ::handles_type(const String &p_type) const {
-	return (p_type == "JSON");
-}
-
-String ResourceFormatLoaderJSONZ::get_resource_type(const String &p_path) const {
-	String el = p_path.get_extension().to_lower();
-	if (el == "jsonz") {
-		return "JSON";
-	}
+String ResourceImporterTXTZ::get_preset_name(int p_idx) const {
 	return "";
+}
+void ResourceImporterTXTZ::get_import_options(const String &p_path, List<ImportOption> *r_options, int p_preset) const {
+	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "compress"), true));
+	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "compression_level", PROPERTY_HINT_RANGE, "0,12"), 9));
+}
+bool ResourceImporterTXTZ::get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const {
+	return true;
+}
+void ResourceImporterTXTZ::get_recognized_extensions(List<String> *p_extensions) const {
+	p_extensions->push_back("json");
+	p_extensions->push_back("json5");
+	p_extensions->push_back("toml");
+	p_extensions->push_back("yaml");
+	p_extensions->push_back("yml");
+	p_extensions->push_back("txt");
+	p_extensions->push_back("jsonnet");
+}
+
+Error ResourceImporterTXTZ::import(const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+	const bool compress = p_options["compress"];
+	const int compression_level = p_options["compression_level"];
+
+	PackedByteArray file_content = FileAccess::get_file_as_bytes(p_source_file);
+	Ref<FileAccess> file = FileAccess::open(p_save_path + ".txtz", FileAccess::WRITE);
+	file->store_8(compress ? TXTZFile::Compression::COMPRESSED : TXTZFile::Compression::UNCOMPRESSED);
+	file->store_buffer(compress ? Lz4::compress_frame(file_content, compression_level) : file_content);
+	return OK;
 }
