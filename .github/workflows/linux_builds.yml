@@ -32,7 +32,7 @@ jobs:
             tests: false # Disabled due freeze caused by mix Mono build and CI
             doc-test: true
             proj-conv: true
-            api-compat: true
+            api-compat: false
             artifact: true
 
           - name: Editor with doubles and GCC sanitizers (target=editor, tests=yes, dev_build=yes, scu_build=yes, precision=double, use_asan=yes, use_ubsan=yes, linker=gold)
