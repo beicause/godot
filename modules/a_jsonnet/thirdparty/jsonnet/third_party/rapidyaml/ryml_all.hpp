@@ -16792,7 +16792,7 @@ template<typename R, typename... Args> struct vtable
 
     explicit constexpr vtable() noexcept :
         invoke_ptr{ [](storage_ptr_t, Args&&...) -> R
-            { throw std::bad_function_call(); }
+            { /*throw std::bad_function_call();*/ }
         },
         copy_ptr{ [](storage_ptr_t, storage_ptr_t) noexcept -> void {} },
         move_ptr{ [](storage_ptr_t, storage_ptr_t) noexcept -> void {} },
@@ -17334,7 +17334,7 @@ void* aalloc_impl(size_t size, size_t alignment)
 #if defined(C4_WIN) || defined(C4_XBOX)
     mem = ::_aligned_malloc(size, alignment);
     C4_CHECK(mem != nullptr || size == 0);
-#elif defined(C4_ARM)
+#elif defined(C4_ARM) || defined(C4_ANDROID)
     // https://stackoverflow.com/questions/53614538/undefined-reference-to-posix-memalign-in-arm-gcc
     // https://electronics.stackexchange.com/questions/467382/e2-studio-undefined-reference-to-posix-memalign/467753
     mem = memalign(alignment, size);
