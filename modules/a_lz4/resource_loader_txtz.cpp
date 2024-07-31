@@ -29,7 +29,26 @@
 /**************************************************************************/
 
 #include "resource_loader_txtz.h"
+#include "modules/a_lz4/gd_lz4.h"
 
+void TXTZFile::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("set_compression", "p_compression"), &TXTZFile::set_compression);
+	ClassDB::bind_method(D_METHOD("get_compression"), &TXTZFile::get_compression);
+	ClassDB::bind_method(D_METHOD("set_data", "p_data"), &TXTZFile::set_data);
+	ClassDB::bind_method(D_METHOD("get_data"), &TXTZFile::get_data);
+	ClassDB::bind_method(D_METHOD("get_as_string"), &TXTZFile::get_as_string);
+
+	BIND_ENUM_CONSTANT(UNKNOWN);
+	BIND_ENUM_CONSTANT(COMPRESSED);
+	BIND_ENUM_CONSTANT(UNCOMPRESSED);
+
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "compression", PROPERTY_HINT_ENUM, "	UNKNOWN,COMPRESSED,UNCOMPRESSED"), "set_compression", "get_compression");
+	ADD_PROPERTY(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "data"), "set_data", "get_data");
+}
+
+String TXTZFile::get_as_string() {
+	return Lz4::parse_as_string(get_data(), compression == COMPRESSED);
+}
 Ref<TXTZFile> ResourceFormatLoaderTXTZ::load(const PackedByteArray &p_bytes, Error *r_error) {
 	if (r_error) {
 		*r_error = ERR_FILE_CANT_OPEN;

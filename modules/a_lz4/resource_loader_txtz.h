@@ -44,23 +44,11 @@ public:
 	};
 
 private:
-	Compression compression;
+	Compression compression = UNKNOWN;
 	PackedByteArray data;
 
 protected:
-	static void _bind_methods() {
-		ClassDB::bind_method(D_METHOD("set_compression", "p_compression"), &TXTZFile::set_compression);
-		ClassDB::bind_method(D_METHOD("get_compression"), &TXTZFile::get_compression);
-		ClassDB::bind_method(D_METHOD("set_data", "p_data"), &TXTZFile::set_data);
-		ClassDB::bind_method(D_METHOD("get_data"), &TXTZFile::get_data);
-
-		BIND_CONSTANT(TXTZFile::Compression::UNKNOWN);
-		BIND_CONSTANT(TXTZFile::Compression::COMPRESSED);
-		BIND_CONSTANT(TXTZFile::Compression::UNCOMPRESSED);
-
-		ADD_PROPERTY(PropertyInfo(Variant::INT, "compression", PROPERTY_HINT_ENUM, "	UNKNOWN,COMPRESSED,UNCOMPRESSED"), "set_compression", "get_compression");
-		ADD_PROPERTY(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "data"), "set_data", "get_data");
-	}
+	static void _bind_methods();
 
 public:
 	void set_compression(Compression p_compression) {
@@ -69,6 +57,8 @@ public:
 	Compression get_compression() { return compression; }
 	void set_data(PackedByteArray p_data) { data = p_data; }
 	PackedByteArray get_data() { return data; }
+
+	String get_as_string();
 };
 
 VARIANT_ENUM_CAST(TXTZFile::Compression);

@@ -6,18 +6,25 @@
 	</description>
 	<tutorials>
 	</tutorials>
+	<methods>
+		<method name="get_as_string">
+			<return type="String" />
+			<description>
+			</description>
+		</method>
+	</methods>
 	<members>
-		<member name="compression" type="int" setter="set_compression" getter="get_compression" enum="TXTZFile.Compression" default="-321831232">
+		<member name="compression" type="int" setter="set_compression" getter="get_compression" enum="TXTZFile.Compression" default="0">
 		</member>
 		<member name="data" type="PackedByteArray" setter="set_data" getter="get_data" default="PackedByteArray()">
 		</member>
 	</members>
 	<constants>
-		<constant name="TXTZFile::Compression::UNKNOWN" value="0">
+		<constant name="UNKNOWN" value="0" enum="Compression">
 		</constant>
-		<constant name="TXTZFile::Compression::COMPRESSED" value="1">
+		<constant name="COMPRESSED" value="1" enum="Compression">
 		</constant>
-		<constant name="TXTZFile::Compression::UNCOMPRESSED" value="2">
+		<constant name="UNCOMPRESSED" value="2" enum="Compression">
 		</constant>
 	</constants>
 </class>
