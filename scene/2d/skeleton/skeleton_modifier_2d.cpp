@@ -160,8 +160,8 @@ void SkeletonModifier2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_execution_mode", "execution_mode"), &SkeletonModifier2D::set_execution_mode);
 	ClassDB::bind_method(D_METHOD("get_execution_mode"), &SkeletonModifier2D::get_execution_mode);
 
-	BIND_ENUM_CONSTANT(ExecutionMode::EXECUTION_MODE_PROCESS_IDLE);
-	BIND_ENUM_CONSTANT(ExecutionMode::EXECUTION_MODE_PROCESS_PHYSICS);
+	BIND_ENUM_CONSTANT(EXECUTION_MODE_PROCESS_IDLE);
+	BIND_ENUM_CONSTANT(EXECUTION_MODE_PROCESS_PHYSICS);
 
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "active"), "set_active", "is_active");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "influence", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_influence", "get_influence");
