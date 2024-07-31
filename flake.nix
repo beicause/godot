@@ -34,7 +34,8 @@
       shell_name = "gd-env";
       extra_envs = {
         IN_NIX_SHELL = "1";
-        ANDROID_NDK_HOME = "~/Android/ndk/23.2.8568313/";
+        ANDROID_HOME = "/home/lzh/Android/";
+        ANDROID_NDK_HOME = extra_envs.ANDROID_HOME + "ndk/23.2.8568313/";
         NIX_SHELL_NAME = shell_name;
       };
       fhs_env =
@@ -46,15 +47,16 @@
             targetPkgs = pkgs: deps;
             profile = ''
               export IN_NIX_SHELL=${extra_envs.IN_NIX_SHELL};
+              export ANDROID_HOME="${extra_envs.ANDROID_HOME}";
               export ANDROID_NDK_HOME="${extra_envs.ANDROID_NDK_HOME}";
               export NIX_SHELL_NAME="${extra_envs.NIX_SHELL_NAME}";
             '';
             runScript = script;
           }
         ));
-      # build_dev_script = "scons use_llvm=yes dev_build=yes deprecated=no tests=no platform=linuxbsd target=editor compiledb=yes";
-      # build_prod_script = "scons use_llvm=yes dev_build=no deprecated=no tests=no platform=linuxbsd target=editor compiledb=yes";
     in
+    # build_dev_script = "scons use_llvm=yes dev_build=yes deprecated=no tests=no platform=linuxbsd target=editor compiledb=yes";
+    # build_prod_script = "scons use_llvm=yes dev_build=no deprecated=no tests=no platform=linuxbsd target=editor compiledb=yes";
     {
       devShells."${system}" = {
         default = (fhs_env "fish").env;
