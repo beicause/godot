@@ -43,9 +43,9 @@
 		</signal>
 	</signals>
 	<constants>
-		<constant name="ExecutionMode::EXECUTION_MODE_PROCESS_IDLE" value="0" enum="ExecutionMode">
+		<constant name="EXECUTION_MODE_PROCESS_IDLE" value="0" enum="ExecutionMode">
 		</constant>
-		<constant name="ExecutionMode::EXECUTION_MODE_PROCESS_PHYSICS" value="1" enum="ExecutionMode">
+		<constant name="EXECUTION_MODE_PROCESS_PHYSICS" value="1" enum="ExecutionMode">
 		</constant>
 	</constants>
 </class>
