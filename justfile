@@ -8,8 +8,8 @@ dev:
 dev-test:
     {{dev_base}} tests=yes
 
-dev-san-test:
-    {{dev_base}} use_asan=yes tests=yes
+dev-asan:
+    {{dev_base}} use_asan=yes
 
 prod:
     scons use_llvm=yes dev_build=no platform=linuxbsd target=editor compiledb=yes \
