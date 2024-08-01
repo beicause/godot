@@ -62,7 +62,7 @@ public:
 		const char *chars_null_term = reinterpret_cast<const char *>(bytes_null_term.ptr());
 		String ret;
 		Error err;
-		if (!p_hint_compressed && ret.validate_utf8(chars_null_term, bytes_null_term.size())) {
+		if (!p_hint_compressed && ret.validate_utf8(chars_null_term)) {
 			err = ret.parse_utf8(chars_null_term);
 		} else {
 			bytes_null_term = Lz4::decompress_frame(p_bytes);
