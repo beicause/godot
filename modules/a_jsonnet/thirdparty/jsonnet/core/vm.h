@@ -131,6 +131,7 @@ std::vector<std::string> jsonnet_vm_execute_stream(
 
 inline void jsonnet_throw_runtime(const RuntimeError& err){
     ERR_PRINT(err.msg.c_str());
+    abort();
 }
 }  // namespace jsonnet::internal
 
