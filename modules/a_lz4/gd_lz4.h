@@ -57,18 +57,18 @@ public:
 	static PackedByteArray compress_frame(PackedByteArray data, int compression_level = 0);
 
 	static String parse_as_string(PackedByteArray p_bytes, bool p_hint_compressed = false) {
-		PackedByteArray bytes_null_term = p_bytes;
-		bytes_null_term.resize(bytes_null_term.size() + 1);
-		const char *chars_null_term = reinterpret_cast<const char *>(bytes_null_term.ptr());
 		String ret;
+		if (p_bytes.size() == 0) {
+			return ret;
+		}
+		const char *chars = (const char *)p_bytes.ptr();
 		Error err;
-		if (!p_hint_compressed && ret.validate_utf8(chars_null_term)) {
-			err = ret.parse_utf8(chars_null_term);
+		if (!p_hint_compressed && ret.validate_utf8(chars, p_bytes.size()) == OK) {
+			err = ret.parse_utf8(chars, p_bytes.size());
 		} else {
-			bytes_null_term = Lz4::decompress_frame(p_bytes);
-			bytes_null_term.resize(bytes_null_term.size() + 1);
-			const char *decompressed_chars_null_term = reinterpret_cast<const char *>(bytes_null_term.ptr());
-			err = ret.parse_utf8(decompressed_chars_null_term);
+			PackedByteArray dec = Lz4::decompress_frame(p_bytes);
+			const char *dec_chars = (const char *)dec.ptr();
+			err = ret.parse_utf8(dec_chars, dec.size());
 		}
 		if (err != OK) {
 			ERR_PRINT(vformat("lz4 parse utf8 string failed: %s", error_names[err]));
