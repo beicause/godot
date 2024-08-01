@@ -1,3 +1,5 @@
+#!modules/a_autobind/.env/bin/python
+
 import os
 from argparse import ArgumentParser, Namespace
 from typing import Generator
