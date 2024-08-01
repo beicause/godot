@@ -113,6 +113,22 @@ public:
 		jnet.bindExtCodeVar(key.utf8().get_data(), value.utf8().get_data());
 	}
 
+	/// Evaluate a file containing Jsonnet code to return a JSON string.
+	///
+	/// This method returns true if the Jsonnet code is successfully evaluated.
+	/// Otherwise, it returns false, and the error output can be returned by
+	/// calling LastError();
+	///
+	/// @param filename Path to a file containing Jsonnet code.
+	/// @param output Pointer to string to contain the output.
+	/// @return true if the Jsonnet code was successfully evaluated, false
+	///         otherwise.
+	String evaluate_file(const String &filename) {
+		std::string ret;
+		jnet.evaluateFile(filename.utf8().get_data(), &ret);
+		return ret.c_str();
+	}
+
 	/// Evaluate a string containing Jsonnet code to return a JSON string.
 	///
 	/// This method returns true if the Jsonnet code is successfully evaluated.
@@ -124,7 +140,7 @@ public:
 	/// @param output Pointer to string to contain the output.
 	/// @return true if the Jsonnet code was successfully evaluated, false
 	///         otherwise.
-	String evaluate_snippet(const String &filename, const String &snippet) {
+	String evaluate_snippet(const String &snippet, const String &filename = "") {
 		std::string output;
 		bool res = jnet.evaluateSnippet(filename.utf8().get_data(), snippet.utf8().get_data(), &output);
 		if (!res) {
@@ -132,6 +148,29 @@ public:
 			return "";
 		}
 		return output.c_str();
+	}
+
+	/// Evaluate a file containing Jsonnet code, return a number of JSON files.
+	///
+	/// This method returns true if the Jsonnet code is successfully evaluated.
+	/// Otherwise, it returns false, and the error output can be returned by
+	/// calling LastError();
+	///
+	/// @param filename Path to a file containing Jsonnet code.
+	/// @param outputs Pointer to map which will store the output map of filename
+	///        to JSON string.
+	Dictionary evaluate_file_multi(const String &filename) {
+		std::map<std::string, std::string> outputs;
+		bool res = jnet.evaluateFileMulti(filename.utf8().get_data(), &outputs);
+		Dictionary ret;
+		if (!res) {
+			ERR_PRINT(vformat("Jsonnet error: %s", last_error()));
+			return ret;
+		}
+		for (auto &it : outputs) {
+			ret[it.first.c_str()] = it.second.c_str();
+		}
+		return ret;
 	}
 
 	/// Evaluate a string containing Jsonnet code, return a number of JSON files.
@@ -146,7 +185,7 @@ public:
 	///        to JSON string.
 	/// @return true if the Jsonnet code was successfully evaluated, false
 	///         otherwise.
-	Dictionary evaluate_snippet_multi(const String &filename, const String &snippet) {
+	Dictionary evaluate_snippet_multi(const String &snippet, const String &filename = "") {
 		std::map<std::string, std::string> outputs;
 		bool res = jnet.evaluateSnippetMulti(filename.utf8().get_data(), snippet.utf8().get_data(), &outputs);
 		Dictionary ret;

@@ -41,17 +41,29 @@
 			<description>
 			</description>
 		</method>
-		<method name="evaluate_snippet">
+		<method name="evaluate_file">
 			<return type="String" />
 			<param index="0" name="filename" type="String" />
-			<param index="1" name="snippet" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="evaluate_file_multi">
+			<return type="Dictionary" />
+			<param index="0" name="filename" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="evaluate_snippet">
+			<return type="String" />
+			<param index="0" name="snippet" type="String" />
+			<param index="1" name="filename" type="String" default="&quot;&quot;" />
 			<description>
 			</description>
 		</method>
 		<method name="evaluate_snippet_multi">
 			<return type="Dictionary" />
-			<param index="0" name="filename" type="String" />
-			<param index="1" name="snippet" type="String" />
+			<param index="0" name="snippet" type="String" />
+			<param index="1" name="filename" type="String" default="&quot;&quot;" />
 			<description>
 			</description>
 		</method>

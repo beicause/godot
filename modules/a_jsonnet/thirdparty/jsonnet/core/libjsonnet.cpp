@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include "core/io/file_access.h"
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
 
-#include <exception>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -233,8 +232,9 @@ struct JsonnetVm {
           stringOutput(false),
           fmtDebugDesugaring(false)
     {
-        jpaths.emplace_back("/usr/share/jsonnet-" + std::string(jsonnet_version()) + "/");
-        jpaths.emplace_back("/usr/local/share/jsonnet-" + std::string(jsonnet_version()) + "/");
+        // jpaths.emplace_back("/usr/share/jsonnet-" + std::string(jsonnet_version()) + "/");
+        // jpaths.emplace_back("/usr/local/share/jsonnet-" + std::string(jsonnet_version()) + "/");
+        jpaths.emplace_back("res://");
     }
 };
 
@@ -250,7 +250,7 @@ static enum ImportStatus try_path(const std::string &dir, const std::string &rel
         return IMPORT_STATUS_IO_ERROR;
     }
     // It is possible that rel is actually absolute.
-    if (rel[0] == '/') {
+    if (rel.substr(0,6) == "res://") {
         abs_path = rel;
     } else {
         abs_path = dir + rel;
@@ -261,20 +261,22 @@ static enum ImportStatus try_path(const std::string &dir, const std::string &rel
         return IMPORT_STATUS_IO_ERROR;
     }
 
-    std::ifstream f;
-    f.open(abs_path.c_str());
-    if (!f.good())
+    Error e;
+    Ref<FileAccess> f= FileAccess::open(abs_path.c_str(),FileAccess::READ,&e);
+    if (e!=OK) {
+        ERR_PRINT(vformat("Jsonnet file %s error: %s", abs_path.c_str(), error_names[e]));
         return IMPORT_STATUS_FILE_NOT_FOUND;
+    }
     // try {
-        content.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+    content=f->get_as_text().utf8().get_data();
     // } catch (const std::ios_base::failure &io_err) {
         // err_msg = io_err.what();
         // return IMPORT_STATUS_IO_ERROR;
     // }
-    if (!f.good()) {
-        err_msg = strerror(errno);
-        return IMPORT_STATUS_IO_ERROR;
-    }
+    // if (!f.good()) {
+        // err_msg = strerror(errno);
+        // return IMPORT_STATUS_IO_ERROR;
+    // }
 
     found_here = abs_path;
 
@@ -501,17 +503,17 @@ static char *jsonnet_fmt_snippet_aux(JsonnetVm *vm, const char *filename, const 
 char *jsonnet_fmt_file(JsonnetVm *vm, const char *filename, int *error)
 {
     TRY
-        std::ifstream f;
-        f.open(filename);
-        if (!f.good()) {
+    Error e;
+        Ref<FileAccess> f=FileAccess::open(filename,FileAccess::READ,&e);
+        if (e!=OK) {
+            ERR_PRINT(vformat("Jsonnet file %s error: %s", filename, error_names[e]));
             std::stringstream ss;
             ss << "Opening input file: " << filename << ": " << strerror(errno);
             *error = true;
             return from_string(vm, ss.str());
         }
-        std::string input;
-        input.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-
+        std::string input=f->get_as_text().utf8().get_data();
+        // input.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
         return jsonnet_fmt_snippet_aux(vm, filename, input.c_str(), error);
     CATCH("jsonnet_fmt_file")
     return nullptr;  // Never happens.
@@ -672,16 +674,17 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename, c
 static char *jsonnet_evaluate_file_aux(JsonnetVm *vm, const char *filename, int *error,
                                        EvalKind kind)
 {
-    std::ifstream f;
-    f.open(filename);
-    if (!f.good()) {
+    Error e;
+    Ref<FileAccess> f=FileAccess::open(filename, FileAccess::READ,&e);
+    if (e!=OK) {
+        ERR_PRINT(vformat("Jsonnet file %s error: %s", filename, error_names[e]));
         std::stringstream ss;
         ss << "Opening input file: " << filename << ": " << strerror(errno);
         *error = true;
         return from_string(vm, ss.str());
     }
-    std::string input;
-    input.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
+    std::string input=f->get_as_text().utf8().get_data();
+    // input.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
 
     return jsonnet_evaluate_snippet_aux(vm, filename, input.c_str(), error, kind);
 }
