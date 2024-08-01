@@ -59,7 +59,9 @@ void JSONNet::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("bind_tla_code_var", "key", "value"), &JSONNet::bind_tla_code_var);
 	ClassDB::bind_method(D_METHOD("bind_ext_var", "key", "value"), &JSONNet::bind_ext_var);
 	ClassDB::bind_method(D_METHOD("bind_ext_code_var", "key", "value"), &JSONNet::bind_ext_code_var);
-	ClassDB::bind_method(D_METHOD("evaluate_snippet", "filename", "snippet"), &JSONNet::evaluate_snippet);
-	ClassDB::bind_method(D_METHOD("evaluate_snippet_multi", "filename", "snippet"), &JSONNet::evaluate_snippet_multi);
+	ClassDB::bind_method(D_METHOD("evaluate_file", "filename"), &JSONNet::evaluate_file);
+	ClassDB::bind_method(D_METHOD("evaluate_snippet", "snippet", "filename"), &JSONNet::evaluate_snippet, DEFVAL(""));
+	ClassDB::bind_method(D_METHOD("evaluate_file_multi", "filename"), &JSONNet::evaluate_file_multi);
+	ClassDB::bind_method(D_METHOD("evaluate_snippet_multi", "snippet", "filename"), &JSONNet::evaluate_snippet_multi, DEFVAL(""));
 	ClassDB::bind_method(D_METHOD("last_error"), &JSONNet::last_error);
 }
