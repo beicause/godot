@@ -57,7 +57,7 @@ PackedByteArray Lz4::decompress_block(const PackedByteArray &data, int dst_capac
 		memcpy(&dst_capacity, data.ptr(), sizeof(int));
 	}
 	dst.resize(dst_capacity);
-	int res = LZ4_decompress_safe(reinterpret_cast<const char *>(data.ptr() + sizeof(int)), reinterpret_cast<char *>(dst.ptrw()),
+	int res = LZ4_decompress_safe((const char *)(data.ptr() + sizeof(int)), (char *)(dst.ptrw()),
 			data.size() - sizeof(int), dst.size());
 	if (res < 0) {
 		ERR_PRINT(vformat("LZ4 decompress block error: %s", LZ4F_getErrorName(res)));
@@ -74,9 +74,9 @@ PackedByteArray Lz4::compress_block_prepend_size(const PackedByteArray &data, in
 	dst.resize(LZ4_compressBound(data.size()) + sizeof(int));
 	int compressed_size;
 	if (compression_level > 0) {
-		compressed_size = LZ4_compress_HC(reinterpret_cast<const char *>(data.ptr()), reinterpret_cast<char *>(dst.ptrw() + sizeof(int)), data.size(), dst.size() - sizeof(int), compression_level);
+		compressed_size = LZ4_compress_HC((const char *)(data.ptr()), (char *)(dst.ptrw() + sizeof(int)), data.size(), dst.size() - sizeof(int), compression_level);
 	} else {
-		compressed_size = LZ4_compress_fast(reinterpret_cast<const char *>(data.ptr()), reinterpret_cast<char *>(dst.ptrw() + sizeof(int)), data.size(), dst.size() - sizeof(int), -compression_level);
+		compressed_size = LZ4_compress_fast((const char *)(data.ptr()), (char *)(dst.ptrw() + sizeof(int)), data.size(), dst.size() - sizeof(int), -compression_level);
 	}
 	dst.resize(compressed_size + sizeof(int));
 	memcpy(dst.ptrw(), &compressed_size, sizeof(int));
