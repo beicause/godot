@@ -89,7 +89,7 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
         for (const auto &p : ast->params) {
             if (params.find(p.id) != params.end()) {
                 std::string msg = "Duplicate function parameter: " + encode_utf8(p.id->name);
-                throw StaticError(ast_->location, msg);
+                jsonnet_throw(StaticError(ast_->location, msg));
             }
             params.insert(p.id);
             new_vars.insert(p.id);
@@ -120,7 +120,7 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
         assert(dynamic_cast<const InSuper *>(ast_));
         auto* ast = static_cast<const InSuper *>(ast_);
         if (!in_object)
-            throw StaticError(ast_->location, "Can't use super outside of an object.");
+            jsonnet_throw(StaticError(ast_->location, "Can't use super outside of an object."));
         append(r, static_analysis(ast->element, in_object, vars));
     } break;
     case AST_INDEX: {
@@ -190,13 +190,13 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
     case AST_SELF: {
         assert(dynamic_cast<const Self *>(ast_));
         if (!in_object)
-            throw StaticError(ast_->location, "Can't use self outside of an object.");
+            jsonnet_throw(StaticError(ast_->location, "Can't use self outside of an object."));
     } break;
     case AST_SUPER_INDEX: {
         assert(dynamic_cast<const SuperIndex *>(ast_));
         auto* ast = static_cast<const SuperIndex *>(ast_);
         if (!in_object)
-            throw StaticError(ast_->location, "Can't use super outside of an object.");
+            jsonnet_throw(StaticError(ast_->location, "Can't use super outside of an object."));
         append(r, static_analysis(ast->index, in_object, vars));
     } break;
     case AST_UNARY: {
@@ -208,7 +208,7 @@ static IdSet static_analysis(AST *ast_, bool in_object, const IdSet &vars)
         assert(dynamic_cast<const Var *>(ast_));
         auto* ast = static_cast<const Var *>(ast_);
         if (vars.find(ast->id) == vars.end()) {
-            throw StaticError(ast->location, "Unknown variable: " + encode_utf8(ast->id->name));
+            jsonnet_throw(StaticError(ast->location, "Unknown variable: " + encode_utf8(ast->id->name)));
         }
         r.insert(ast->id);
     } break;

@@ -755,7 +755,7 @@ class Desugarer {
 
         } else if (auto *ast = dynamic_cast<Dollar *>(ast_)) {
             if (obj_level == 0) {
-                throw StaticError(ast->location, "No top-level object found.");
+                jsonnet_throw(StaticError(ast->location, "No top-level object found."));
             }
             ast_ = var(id(U"$"));
 
