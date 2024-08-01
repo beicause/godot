@@ -82,6 +82,7 @@ public:
 
 	/// Add to the default import callback's library search path.
 	void add_import_path(const String &path) {
+		ERR_FAIL_COND_MSG(!path.is_empty(), "jsonnet path cannot be empty");
 		jnet.addImportPath(path.utf8().get_data());
 	}
 
@@ -124,6 +125,7 @@ public:
 	/// @return true if the Jsonnet code was successfully evaluated, false
 	///         otherwise.
 	String evaluate_file(const String &filename) {
+		ERR_FAIL_COND_V_MSG(filename.is_empty(), "", "jsonnet filename cannot be empty");
 		std::string ret;
 		jnet.evaluateFile(filename.utf8().get_data(), &ret);
 		return ret.c_str();
@@ -141,6 +143,7 @@ public:
 	/// @return true if the Jsonnet code was successfully evaluated, false
 	///         otherwise.
 	String evaluate_snippet(const String &snippet, const String &filename = "") {
+		ERR_FAIL_COND_V_MSG(snippet.is_empty(), "", "jsonnet snippet cannot be empty");
 		std::string output;
 		bool res = jnet.evaluateSnippet(filename.utf8().get_data(), snippet.utf8().get_data(), &output);
 		if (!res) {
@@ -160,6 +163,7 @@ public:
 	/// @param outputs Pointer to map which will store the output map of filename
 	///        to JSON string.
 	Dictionary evaluate_file_multi(const String &filename) {
+		ERR_FAIL_COND_V_MSG(filename.is_empty(), Dictionary(), "jsonnet filename cannot be empty");
 		std::map<std::string, std::string> outputs;
 		bool res = jnet.evaluateFileMulti(filename.utf8().get_data(), &outputs);
 		Dictionary ret;
@@ -186,6 +190,7 @@ public:
 	/// @return true if the Jsonnet code was successfully evaluated, false
 	///         otherwise.
 	Dictionary evaluate_snippet_multi(const String &snippet, const String &filename = "") {
+		ERR_FAIL_COND_V_MSG(snippet.is_empty(), Dictionary(), "jsonnet snippet cannot be empty");
 		std::map<std::string, std::string> outputs;
 		bool res = jnet.evaluateSnippetMulti(filename.utf8().get_data(), snippet.utf8().get_data(), &outputs);
 		Dictionary ret;
