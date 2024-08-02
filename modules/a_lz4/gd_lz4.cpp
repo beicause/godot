@@ -94,6 +94,14 @@ struct LZ4_read_buffer {
 };
 
 PackedByteArray Lz4::decompress_frame(PackedByteArray data) {
+#define clean_buf_return(v)                          \
+	memfree(lz4fRead.srcBuf);                        \
+	LZ4F_freeDecompressionContext(lz4fRead.dctxPtr); \
+	return v
+#define clean_return(v)                              \
+	LZ4F_freeDecompressionContext(lz4fRead.dctxPtr); \
+	return v
+
 	if (data.size() == 0) {
 		return PackedByteArray();
 	}
@@ -103,43 +111,43 @@ PackedByteArray Lz4::decompress_frame(PackedByteArray data) {
 
 	err_code = LZ4F_createDecompressionContext(&lz4fRead.dctxPtr, LZ4F_VERSION);
 	if (LZ4F_isError(err_code)) {
-		return PackedByteArray();
+		clean_return(PackedByteArray());
 	}
 
 	lz4fRead.fp = data;
 	PackedByteArray chunk_buf = lz4fRead.fp.slice(0, LZ4F_HEADER_SIZE_MAX);
 	lz4fRead.fp_ptr += LZ4F_HEADER_SIZE_MAX;
 	consumedSize = chunk_buf.size();
-	{
-		LZ4F_frameInfo_t info;
-		LZ4F_errorCode_t const r = LZ4F_getFrameInfo(lz4fRead.dctxPtr, &info, chunk_buf.ptr(), &consumedSize);
-		if (LZ4F_isError(r)) {
-			return PackedByteArray();
-		}
 
-		switch (info.blockSizeID) {
-			case LZ4F_default:
-			case LZ4F_max64KB:
-				lz4fRead.srcBufMaxSize = 64 * 1024;
-				break;
-			case LZ4F_max256KB:
-				lz4fRead.srcBufMaxSize = 256 * 1024;
-				break;
-			case LZ4F_max1MB:
-				lz4fRead.srcBufMaxSize = 1 * 1024 * 1024;
-				break;
-			case LZ4F_max4MB:
-				lz4fRead.srcBufMaxSize = 4 * 1024 * 1024;
-				break;
-			default:
-				return PackedByteArray();
-		}
+	LZ4F_frameInfo_t info;
+	LZ4F_errorCode_t const r = LZ4F_getFrameInfo(lz4fRead.dctxPtr, &info, chunk_buf.ptr(), &consumedSize);
+	if (LZ4F_isError(r)) {
+		clean_return(PackedByteArray());
 	}
+
+	switch (info.blockSizeID) {
+		case LZ4F_default:
+		case LZ4F_max64KB:
+			lz4fRead.srcBufMaxSize = 64 * 1024;
+			break;
+		case LZ4F_max256KB:
+			lz4fRead.srcBufMaxSize = 256 * 1024;
+			break;
+		case LZ4F_max1MB:
+			lz4fRead.srcBufMaxSize = 1 * 1024 * 1024;
+			break;
+		case LZ4F_max4MB:
+			lz4fRead.srcBufMaxSize = 4 * 1024 * 1024;
+			break;
+		default:
+			clean_return(PackedByteArray());
+	}
+
 	lz4fRead.srcBuf = (LZ4_byte *)memalloc(lz4fRead.srcBufMaxSize);
 	lz4fRead.srcBufSize = chunk_buf.size() - consumedSize;
 	memcpy(lz4fRead.srcBuf, chunk_buf.ptr() + consumedSize, lz4fRead.srcBufSize);
 
-	auto read = [&](int dst_capacity) {
+	auto read_func = [&](int dst_capacity) {
 		PackedByteArray dst;
 		if (dst_capacity < 0) {
 			return PackedByteArray();
@@ -190,13 +198,16 @@ PackedByteArray Lz4::decompress_frame(PackedByteArray data) {
 	constexpr int chunk_size = 16 * 1024;
 	PackedByteArray ret_array;
 	while (true) {
-		PackedByteArray buf = read(chunk_size);
+		PackedByteArray buf = read_func(chunk_size);
 		if (buf.size() == 0) {
 			break;
 		}
 		ret_array.append_array(buf);
 	}
-	return ret_array;
+	clean_buf_return(ret_array);
+
+#undef clean_buf_return
+#undef clean_return
 }
 
 PackedByteArray Lz4::compress_frame(PackedByteArray data, int compression_level) {
@@ -212,3 +223,22 @@ PackedByteArray Lz4::compress_frame(PackedByteArray data, int compression_level)
 	ret.resize(size);
 	return ret;
 }
+
+void Lz4::_bind_methods() {
+	ClassDB::bind_static_method("Lz4", D_METHOD("decompress_block", "data", "dst_capacity"), &Lz4::decompress_block, DEFVAL(0));
+	ClassDB::bind_static_method("Lz4", D_METHOD("compress_block_prepend_size", "data", "compression_level"), &Lz4::compress_block_prepend_size, DEFVAL(0));
+	ClassDB::bind_static_method("Lz4", D_METHOD("decompress_frame", "data"), &Lz4::decompress_frame);
+	ClassDB::bind_static_method("Lz4", D_METHOD("compress_frame", "data", "compression_level"), &Lz4::compress_frame, DEFVAL(0));
+	ClassDB::bind_static_method("Lz4", D_METHOD("parse_as_string", "p_bytes", "p_hint_compressed"), &Lz4::parse_as_string, DEFVAL(false));
+}
+
+void Lz4File::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("open_read", "path"), &Lz4File::open_read);
+	ClassDB::bind_method(D_METHOD("open_write", "path"), &Lz4File::open_write);
+	ClassDB::bind_method(D_METHOD("open_read_file", "f"), &Lz4File::open_read_file);
+	ClassDB::bind_method(D_METHOD("open_write_file", "f"), &Lz4File::open_write_file);
+	ClassDB::bind_method(D_METHOD("read", "size"), &Lz4File::read, DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("write", "data"), &Lz4File::write);
+	ClassDB::bind_method(D_METHOD("close_write"), &Lz4File::close_write);
+	ClassDB::bind_method(D_METHOD("close_read"), &Lz4File::close_read);
+};
