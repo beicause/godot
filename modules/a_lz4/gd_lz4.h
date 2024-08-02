@@ -41,13 +41,7 @@ class Lz4 : public RefCounted {
 	GDCLASS(Lz4, RefCounted);
 
 protected:
-	static void _bind_methods() {
-		ClassDB::bind_static_method("Lz4", D_METHOD("decompress_block", "data", "dst_capacity"), &Lz4::decompress_block, DEFVAL(0));
-		ClassDB::bind_static_method("Lz4", D_METHOD("compress_block_prepend_size", "data", "compression_level"), &Lz4::compress_block_prepend_size, DEFVAL(0));
-		ClassDB::bind_static_method("Lz4", D_METHOD("decompress_frame", "data"), &Lz4::decompress_frame);
-		ClassDB::bind_static_method("Lz4", D_METHOD("compress_frame", "data", "compression_level"), &Lz4::compress_frame, DEFVAL(0));
-		ClassDB::bind_static_method("Lz4", D_METHOD("parse_as_string", "p_bytes", "p_hint_compressed"), &Lz4::parse_as_string, DEFVAL(false));
-	}
+	static void _bind_methods();
 
 public:
 	static PackedByteArray decompress_block(const PackedByteArray &data, int dst_capacity = 0);
@@ -88,16 +82,7 @@ class Lz4File : public RefCounted {
 	}
 
 protected:
-	static void _bind_methods() {
-		ClassDB::bind_method(D_METHOD("open_read", "path"), &Lz4File::open_read);
-		ClassDB::bind_method(D_METHOD("open_write", "path"), &Lz4File::open_write);
-		ClassDB::bind_method(D_METHOD("open_read_file", "f"), &Lz4File::open_read_file);
-		ClassDB::bind_method(D_METHOD("open_write_file", "f"), &Lz4File::open_write_file);
-		ClassDB::bind_method(D_METHOD("read", "size"), &Lz4File::read, DEFVAL(0));
-		ClassDB::bind_method(D_METHOD("write", "data"), &Lz4File::write);
-		ClassDB::bind_method(D_METHOD("close_write"), &Lz4File::close_write);
-		ClassDB::bind_method(D_METHOD("close_read"), &Lz4File::close_read);
-	};
+	static void _bind_methods();
 
 public:
 	Error open_read(String path) {
