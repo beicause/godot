@@ -4,7 +4,25 @@ Import("env")
 Import("env_modules")
 env_module = env_modules.Clone()
 
-target = f"{'aarch64' if env['arch']=='arm64' else env['arch']}-{'unknown-linux-gnu' if env['platform']=='linuxbsd' else 'linux-android' if env['platform']=='android' else env['platform']}"
+rust_target_arch=''
+rust_target_os=''
+if env['arch']=="arm64":
+    rust_target_arch = "aarch64"
+elif env['arch']=="x86_64":
+    rust_target_arch = "x86_64"
+else:
+    raise Exception(f"unsupported arch {env['arch']}")
+
+if env['platform']=="linuxbsd":
+    rust_target_os = "unknown-linux-gnu"
+elif env['platform']=="android":
+    rust_target_os = "linux-android"
+elif env['platform']=="windows":
+    rust_target_os="pc-windows-msvc"
+else:
+    raise Exception(f"unsupported platform {env['platform']}")
+
+target = f"{rust_target_arch}-{rust_target_os}"
 
 # build rust crates
 cargo_cmd = ""
