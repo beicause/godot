@@ -2,7 +2,7 @@ import os
 
 Import("env")
 Import("env_modules")
-m_env = env_modules.Clone()
+env_module = env_modules.Clone()
 
 target = f"{'aarch64' if env['arch']=='arm64' else env['arch']}-{'unknown-linux-gnu' if env['platform']=='linuxbsd' else 'linux-android' if env['platform']=='android' else env['platform']}"
 
@@ -22,20 +22,30 @@ assert os.system(cargo_cmd) == 0
 # generate bindings
 rust_libs = ["gd_glicol", "gd_jmespath", "gd_json_converter"]
 
+try:os.mkdir("cxxbridge")
+except:pass
+
 for p in rust_libs:
-    assert os.system(f"cxxbridge crates/{p}/src/lib.rs --header > {p}.rs.h") == 0
-    assert os.system(f"cxxbridge crates/{p}/src/lib.rs > {p}.rs.cpp") == 0
+    assert os.system(f"cxxbridge crates/{p}/src/lib.rs --header > ./cxxbridge/{p}.rs.h") == 0
+    assert os.system(f"cxxbridge crates/{p}/src/lib.rs > ./cxxbridge/{p}.rs.cpp") == 0
 
 # generate cxx.h
-assert os.system(f"cxxbridge --header > cxx.h") == 0
+assert os.system(f"cxxbridge --header > ./cxxbridge/cxx.h") == 0
 
 
-sources = [env.Glob("*.cpp")]
-lib_path = [f"target/{target}/{'release' if not env.dev_build else 'debug'}"]
-
+module_obj = []
+env_module.add_source_files(module_obj, "*.cpp")
 if env.editor_build:
-    sources.append(env.Glob("editor/*.cpp"))
+    env_module.add_source_files(module_obj, "editor/*.cpp")
 
+cxxbridge_obj = []
+env_cxxbridge=env_module.Clone()
+env_cxxbridge.disable_warnings()
+env_cxxbridge.add_source_files(cxxbridge_obj, "cxxbridge/*.cpp")
+
+lib_path = [f"target/{target}/{'release' if not env.dev_build else 'debug'}"]
 env.Append(LIBPATH=[env.Dir(p).abspath for p in lib_path])
 env.Append(LIBS=["rust_lib"])
-m_env.add_source_files(env.modules_sources, sources)
+
+env.modules_sources += module_obj
+env.modules_sources += cxxbridge_obj
