@@ -7,21 +7,22 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug editor",
-            "program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+            "name": "Debug game",
+            "program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64",
             "args": [
-                "--editor",
                 "--path",
-                "/home/lzh/game"
+                "./bin/test_project"
+                // "/home/lzh/game"
             ],
             "cwd": "${workspaceFolder}",
         },
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug game",
-            "program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+            "name": "Debug editor",
+            "program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64",
             "args": [
+                "--editor",
                 "--path",
                 "/home/lzh/game"
             ],
