@@ -16,8 +16,9 @@
       deps = with pkgs; [
         pkg-config
         autoPatchelfHook
-        clang_18
-        clang-tools
+        gcc14
+        clang_17
+        lld_17
         python3
         scons
         cxx-rs
@@ -50,6 +51,7 @@
               export ANDROID_HOME="${extra_envs.ANDROID_HOME}";
               export ANDROID_NDK_HOME="${extra_envs.ANDROID_NDK_HOME}";
               export NIX_SHELL_NAME="${extra_envs.NIX_SHELL_NAME}";
+              export LDFLAGS="-B/usr/bin/"
             '';
             runScript = script;
           }
