@@ -259,21 +259,21 @@ struct Token {
         ASSERT,
         ELSE,
         ERROR,
-        FALSE,
+        FALSE_,
         FOR,
         FUNCTION,
         IF,
         IMPORT,
         IMPORTSTR,
         IMPORTBIN,
-        IN,
+        IN_,
         LOCAL,
         NULL_LIT,
         TAILSTRICT,
         THEN,
         SELF,
         SUPER,
-        TRUE,
+        TRUE_,
 
         // A special token that holds line/column information about the end of the file.
         END_OF_FILE
@@ -343,21 +343,21 @@ struct Token {
             case ASSERT: return "assert";
             case ELSE: return "else";
             case ERROR: return "error";
-            case FALSE: return "false";
+            case FALSE_: return "false";
             case FOR: return "for";
             case FUNCTION: return "function";
             case IF: return "if";
             case IMPORT: return "import";
             case IMPORTSTR: return "importstr";
             case IMPORTBIN: return "importbin";
-            case IN: return "in";
+            case IN_: return "in";
             case LOCAL: return "local";
             case NULL_LIT: return "null";
             case SELF: return "self";
             case SUPER: return "super";
             case TAILSTRICT: return "tailstrict";
             case THEN: return "then";
-            case TRUE: return "true";
+            case TRUE_: return "true";
 
             case END_OF_FILE: return "end of file";
             default:
