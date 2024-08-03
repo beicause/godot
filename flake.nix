@@ -16,9 +16,9 @@
       deps = with pkgs; [
         pkg-config
         autoPatchelfHook
-        gcc14
+        # gcc14
         clang_17
-        lld_17
+        mold
         python3
         scons
         cxx-rs
