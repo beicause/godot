@@ -550,7 +550,7 @@ class Parser {
             LocationRange l;
             Token id_token = popExpect(Token::IDENTIFIER);
             const Identifier *id = alloc->makeIdentifier(id_token.data32());
-            Token in_token = popExpect(Token::IN);
+            Token in_token = popExpect(Token::IN_);
             AST *arr = parse(MAX_PRECEDENCE);
             specs.emplace_back(
                 ComprehensionSpec::FOR, for_fodder, id_token.fodder, id, in_token.fodder, arr);
@@ -587,7 +587,7 @@ class Parser {
             case Token::FOR:
             case Token::FUNCTION:
             case Token::IF:
-            case Token::IN:
+            case Token::IN_:
             case Token::IMPORT:
             case Token::IMPORTSTR:
             case Token::IMPORTBIN:
@@ -704,9 +704,9 @@ class Parser {
                 return alloc->make<LiteralString>(
                     span(tok), tok.fodder, tok.data32(), LiteralString::VERBATIM_DOUBLE, "", "");
 
-            case Token::FALSE: return alloc->make<LiteralBoolean>(span(tok), tok.fodder, false);
+            case Token::FALSE_: return alloc->make<LiteralBoolean>(span(tok), tok.fodder, false);
 
-            case Token::TRUE: return alloc->make<LiteralBoolean>(span(tok), tok.fodder, true);
+            case Token::TRUE_: return alloc->make<LiteralBoolean>(span(tok), tok.fodder, true);
 
             case Token::NULL_LIT: return alloc->make<LiteralNull>(span(tok), tok.fodder);
 
@@ -935,7 +935,7 @@ class Parser {
 
             switch (peek().kind) {
                 // Logical / arithmetic binary operator.
-                case Token::IN:
+                case Token::IN_:
                 case Token::OPERATOR:
                     // These occur if the outer statement was an assert or array slice.
                     // Either way, we terminate the parsing here.
@@ -1082,7 +1082,7 @@ class Parser {
                     break;
                 }
 
-                case Token::IN: {
+                case Token::IN_: {
                     if (peek().kind == Token::SUPER) {
                         Token super = pop();
                         lhs = alloc->make<InSuper>(
