@@ -1,0 +1,22 @@
+[workspace]
+default-members = ["crates/rust_lib"]
+members = [
+	"crates/rust_lib",
+	"crates/gd_glicol",
+	"crates/gd_jmespath",
+	"crates/gd_json_converter",
+]
+resolver = "1"
+
+[workspace.package]
+version = "0.13.5"
+edition = "2021"
+
+[workspace.dependencies]
+cxx = "1.0"
+
+[profile.release]
+opt-level = 's' # Optimize for size.
+lto = true      # Enable Link Time Optimization
+# codegen-units = 1 # Reduce number of codegen units to increase optimizations.
+# panic = 'abort'   # Abort on panic

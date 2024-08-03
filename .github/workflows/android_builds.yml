@@ -49,6 +49,16 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Set up Rust
+        if: ${{ matrix.sconsflags != 'arch=arm32' }}
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          rustup default nightly
+          rustup target add aarch64-linux-android
+          cargo install cargo-ndk
+          cargo install cxxbridge-cmd
+          export ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/23.2.8568313
+
       - name: Restore Godot build cache
         uses: ./.github/actions/godot-cache-restore
         with:
