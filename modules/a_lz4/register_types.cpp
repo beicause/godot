@@ -47,7 +47,6 @@ void initialize_a_lz4_module(ModuleInitializationLevel p_level) {
 		return;
 	}
 	ClassDB::register_class<Lz4>();
-	ClassDB::register_class<Lz4File>();
 	ClassDB::register_class<TXTZFile>();
 
 	resource_loader_jsonz.instantiate();
