@@ -1,0 +1,41 @@
+import os
+
+Import("env")
+Import("env_modules")
+m_env = env_modules.Clone()
+
+target = f"{'aarch64' if env['arch']=='arm64' else env['arch']}-{'unknown-linux-gnu' if env['platform']=='linuxbsd' else 'linux-android' if env['platform']=='android' else env['platform']}"
+
+# build rust crates
+cargo_cmd = ""
+
+if target == "aarch64-linux-android":
+    cargo_cmd = "cargo ndk -t arm64-v8a b -p rust_lib"
+else:
+    cargo_cmd = f"cargo b -p rust_lib --target {target}"
+
+if not env.dev_build:
+    cargo_cmd += " -r"
+
+assert os.system(cargo_cmd) == 0
+
+# generate bindings
+rust_libs = ["gd_glicol", "gd_jmespath", "gd_json_converter"]
+
+for p in rust_libs:
+    assert os.system(f"cxxbridge crates/{p}/src/lib.rs --header > {p}.rs.h") == 0
+    assert os.system(f"cxxbridge crates/{p}/src/lib.rs > {p}.rs.cpp") == 0
+
+# generate cxx.h
+assert os.system(f"cxxbridge --header > cxx.h") == 0
+
+
+sources = [env.Glob("*.cpp")]
+lib_path = [f"target/{target}/{'release' if not env.dev_build else 'debug'}"]
+
+if env.editor_build:
+    sources.append(env.Glob("editor/*.cpp"))
+
+env.Append(LIBPATH=[env.Dir(p).abspath for p in lib_path])
+env.Append(LIBS=["rust_lib"])
+m_env.add_source_files(env.modules_sources, sources)
