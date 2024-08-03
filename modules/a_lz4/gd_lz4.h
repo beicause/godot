@@ -31,9 +31,7 @@
 #ifndef GD_LZ4_H
 #define GD_LZ4_H
 
-#include "core/io/file_access.h"
 #include "core/object/ref_counted.h"
-#include "gd_lz4file.h"
 
 using namespace godot;
 
@@ -68,113 +66,6 @@ public:
 			ERR_PRINT(vformat("lz4 parse utf8 string failed: %s", error_names[err]));
 		}
 		return ret;
-	}
-};
-
-class Lz4File : public RefCounted {
-	GDCLASS(Lz4File, RefCounted);
-
-	LZ4_readFile_t *lz4fRead = nullptr;
-	LZ4_writeFile_t *lz4fWrite = nullptr;
-
-	static LZ4F_errorCode_t returnErrorCode(LZ4F_errorCodes code) {
-		return (LZ4F_errorCode_t) - (ptrdiff_t)code;
-	}
-
-protected:
-	static void _bind_methods();
-
-public:
-	Error open_read(String path) {
-		Ref<FileAccess> f = FileAccess::open(path, FileAccess::READ);
-		if (f.is_null()) {
-			return ERR_CANT_OPEN;
-		}
-		return open_read_file(f);
-	}
-	Error open_write(String path) {
-		Ref<FileAccess> f = FileAccess::open(path, FileAccess::WRITE);
-		if (f.is_null()) {
-			return ERR_CANT_OPEN;
-		}
-		return open_write_file(f);
-	}
-	Error open_read_file(Ref<FileAccess> f) {
-		LZ4F_errorCode_t err = LZ4F_readOpen(&lz4fRead, f);
-		return LZ4F_isError(err) ? ERR_FILE_CANT_READ : OK;
-	}
-	Error open_write_file(Ref<FileAccess> f) {
-		LZ4F_errorCode_t err = LZ4F_writeOpen(&lz4fWrite, f, nullptr);
-		return LZ4F_isError(err) ? ERR_FILE_CANT_WRITE : OK;
-	}
-
-	PackedByteArray read(int size = 0) {
-		if (size > 0) {
-			if (lz4fRead == nullptr) {
-				ERR_PRINT("LZ4 Reader is null, please open read first");
-				return PackedByteArray();
-			}
-			PackedByteArray ret;
-			ret.resize(size);
-			size_t res = LZ4F_read(lz4fRead, ret.ptrw(), size);
-			if (LZ4F_isError(res)) {
-				ERR_PRINT(vformat("LZ4 read error: %s", LZ4F_getErrorName(res)));
-				ret.resize(0);
-			}
-			ret.resize(res);
-			return ret;
-		} else {
-			PackedByteArray ret;
-			constexpr int chunk_size = 16 * 1024;
-			while (true) {
-				PackedByteArray chunk = read(chunk_size);
-				if (chunk.size() == 0) {
-					break;
-				}
-				ret.append_array(chunk);
-			}
-			return ret;
-		}
-	}
-
-	int write(PackedByteArray data) {
-		if (data.size() == 0) {
-			return 0;
-		}
-		if (lz4fWrite == nullptr) {
-			ERR_PRINT("LZ4 writer is null, please open write first");
-			returnErrorCode(LZ4F_ERROR_parameter_null);
-		}
-		return LZ4F_write(lz4fWrite, data);
-	}
-
-	Error close_write() {
-		if (lz4fWrite != nullptr) {
-			LZ4F_errorCode_t ret = LZ4F_writeClose(lz4fWrite);
-			lz4fWrite = nullptr;
-			if (LZ4F_isError(ret)) {
-				ERR_PRINT(vformat("LZ4 write error: %s", LZ4F_getErrorName(ret)));
-				return ERR_FILE_CANT_WRITE;
-			}
-		}
-		return OK;
-	}
-
-	Error close_read() {
-		if (lz4fRead != nullptr) {
-			LZ4F_errorCode_t ret = LZ4F_readClose(lz4fRead);
-			lz4fRead = nullptr;
-			if (LZ4F_isError(ret)) {
-				ERR_PRINT(vformat("LZ4 read error: %s", LZ4F_getErrorName(ret)));
-				return ERR_FILE_CANT_READ;
-			}
-		}
-		return OK;
-	}
-
-	~Lz4File() {
-		close_read();
-		close_write();
 	}
 };
 
