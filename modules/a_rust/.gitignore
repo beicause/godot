@@ -18,6 +18,4 @@ compile_commands.json
 target
 __pycache__
 
-*.rs.h
-*.rs.cpp
-cxx.h
+cxxbridge/
