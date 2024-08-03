@@ -2,34 +2,46 @@ import os
 
 Import("env")
 Import("env_modules")
+
 env_module = env_modules.Clone()
 
-rust_target_arch=''
-rust_target_os=''
-if env['arch']=="arm64":
+rust_target_arch = ""
+rust_target_os = ""
+if env["arch"] == "arm64":
     rust_target_arch = "aarch64"
-elif env['arch']=="x86_64":
+elif env["arch"] == "x86_64":
     rust_target_arch = "x86_64"
 else:
     raise Exception(f"unsupported arch {env['arch']}")
 
-if env['platform']=="linuxbsd":
+if env["platform"] == "linuxbsd":
     rust_target_os = "unknown-linux-gnu"
-elif env['platform']=="android":
+elif env["platform"] == "android":
     rust_target_os = "linux-android"
-elif env['platform']=="windows":
-    rust_target_os="pc-windows-msvc"
+elif env["platform"] == "windows":
+    if env.msvc:
+        rust_target_os = "pc-windows-msvc"
+    elif env.get("use_mingw") and env["use_llvm"]:
+        rust_target_os = "pc-windows-gnullvm"
+    elif env.get("use_mingw") and not env["use_llvm"]:
+        rust_target_os = "pc-windows-gnu"
 else:
     raise Exception(f"unsupported platform {env['platform']}")
+
+assert rust_target_arch, "invalid arch"
+assert rust_target_os, "invalid target"
 
 target = f"{rust_target_arch}-{rust_target_os}"
 
 # build rust crates
+cargo_rust_flags = []
+if env.get("use_asan"):
+    cargo_rust_flags.append('-Z sanitizer=address')
+if env.msvc:
+    cargo_rust_flags.append("-Ctarget-feature=+crt-static")
+os.environ["RUSTFLAGS"] = " ".join(cargo_rust_flags)
+
 cargo_cmd = ""
-
-if env.get('use_asan'):
-    cargo_cmd+="RUSTFLAGS=\"-Z sanitizer=address\" "
-
 if target == "aarch64-linux-android":
     cargo_cmd += "cargo ndk -t arm64-v8a b -p rust_lib"
 else:
@@ -38,16 +50,22 @@ else:
 if not env.dev_build:
     cargo_cmd += " -r"
 
-assert os.system(cargo_cmd) == 0
+print("Run cargo build cmd: ",cargo_cmd)
+assert os.system(cargo_cmd) == 0, "cargo build failed"
 
 # generate bindings
 rust_libs = ["gd_glicol", "gd_jmespath", "gd_json_converter"]
 
-try:os.mkdir("cxxbridge")
-except:pass
+try:
+    os.mkdir("cxxbridge")
+except:
+    pass
 
 for p in rust_libs:
-    assert os.system(f"cxxbridge crates/{p}/src/lib.rs --header > ./cxxbridge/{p}.rs.h") == 0
+    assert (
+        os.system(f"cxxbridge crates/{p}/src/lib.rs --header > ./cxxbridge/{p}.rs.h")
+        == 0
+    )
     assert os.system(f"cxxbridge crates/{p}/src/lib.rs > ./cxxbridge/{p}.rs.cpp") == 0
 
 # generate cxx.h
@@ -60,16 +78,18 @@ if env.editor_build:
     env_module.add_source_files(module_obj, "editor/*.cpp")
 
 cxxbridge_obj = []
-env_cxxbridge=env_module.Clone()
+env_cxxbridge = env_module.Clone()
 env_cxxbridge.disable_warnings()
 env_cxxbridge.add_source_files(cxxbridge_obj, "cxxbridge/*.cpp")
 
-lib_path = [f"target/{target}/{'release' if not env.dev_build else 'debug'}"]
-env.Append(LIBPATH=[env.Dir(p).abspath for p in lib_path])
-
-if env['platform']=="windows":
-    env.Append(LIBSUFFIXES=[".lib"])
-env.Append(LIBS=["rust_lib"])
+lib_path = [f"#modules/a_rust/target/{target}/{'release' if not env.dev_build else 'debug'}/"]
+env.Append(LIBPATH=lib_path)
+if env.msvc:
+    env.Append(LINKFLAGS='rust_lib.lib')
+else:
+    env.Append(LIBS=["rust_lib"])
+if env.get("use_mingw"):
+    env.Append(LIBS=["userenv"])
 
 env.modules_sources += module_obj
 env.modules_sources += cxxbridge_obj
