@@ -7,7 +7,7 @@ def configure(env):
 
 
 def get_doc_classes():
-    return ["Lz4", "Lz4File", "TXTZFfile"]
+    return ["Lz4", "TXTZFfile"]
 
 
 def get_doc_path():
