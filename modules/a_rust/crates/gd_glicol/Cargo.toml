@@ -1,0 +1,8 @@
+[package]
+name = "gd_glicol"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+glicol = { version = "0.13", features = ["use-samples", "use-meta"] }
+cxx = { workspace = true }
