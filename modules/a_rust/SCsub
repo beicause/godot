@@ -27,10 +27,13 @@ target = f"{rust_target_arch}-{rust_target_os}"
 # build rust crates
 cargo_cmd = ""
 
+if env.get('use_asan'):
+    cargo_cmd+="RUSTFLAGS=\"-Z sanitizer=address\" "
+
 if target == "aarch64-linux-android":
-    cargo_cmd = "cargo ndk -t arm64-v8a b -p rust_lib"
+    cargo_cmd += "cargo ndk -t arm64-v8a b -p rust_lib"
 else:
-    cargo_cmd = f"cargo b -p rust_lib --target {target}"
+    cargo_cmd += f"cargo b -p rust_lib --target {target}"
 
 if not env.dev_build:
     cargo_cmd += " -r"
@@ -63,6 +66,9 @@ env_cxxbridge.add_source_files(cxxbridge_obj, "cxxbridge/*.cpp")
 
 lib_path = [f"target/{target}/{'release' if not env.dev_build else 'debug'}"]
 env.Append(LIBPATH=[env.Dir(p).abspath for p in lib_path])
+
+if env['platform']=="windows":
+    env.Append(LIBSUFFIXES=[".lib"])
 env.Append(LIBS=["rust_lib"])
 
 env.modules_sources += module_obj
