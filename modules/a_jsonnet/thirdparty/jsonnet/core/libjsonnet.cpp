@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include "core/config/project_settings.h"
 #include "core/io/file_access.h"
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
 
-#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -234,7 +234,8 @@ struct JsonnetVm {
     {
         // jpaths.emplace_back("/usr/share/jsonnet-" + std::string(jsonnet_version()) + "/");
         // jpaths.emplace_back("/usr/local/share/jsonnet-" + std::string(jsonnet_version()) + "/");
-        jpaths.emplace_back("res://");
+        jpaths.emplace_back(ProjectSettings::get_singleton()->globalize_path("res://").utf8().get_data());
+        jpaths.emplace_back(ProjectSettings::get_singleton()->globalize_path("user://").utf8().get_data());
     }
 };
 
@@ -250,7 +251,8 @@ static enum ImportStatus try_path(const std::string &dir, const std::string &rel
         return IMPORT_STATUS_IO_ERROR;
     }
     // It is possible that rel is actually absolute.
-    if (rel.substr(0,6) == "res://") {
+    String rel_string=rel.c_str();
+    if (rel[0] == '/'||rel_string.begins_with("res://")||rel_string.begins_with("user://")) {
         abs_path = rel;
     } else {
         abs_path = dir + rel;
