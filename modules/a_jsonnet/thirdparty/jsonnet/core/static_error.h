@@ -17,7 +17,6 @@ limitations under the License.
 #ifndef JSONNET_STATIC_ERROR_H
 #define JSONNET_STATIC_ERROR_H
 
-#include "core/error/error_macros.h"
 #include <iostream>
 #include <sstream>
 
@@ -110,13 +109,6 @@ static inline std::ostream &operator<<(std::ostream &o, const StaticError &err)
     o << err.toString();
     return o;
 }
-
-
-static inline void jsonnet_throw(const StaticError& err){
-    ERR_PRINT(err.toString().c_str());
-    std::abort();
-}
-
 
 }  // namespace jsonnet::internal
 

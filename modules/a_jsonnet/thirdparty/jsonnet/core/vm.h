@@ -129,9 +129,6 @@ std::vector<std::string> jsonnet_vm_execute_stream(
     double gc_min_objects, double gc_growth_trigger, const VmNativeCallbackMap &natives,
     JsonnetImportCallback *import_callback, void *import_callback_ctx, bool string_output);
 
-inline void jsonnet_throw_runtime(const RuntimeError& err){
-    ERR_PRINT(err.msg.c_str());
-}
 }  // namespace jsonnet::internal
 
 #endif

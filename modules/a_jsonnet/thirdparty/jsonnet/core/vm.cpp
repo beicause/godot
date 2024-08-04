@@ -345,7 +345,7 @@ class Stack {
         std::cout << std::endl;
     }
 
-    /** Creates the error object for jsonnet_throw_runtimeing( and also populates it with the stack trace).
+    /** Creates the error object for throwing, and also populates it with the stack trace.
      */
     RuntimeError makeError(const LocationRange &loc, const std::string &msg)
     {
@@ -401,7 +401,7 @@ class Stack {
     {
         tailCallTrimStack();
         if (calls >= limit) {
-            jsonnet_throw_runtime(makeError(loc, "max stack frames exceeded."));
+            throw makeError(loc, "max stack frames exceeded.");
         }
         stack.emplace_back(FRAME_CALL, loc);
         calls++;
@@ -605,10 +605,10 @@ class Interpreter {
     Value makeNumberCheck(const LocationRange &loc, double v)
     {
         if (std::isnan(v)) {
-            jsonnet_throw_runtime(makeError(loc, "not a number"));
+            throw makeError(loc, "not a number");
         }
         if (std::isinf(v)) {
-            jsonnet_throw_runtime(makeError(loc, "overflow"));
+            throw makeError(loc, "overflow");
         }
         return makeNumber(v);
     }
@@ -820,7 +820,7 @@ class Interpreter {
             std::string epath = encode_utf8(jsonnet_string_escape(path, false));
             std::string msg = "couldn't open import \"" + epath + "\": ";
             msg += input;
-            jsonnet_throw_runtime(makeError(loc, msg));
+            throw makeError(loc, msg);
         }
 
         auto *input_ptr = new ImportCacheValue();
@@ -993,7 +993,7 @@ class Interpreter {
             prefix = ", ";
         }
         ss << ")";
-        jsonnet_throw_runtime(makeError(loc, ss.str()));
+        throw makeError(loc, ss.str());
     }
 
     const AST *builtinMakeArray(const LocationRange &loc, const std::vector<Value> &args)
@@ -1004,14 +1004,14 @@ class Interpreter {
         if (sz < 0) {
             std::stringstream ss;
             ss << "makeArray requires size >= 0, got " << sz;
-            jsonnet_throw_runtime(makeError(loc, ss.str()));
+            throw makeError(loc, ss.str());
         }
         auto *func = static_cast<const HeapClosure *>(args[1].v.h);
         std::vector<HeapThunk *> elements;
         if (func->params.size() != 1) {
             std::stringstream ss;
             ss << "makeArray function must take 1 param, got: " << func->params.size();
-            jsonnet_throw_runtime(makeError(loc, ss.str()));
+            throw makeError(loc, ss.str());
         }
         elements.resize(sz);
         for (long i = 0; i < sz; ++i) {
@@ -1126,7 +1126,7 @@ class Interpreter {
         auto *func = static_cast<HeapClosure *>(args[0].v.h);
         auto *arr = static_cast<HeapArray *>(args[1].v.h);
         if (func->params.size() != 1) {
-            jsonnet_throw_runtime(makeError(loc, "filter function takes 1 parameter."));
+            throw makeError(loc, "filter function takes 1 parameter.");
         }
         if (arr->elements.size() == 0) {
             scratch = makeArray({});
@@ -1167,7 +1167,7 @@ class Interpreter {
     const AST *builtinLength(const LocationRange &loc, const std::vector<Value> &args)
     {
         if (args.size() != 1) {
-            jsonnet_throw_runtime(makeError(loc, "length takes 1 parameter."));
+            throw makeError(loc, "length takes 1 parameter.");
         }
         HeapEntity *e = args[0].v.h;
         switch (args[0].t) {
@@ -1189,10 +1189,10 @@ class Interpreter {
                 break;
 
             default:
-                jsonnet_throw_runtime(makeError(loc,
-                                "length operates on strings, objects, )"
+                throw makeError(loc,
+                                "length operates on strings, objects, "
                                 "and arrays, got " +
-                                    type_str(args[0])));
+                                    type_str(args[0]));
         }
         return nullptr;
     }
@@ -1224,7 +1224,7 @@ class Interpreter {
         if (str.length() != 1) {
             std::stringstream ss;
             ss << "codepoint takes a string of length 1, got length " << str.length();
-            jsonnet_throw_runtime(makeError(loc, ss.str()));
+            throw makeError(loc, ss.str());
         }
         char32_t c = static_cast<HeapString *>(args[0].v.h)->value[0];
         scratch = makeNumber((unsigned long)(c));
@@ -1238,12 +1238,12 @@ class Interpreter {
         if (l < 0) {
             std::stringstream ss;
             ss << "codepoints must be >= 0, got " << l;
-            jsonnet_throw_runtime(makeError(loc, ss.str()));
+            throw makeError(loc, ss.str());
         }
         if (l >= JSONNET_CODEPOINT_MAX) {
             std::stringstream ss;
             ss << "invalid unicode codepoint, got " << l;
-            jsonnet_throw_runtime(makeError(loc, ss.str()));
+            throw makeError(loc, ss.str());
         }
         char32_t c = l;
         scratch = makeString(UString(&c, 1));
@@ -1288,7 +1288,7 @@ class Interpreter {
         double a = args[0].v.d;
         double b = args[1].v.d;
         if (b == 0)
-            jsonnet_throw_runtime(makeError(loc, "division by zero."));
+            throw makeError(loc, "division by zero.");
         scratch = makeNumberCheck(loc, std::fmod(a, b));
         return nullptr;
     }
@@ -1301,7 +1301,7 @@ class Interpreter {
         auto it = externalVars.find(var8);
         if (it == externalVars.end()) {
             std::string msg = "undefined external variable: " + var8;
-            jsonnet_throw_runtime(makeError(loc, msg));
+            throw makeError(loc, msg);
         }
         const VmExt &ext = it->second;
         if (ext.isCode) {
@@ -1323,7 +1323,7 @@ class Interpreter {
         if (args.size() != 2) {
             std::stringstream ss;
             ss << "primitiveEquals takes 2 parameters, got " << args.size();
-            jsonnet_throw_runtime(makeError(loc, ss.str()));
+            throw makeError(loc, ss.str());
         }
         if (args[0].t != args[1].t) {
             scratch = makeBoolean(false);
@@ -1342,13 +1342,13 @@ class Interpreter {
 
             case Value::NULL_TYPE: r = true; break;
 
-            case Value::FUNCTION: jsonnet_throw_runtime(makeError(loc, "cannot test equality of functions")); break;
+            case Value::FUNCTION: throw makeError(loc, "cannot test equality of functions"); break;
 
             default:
-                jsonnet_throw_runtime(makeError(loc,
-                                "primitiveEquals operates on primitive )"
+                throw makeError(loc,
+                                "primitiveEquals operates on primitive "
                                 "types, got " +
-                                    type_str(args[0])));
+                                    type_str(args[0]));
         }
         scratch = makeBoolean(r);
         return nullptr;
@@ -1407,13 +1407,13 @@ class Interpreter {
                 if (b.t != Value::NUMBER) {
                     std::stringstream ss;
                     ss << "Element " << f.elementId << " of the provided array was not a number";
-                    jsonnet_throw_runtime(makeError(stack.top().location, ss.str()));
+                    throw makeError(stack.top().location, ss.str());
                 } else {
                     double d = b.v.d;
                     if (d < 0 || d > 255 || d != int(d)) {
                         std::stringstream ss;
                         ss << "Element " << f.elementId << " of the provided array was not an integer in range [0,255]";
-                        jsonnet_throw_runtime(makeError(stack.top().location, ss.str()));
+                        throw makeError(stack.top().location, ss.str());
                     }
                     f.bytes.push_back(uint8_t(d));
                 }
@@ -1445,7 +1445,7 @@ class Interpreter {
             std::stringstream ss;
             ss << "Builtin function trace expected string as first parameter but "
                << "got " << type_str(args[0].t);
-            jsonnet_throw_runtime(makeError(loc, ss.str()));
+            throw makeError(loc, ss.str());
         }
 
         std::string str = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
@@ -1494,12 +1494,12 @@ class Interpreter {
         if (from < 0) {
             std::stringstream ss;
             ss << "substr second parameter should be greater than zero, got " << from;
-            jsonnet_throw_runtime(makeError(loc, ss.str()));
+            throw makeError(loc, ss.str());
         }
         if (len < 0) {
             std::stringstream ss;
             ss << "substr third parameter should be greater than zero, got " << len;
-            jsonnet_throw_runtime(makeError(loc, ss.str()));
+            throw makeError(loc, ss.str());
         }
         if (static_cast<unsigned long>(from) > str->value.size()) {
             scratch = makeString(UString());
@@ -1537,7 +1537,7 @@ class Interpreter {
         const auto *from = static_cast<const HeapString *>(args[1].v.h);
         const auto *to = static_cast<const HeapString *>(args[2].v.h);
         if (from->value.empty()) {
-          jsonnet_throw_runtime(makeError(loc, "'from' string must not be zero length."));
+          throw makeError(loc, "'from' string must not be zero length.");
         }
         UString new_str(str->value);
         UString::size_type pos = 0;
@@ -1587,14 +1587,14 @@ class Interpreter {
 
         std::string value = encode_utf8(static_cast<HeapString *>(args[0].v.h)->value);
 
-        // try {
+        try {
             auto j = json::parse(value);
 
             bool filled;
             otherJsonToHeap(j, filled, scratch);
-        // } catch (const json::parse_error &e) {
-            // jsonnet_throw_runtime(makeError(loc, e.what()));
-        // }
+        } catch (const json::parse_error &e) {
+            throw makeError(loc, e.what());
+        }
 
         return nullptr;
     }
@@ -1728,7 +1728,7 @@ class Interpreter {
         if (elt.t != Value::STRING) {
             std::stringstream ss;
             ss << "expected string but arr[" << idx << "] was " << type_str(elt);
-            jsonnet_throw_runtime(makeError(stack.top().location, ss.str()));
+            throw makeError(stack.top().location, ss.str());
         }
         if (!first) {
             running.append(static_cast<HeapString *>(sep.v.h)->value);
@@ -1764,7 +1764,7 @@ class Interpreter {
         if (elt.t != Value::ARRAY) {
             std::stringstream ss;
             ss << "expected array but arr[" << idx << "] was " << type_str(elt);
-            jsonnet_throw_runtime(makeError(stack.top().location, ss.str()));
+            throw makeError(stack.top().location, ss.str());
         }
         if (!first) {
             auto& elts = static_cast<HeapArray *>(sep.v.h)->elements;
@@ -1798,12 +1798,12 @@ class Interpreter {
         if (args[0].t != Value::ARRAY && args[0].t != Value::STRING) {
             std::stringstream ss;
             ss << "join first parameter should be string or array, got " << type_str(args[0]);
-            jsonnet_throw_runtime(makeError(loc, ss.str()));
+            throw makeError(loc, ss.str());
         }
         if (args[1].t != Value::ARRAY) {
             std::stringstream ss;
             ss << "join second parameter should be array, got " << type_str(args[1]);
-            jsonnet_throw_runtime(makeError(loc, ss.str()));
+            throw makeError(loc, ss.str());
         }
         Frame &f = stack.top();
         if (args[0].t == Value::STRING) {
@@ -1918,7 +1918,7 @@ class Interpreter {
         HeapObject *self = obj;
         HeapLeafObject *found = findObject(f, obj, offset, found_at);
         if (found == nullptr) {
-            jsonnet_throw_runtime(makeError(loc, "field does not exist: " + encode_utf8(f->name)));
+            throw makeError(loc, "field does not exist: " + encode_utf8(f->name));
         }
         if (auto *simp = dynamic_cast<HeapSimpleObject *>(found)) {
             auto it = simp->fields.find(f);
@@ -2226,8 +2226,8 @@ class Interpreter {
                 case FRAME_APPLY_TARGET: {
                     const auto &ast = *static_cast<const Apply *>(f.ast);
                     if (scratch.t != Value::FUNCTION) {
-                        jsonnet_throw_runtime(makeError(ast.location,
-                                        "only functions can be called, got " + type_str(scratch)));
+                        throw makeError(ast.location,
+                                        "only functions can be called, got " + type_str(scratch));
                     }
                     auto *func = static_cast<HeapClosure *>(scratch.v.h);
 
@@ -2252,13 +2252,13 @@ class Interpreter {
                                 std::stringstream ss;
                                 ss << "internal error: got positional param after named at index "
                                    << i;
-                                jsonnet_throw_runtime(makeError(ast.location, ss.str()));
+                                throw makeError(ast.location, ss.str());
                             }
                             if (i >= func->params.size()) {
                                 std::stringstream ss;
                                 ss << "too many args, function has " << func->params.size()
                                    << " parameter(s)";
-                                jsonnet_throw_runtime(makeError(ast.location, ss.str()));
+                                throw makeError(ast.location, ss.str());
                             }
                             name = func->params[i].id;
                         }
@@ -2276,13 +2276,13 @@ class Interpreter {
                         if (args.find(name) != args.end()) {
                             std::stringstream ss;
                             ss << "binding parameter a second time: " << encode_utf8(name->name);
-                            jsonnet_throw_runtime(makeError(ast.location, ss.str()));
+                            throw makeError(ast.location, ss.str());
                         }
                         args[name] = thunk;
                         if (params_needed.find(name) == params_needed.end()) {
                             std::stringstream ss;
                             ss << "function has no parameter " << encode_utf8(name->name);
-                            jsonnet_throw_runtime(makeError(ast.location, ss.str()));
+                            throw makeError(ast.location, ss.str());
                         }
                     }
 
@@ -2300,7 +2300,7 @@ class Interpreter {
                             std::stringstream ss;
                             ss << "function parameter " << encode_utf8(param.id->name)
                                << " not bound in call.";
-                            jsonnet_throw_runtime(makeError(ast.location, ss.str()));
+                            throw makeError(ast.location, ss.str());
                         }
 
                         // Special case for builtin functions -- leave identifier blank for
@@ -2419,10 +2419,10 @@ class Interpreter {
                         // e in e
                         case BOP_IN: {
                             if (lhs.t != Value::STRING) {
-                                jsonnet_throw_runtime(makeError(ast.location,
-                                                "the left hand side of the 'in' operator should be )"
+                                throw makeError(ast.location,
+                                                "the left hand side of the 'in' operator should be "
                                                 "a string,  got " +
-                                                    type_str(lhs)));
+                                                    type_str(lhs));
                             }
                             auto *field = static_cast<HeapString *>(lhs.v.h);
                             switch (rhs.t) {
@@ -2435,11 +2435,11 @@ class Interpreter {
                                 } break;
 
                                 default:
-                                    jsonnet_throw_runtime(makeError(
+                                    throw makeError(
                                         ast.location,
                                         "the right hand side of the 'in' operator should be"
                                         " an object, got " +
-                                            type_str(rhs)));
+                                            type_str(rhs));
                             }
                             goto popframe;
                         }
@@ -2448,11 +2448,11 @@ class Interpreter {
                     }
                     // Everything else requires matching types.
                     if (lhs.t != rhs.t) {
-                        jsonnet_throw_runtime(makeError(ast.location,
+                        throw makeError(ast.location,
                                         "binary operator " + bop_string(ast.op) +
                                             " requires "
                                             "matching types, got " +
-                                            type_str(lhs) + " and " + type_str(rhs) + "."));
+                                            type_str(lhs) + " and " + type_str(rhs) + ".");
                     }
                     switch (lhs.t) {
                         case Value::ARRAY:
@@ -2499,9 +2499,9 @@ class Interpreter {
                                 ast_ = callSourceVal(orig_ast, func, {lhs_th, rhs_th});
                                 goto recurse;
                             } else {
-                                jsonnet_throw_runtime(makeError(ast.location,
+                                throw makeError(ast.location,
                                                 "binary operator " + bop_string(ast.op) +
-                                                    " does not operate on arrays."));
+                                                    " does not operate on arrays.");
                             }
                             break;
 
@@ -2512,9 +2512,9 @@ class Interpreter {
                                 case BOP_OR: scratch = makeBoolean(lhs.v.b || rhs.v.b); break;
 
                                 default:
-                                    jsonnet_throw_runtime(makeError(ast.location,
+                                    throw makeError(ast.location,
                                                     "binary operator " + bop_string(ast.op) +
-                                                        " does not operate on booleans."));
+                                                        " does not operate on booleans.");
                             }
                             break;
 
@@ -2534,7 +2534,7 @@ class Interpreter {
 
                                 case BOP_DIV:
                                     if (rhs.v.d == 0)
-                                        jsonnet_throw_runtime(makeError(ast.location, "division by zero."));
+                                        throw makeError(ast.location, "division by zero.");
                                     scratch = makeNumberCheck(ast.location, lhs.v.d / rhs.v.d);
                                     break;
 
@@ -2542,7 +2542,7 @@ class Interpreter {
 
                                 case BOP_SHIFT_L: {
                                     if (rhs.v.d < 0)
-                                        jsonnet_throw_runtime(makeError(ast.location, "shift by negative exponent."));
+                                        throw makeError(ast.location, "shift by negative exponent.");
                                     int64_t long_l = lhs.v.d;
                                     int64_t long_r = rhs.v.d;
                                     long_r = long_r % 64;
@@ -2551,7 +2551,7 @@ class Interpreter {
 
                                 case BOP_SHIFT_R: {
                                     if (rhs.v.d < 0)
-                                        jsonnet_throw_runtime(makeError(ast.location, "shift by negative exponent."));
+                                        throw makeError(ast.location, "shift by negative exponent.");
                                     int64_t long_l = lhs.v.d;
                                     int64_t long_r = rhs.v.d;
                                     long_r = long_r % 64;
@@ -2587,27 +2587,27 @@ class Interpreter {
                                 case BOP_GREATER: scratch = makeBoolean(lhs.v.d > rhs.v.d); break;
 
                                 default:
-                                    jsonnet_throw_runtime(makeError(ast.location,
+                                    throw makeError(ast.location,
                                                     "binary operator " + bop_string(ast.op) +
-                                                        " does not operate on numbers."));
+                                                        " does not operate on numbers.");
                             }
                             break;
 
                         case Value::FUNCTION:
-                            jsonnet_throw_runtime(makeError(ast.location,
+                            throw makeError(ast.location,
                                             "binary operator " + bop_string(ast.op) +
-                                                " does not operate on functions."));
+                                                " does not operate on functions.");
 
                         case Value::NULL_TYPE:
-                            jsonnet_throw_runtime(makeError(ast.location,
+                            throw makeError(ast.location,
                                             "binary operator " + bop_string(ast.op) +
-                                                " does not operate on null."));
+                                                " does not operate on null.");
 
                         case Value::OBJECT: {
                             if (ast.op != BOP_PLUS) {
-                                jsonnet_throw_runtime(makeError(ast.location,
+                                throw makeError(ast.location,
                                                 "binary operator " + bop_string(ast.op) +
-                                                    " does not operate on objects."));
+                                                    " does not operate on objects.");
                             }
                             auto *lhs_obj = static_cast<HeapObject *>(lhs.v.h);
                             auto *rhs_obj = static_cast<HeapObject *>(rhs.v.h);
@@ -2631,9 +2631,9 @@ class Interpreter {
                                 case BOP_GREATER: scratch = makeBoolean(lhs_str > rhs_str); break;
 
                                 default:
-                                    jsonnet_throw_runtime(makeError(ast.location,
+                                    throw makeError(ast.location,
                                                     "binary operator " + bop_string(ast.op) +
-                                                        " does not operate on strings."));
+                                                        " does not operate on strings.");
                             }
                         } break;
                     }
@@ -2644,9 +2644,9 @@ class Interpreter {
                     auto *func = static_cast<HeapClosure *>(f.val.v.h);
                     auto *arr = static_cast<HeapArray *>(f.val2.v.h);
                     if (scratch.t != Value::BOOLEAN) {
-                        jsonnet_throw_runtime(makeError(
+                        throw makeError(
                             ast.location,
-                            "filter function must return boolean, got: " + type_str(scratch)));
+                            "filter function must return boolean, got: " + type_str(scratch));
                     }
                     if (scratch.v.b)
                         f.thunks.push_back(arr->elements[f.elementId]);
@@ -2712,8 +2712,8 @@ class Interpreter {
                                     break;
 
                                 default:
-                                    jsonnet_throw_runtime(makeError(ast.location,
-                                                    "native extensions can only take primitives."));
+                                    throw makeError(ast.location,
+                                                    "native extensions can only take primitives.");
                             }
                         }
                         std::vector<const JsonnetJsonValue *> args3;
@@ -2721,8 +2721,8 @@ class Interpreter {
                             args3.push_back(&args2[i]);
                         }
                         if (nit == nativeCallbacks.end()) {
-                            jsonnet_throw_runtime(makeError(ast.location,
-                                            "unrecognized builtin name: " + builtin_name));
+                            throw makeError(ast.location,
+                                            "unrecognized builtin name: " + builtin_name);
                         }
                         const VmNativeCallback &cb = nit->second;
 
@@ -2734,12 +2734,12 @@ class Interpreter {
                             jsonToHeap(r, unused, scratch);
                         } else {
                             if (r->kind != JsonnetJsonValue::STRING) {
-                                jsonnet_throw_runtime(makeError(
+                                throw makeError(
                                     ast.location,
-                                    "native extension returned an error that was not a string."));
+                                    "native extension returned an error that was not a string.");
                             }
                             std::string rs = r->string;
-                            jsonnet_throw_runtime(makeError(ast.location, rs));
+                            throw makeError(ast.location, rs);
                         }
 
                     } else {
@@ -2787,15 +2787,15 @@ class Interpreter {
                     } else {
                         msg = toString(ast.location);
                     }
-                    jsonnet_throw_runtime(makeError(ast.location, encode_utf8(msg)));
+                    throw makeError(ast.location, encode_utf8(msg));
                 } break;
 
                 case FRAME_IF: {
                     const auto &ast = *static_cast<const Conditional *>(f.ast);
                     if (scratch.t != Value::BOOLEAN) {
-                        jsonnet_throw_runtime(makeError(
+                        throw makeError(
                             ast.location,
-                            "condition must be boolean, got " + type_str(scratch) + "."));
+                            "condition must be boolean, got " + type_str(scratch) + ".");
                     }
                     ast_ = scratch.v.b ? ast.branchTrue : ast.branchFalse;
                     stack.pop();
@@ -2809,13 +2809,13 @@ class Interpreter {
                     stack.getSelfBinding(self, offset);
                     offset++;
                     if (offset >= countLeaves(self)) {
-                        jsonnet_throw_runtime(makeError(ast.location,
-                                        "attempt to use super when there is no super class."));
+                        throw makeError(ast.location,
+                                        "attempt to use super when there is no super class.");
                     }
                     if (scratch.t != Value::STRING) {
-                        jsonnet_throw_runtime(makeError(
+                        throw makeError(
                             ast.location,
-                            "super index must be string, got " + type_str(scratch) + "."));
+                            "super index must be string, got " + type_str(scratch) + ".");
                     }
 
                     const UString &index_name = static_cast<HeapString *>(scratch.v.h)->value;
@@ -2832,9 +2832,9 @@ class Interpreter {
                     stack.getSelfBinding(self, offset);
                     offset++;
                     if (scratch.t != Value::STRING) {
-                        jsonnet_throw_runtime(makeError(ast.location,
+                        throw makeError(ast.location,
                                         "left hand side of e in super must be string, got " +
-                                            type_str(scratch) + "."));
+                                            type_str(scratch) + ".");
                     }
                     if (offset >= countLeaves(self)) {
                         // There is no super object.
@@ -2855,15 +2855,15 @@ class Interpreter {
                         const auto *array = static_cast<HeapArray *>(target.v.h);
                         if (scratch.t == Value::STRING) {
                             const UString &str = static_cast<HeapString *>(scratch.v.h)->value;
-                            jsonnet_throw_runtime(makeError(
+                            throw makeError(
                                 ast.location,
                                 "attempted index an array with string \""
-                                + encode_utf8(jsonnet_string_escape(str, false)) + "\"."));
+                                + encode_utf8(jsonnet_string_escape(str, false)) + "\".");
                         }
                         if (scratch.t != Value::NUMBER) {
-                            jsonnet_throw_runtime(makeError(
+                            throw makeError(
                                 ast.location,
-                                "array index must be number, got " + type_str(scratch) + "."));
+                                "array index must be number, got " + type_str(scratch) + ".");
                         }
                         double index = ::floor(scratch.v.d);
                         long sz = array->elements.size();
@@ -2871,12 +2871,12 @@ class Interpreter {
                             std::stringstream ss;
                             ss << "array bounds error: " << index << " not within [0, " << sz
                                << ")";
-                            jsonnet_throw_runtime(makeError(ast.location, ss.str()));
+                            throw makeError(ast.location, ss.str());
                         }
                         if (scratch.v.d != index) {
                             std::stringstream ss;
                             ss << "array index was not integer: " << scratch.v.d;
-                            jsonnet_throw_runtime(makeError(ast.location, ss.str()));
+                            throw makeError(ast.location, ss.str());
                         }
                         // index < sz <= SIZE_T_MAX
                         auto *thunk = array->elements[size_t(index)];
@@ -2893,9 +2893,9 @@ class Interpreter {
                         auto *obj = static_cast<HeapObject *>(target.v.h);
                         assert(obj != nullptr);
                         if (scratch.t != Value::STRING) {
-                            jsonnet_throw_runtime(makeError(
+                            throw makeError(
                                 ast.location,
-                                "object index must be string, got " + type_str(scratch) + "."));
+                                "object index must be string, got " + type_str(scratch) + ".");
                         }
                         const UString &index_name = static_cast<HeapString *>(scratch.v.h)->value;
                         auto *fid = alloc->makeIdentifier(index_name);
@@ -2906,16 +2906,16 @@ class Interpreter {
                         auto *obj = static_cast<HeapString *>(target.v.h);
                         assert(obj != nullptr);
                         if (scratch.t != Value::NUMBER) {
-                            jsonnet_throw_runtime(makeError(
+                            throw makeError(
                                 ast.location,
-                                "string index must be a number, got " + type_str(scratch) + "."));
+                                "string index must be a number, got " + type_str(scratch) + ".");
                         }
                         long sz = obj->value.length();
                         long i = (long)scratch.v.d;
                         if (i < 0 || i >= sz) {
                             std::stringstream ss;
                             ss << "string bounds error: " << i << " not within [0, " << sz << ")";
-                            jsonnet_throw_runtime(makeError(ast.location, ss.str()));
+                            throw makeError(ast.location, ss.str());
                         }
                         char32_t ch[] = {obj->value[i], U'\0'};
                         scratch = makeString(ch);
@@ -2929,9 +2929,9 @@ class Interpreter {
                     const auto &ast = *static_cast<const Index *>(f.ast);
                     if (scratch.t != Value::ARRAY && scratch.t != Value::OBJECT &&
                         scratch.t != Value::STRING) {
-                        jsonnet_throw_runtime(makeError(ast.location,
+                        throw makeError(ast.location,
                                         "can only index objects, strings, and arrays, got " +
-                                            type_str(scratch) + "."));
+                                            type_str(scratch) + ".");
                     }
                     f.val = scratch;
                     f.kind = FRAME_INDEX_INDEX;
@@ -2986,14 +2986,14 @@ class Interpreter {
                     const auto &ast = *static_cast<const DesugaredObject *>(f.ast);
                     if (scratch.t != Value::NULL_TYPE) {
                         if (scratch.t != Value::STRING) {
-                            jsonnet_throw_runtime(makeError(ast.location, "field name was not a string."));
+                            throw makeError(ast.location, "field name was not a string.");
                         }
                         const auto &fname = static_cast<const HeapString *>(scratch.v.h)->value;
                         const Identifier *fid = alloc->makeIdentifier(fname);
                         if (f.objectFields.find(fid) != f.objectFields.end()) {
                             std::string msg =
                                 "duplicate field name: \"" + encode_utf8(fname) + "\"";
-                            jsonnet_throw_runtime(makeError(ast.location, msg));
+                            throw makeError(ast.location, msg);
                         }
                         f.objectFields[fid].hide = f.fit->hide;
                         f.objectFields[fid].body = f.fit->body;
@@ -3012,8 +3012,8 @@ class Interpreter {
                     const auto &ast = *static_cast<const ObjectComprehensionSimple *>(f.ast);
                     const Value &arr_v = scratch;
                     if (scratch.t != Value::ARRAY) {
-                        jsonnet_throw_runtime(makeError(ast.location,
-                                        "object comprehension needs array, got " + type_str(arr_v)));
+                        throw makeError(ast.location,
+                                        "object comprehension needs array, got " + type_str(arr_v));
                     }
                     const auto *arr = static_cast<const HeapArray *>(arr_v.v.h);
                     if (arr->elements.size() == 0) {
@@ -3037,13 +3037,13 @@ class Interpreter {
                         if (scratch.t != Value::STRING) {
                             std::stringstream ss;
                             ss << "field must be string, got: " << type_str(scratch);
-                            jsonnet_throw_runtime(makeError(ast.location, ss.str()));
+                            throw makeError(ast.location, ss.str());
                         }
                         const auto &fname = static_cast<const HeapString *>(scratch.v.h)->value;
                         const Identifier *fid = alloc->makeIdentifier(fname);
                         if (f.elements.find(fid) != f.elements.end()) {
-                            jsonnet_throw_runtime(makeError(ast.location,
-                                            "duplicate field name: \"" + encode_utf8(fname) + "\""));
+                            throw makeError(ast.location,
+                                            "duplicate field name: \"" + encode_utf8(fname) + "\"");
                         }
                         f.elements[fid] = arr->elements[f.elementId];
                     }
@@ -3087,9 +3087,9 @@ class Interpreter {
                             if (ast.op == UOP_NOT) {
                                 scratch = makeBoolean(!scratch.v.b);
                             } else {
-                                jsonnet_throw_runtime(makeError(ast.location,
+                                throw makeError(ast.location,
                                                 "unary operator " + uop_string(ast.op) +
-                                                    " does not operate on booleans."));
+                                                    " does not operate on booleans.");
                             }
                             break;
 
@@ -3104,16 +3104,16 @@ class Interpreter {
                                     break;
 
                                 default:
-                                    jsonnet_throw_runtime(makeError(ast.location,
+                                    throw makeError(ast.location,
                                                     "unary operator " + uop_string(ast.op) +
-                                                        " does not operate on numbers."));
+                                                        " does not operate on numbers.");
                             }
                             break;
 
                         default:
-                            jsonnet_throw_runtime(makeError(ast.location,
+                            throw makeError(ast.location,
                                             "unary operator " + uop_string(ast.op) +
-                                                " does not operate on type " + type_str(scratch)));
+                                                " does not operate on type " + type_str(scratch));
                     }
                 } break;
 
@@ -3208,7 +3208,7 @@ class Interpreter {
             case Value::NUMBER: ss << decode_utf8(jsonnet_unparse_number(scratch.v.d)); break;
 
             case Value::FUNCTION:
-                jsonnet_throw_runtime(makeError(loc, "couldn't manifest function in JSON output."));
+                throw makeError(loc, "couldn't manifest function in JSON output.");
 
             case Value::NULL_TYPE: ss << U"null"; break;
 
@@ -3257,7 +3257,7 @@ class Interpreter {
         if (scratch.t != Value::STRING) {
             std::stringstream ss;
             ss << "expected string result, got: " << type_str(scratch.t);
-            jsonnet_throw_runtime(makeError(loc, ss.str()));
+            throw makeError(loc, ss.str());
         }
         return static_cast<HeapString *>(scratch.v.h)->value;
     }
@@ -3271,7 +3271,7 @@ class Interpreter {
             ss << "multi mode: top-level object was a " << type_str(scratch.t) << ", "
                << "should be an object whose keys are filenames and values hold "
                << "the JSON for that file.";
-            jsonnet_throw_runtime(makeError(loc, ss.str()));
+            throw makeError(loc, ss.str());
         }
         auto *obj = static_cast<HeapObject *>(scratch.v.h);
         runInvariants(loc, obj);
@@ -3304,7 +3304,7 @@ class Interpreter {
             ss << "stream mode: top-level object was a " << type_str(scratch.t) << ", "
                << "should be an array whose elements hold "
                << "the JSON for each document in the stream.";
-            jsonnet_throw_runtime(makeError(loc, ss.str()));
+            throw makeError(loc, ss.str());
         }
         auto *arr = static_cast<HeapArray *>(scratch.v.h);
         for (auto *thunk : arr->elements) {

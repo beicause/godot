@@ -266,12 +266,12 @@ static enum ImportStatus try_path(const std::string &dir, const std::string &rel
     f.open(abs_path.c_str());
     if (!f.good())
         return IMPORT_STATUS_FILE_NOT_FOUND;
-    // try {
+    try {
         content.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-    // } catch (const std::ios_base::failure &io_err) {
-        // err_msg = io_err.what();
-        // return IMPORT_STATUS_IO_ERROR;
-    // }
+    } catch (const std::ios_base::failure &io_err) {
+        err_msg = io_err.what();
+        return IMPORT_STATUS_IO_ERROR;
+    }
     if (!f.good()) {
         err_msg = strerror(errno);
         return IMPORT_STATUS_IO_ERROR;
@@ -315,10 +315,10 @@ static int default_import_callback(void *ctx, const char *dir, const char *file,
     return 0;  // success
 }
 
-#define TRY {//try {
+#define TRY try {
 #define CATCH(func)                                                                           \
     }                                                                                         \
-    // catch (const std::bad_alloc &)                                                            \
+    catch (const std::bad_alloc &)                                                            \
     {                                                                                         \
         memory_panic();                                                                       \
     }                                                                                         \
@@ -471,7 +471,7 @@ void jsonnet_jpath_add(JsonnetVm *vm, const char *path_)
 static char *jsonnet_fmt_snippet_aux(JsonnetVm *vm, const char *filename, const char *snippet,
                                      int *error)
 {
-    // try {
+    try {
         Allocator alloc;
         std::string json_str;
         AST *expr;
@@ -491,12 +491,12 @@ static char *jsonnet_fmt_snippet_aux(JsonnetVm *vm, const char *filename, const 
         *error = false;
         return from_string(vm, json_str);
 
-    // } catch (StaticError &e) {
-    //     std::stringstream ss;
-    //     ss << "STATIC ERROR: " << e << std::endl;
-    //     *error = true;
-    //     return from_string(vm, ss.str());
-    // }
+    } catch (StaticError &e) {
+        std::stringstream ss;
+        ss << "STATIC ERROR: " << e << std::endl;
+        *error = true;
+        return from_string(vm, ss.str());
+    }
 }
 
 char *jsonnet_fmt_file(JsonnetVm *vm, const char *filename, int *error)
@@ -533,7 +533,7 @@ enum EvalKind { REGULAR, MULTI, STREAM };
 static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename, const char *snippet,
                                           int *error, EvalKind kind)
 {
-    // try {
+    try {
         Allocator alloc;
         AST *expr;
         Tokens tokens = jsonnet_lex(filename, snippet);
@@ -642,30 +642,30 @@ static char *jsonnet_evaluate_snippet_aux(JsonnetVm *vm, const char *filename, c
                 abort();
         }
 
-    // } catch (StaticError &e) {
-    //     std::stringstream ss;
-    //     ss << "STATIC ERROR: " << e << std::endl;
-    //     *error = true;
-    //     return from_string(vm, ss.str());
+    } catch (StaticError &e) {
+        std::stringstream ss;
+        ss << "STATIC ERROR: " << e << std::endl;
+        *error = true;
+        return from_string(vm, ss.str());
 
-    // } catch (RuntimeError &e) {
-    //     std::stringstream ss;
-    //     ss << "RUNTIME ERROR: " << e.msg << std::endl;
-    //     const long max_above = vm->maxTrace / 2;
-    //     const long max_below = vm->maxTrace - max_above;
-    //     const long sz = e.stackTrace.size();
-    //     for (long i = 0; i < sz; ++i) {
-    //         const auto &f = e.stackTrace[i];
-    //         if (vm->maxTrace > 0 && i >= max_above && i < sz - max_below) {
-    //             if (i == max_above)
-    //                 ss << "\t..." << std::endl;
-    //         } else {
-    //             ss << "\t" << f.location << "\t" << f.name << std::endl;
-    //         }
-    //     }
-    //     *error = true;
-    //     return from_string(vm, ss.str());
-    // }
+    } catch (RuntimeError &e) {
+        std::stringstream ss;
+        ss << "RUNTIME ERROR: " << e.msg << std::endl;
+        const long max_above = vm->maxTrace / 2;
+        const long max_below = vm->maxTrace - max_above;
+        const long sz = e.stackTrace.size();
+        for (long i = 0; i < sz; ++i) {
+            const auto &f = e.stackTrace[i];
+            if (vm->maxTrace > 0 && i >= max_above && i < sz - max_below) {
+                if (i == max_above)
+                    ss << "\t..." << std::endl;
+            } else {
+                ss << "\t" << f.location << "\t" << f.name << std::endl;
+            }
+        }
+        *error = true;
+        return from_string(vm, ss.str());
+    }
 
     return nullptr;  // Quiet, compiler.
 }
