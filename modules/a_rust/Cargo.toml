@@ -3,7 +3,6 @@ default-members = ["crates/rust_lib"]
 members = [
 	"crates/rust_lib",
 	"crates/gd_glicol",
-	"crates/gd_jmespath",
 	"crates/gd_json_converter",
 ]
 resolver = "1"
