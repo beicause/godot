@@ -71,7 +71,7 @@ unsigned long jsonnet_string_parse_unicode(const LocationRange &loc, const char3
         unsigned digit;
         if (x == '\0') {
             auto msg = "Truncated unicode escape sequence in string literal.";
-            jsonnet_throw_static(StaticError(loc, msg));
+            jsonnet_throw(StaticError(loc, msg));
         } else if (x >= '0' && x <= '9') {
             digit = x - '0';
         } else if (x >= 'a' && x <= 'f') {
@@ -82,7 +82,7 @@ unsigned long jsonnet_string_parse_unicode(const LocationRange &loc, const char3
             std::stringstream ss;
             ss << "Malformed unicode escape character, "
                << "should be hex: '" << x << "'";
-            jsonnet_throw_static(StaticError(loc, ss.str()));
+            jsonnet_throw(StaticError(loc, ss.str()));
         }
         codepoint *= 16;
         codepoint += digit;
@@ -102,7 +102,7 @@ char32_t decode_utf16_surrogates(const LocationRange &loc, const unsigned long h
     } else {
         std::stringstream ss;
         ss << "Invalid UTF-16 bytes";
-        jsonnet_throw_static(StaticError(loc, ss.str()));
+        jsonnet_throw(StaticError(loc, ss.str()));
     }
 }
 
@@ -142,12 +142,12 @@ UString jsonnet_string_unescape(const LocationRange &loc, const UString &s)
                            if (*(++c) != '\\') {
                                 std::stringstream ss;
                                 ss << "Invalid non-BMP Unicode escape in string literal";
-                                jsonnet_throw_static(StaticError(loc, ss.str()));
+                                jsonnet_throw(StaticError(loc, ss.str()));
                            }
                            if (*(++c) != 'u') {
                                 std::stringstream ss;
                                 ss << "Invalid non-BMP Unicode escape in string literal";
-                                jsonnet_throw_static(StaticError(loc, ss.str()));
+                                jsonnet_throw(StaticError(loc, ss.str()));
                            }
                            ++c;
                            unsigned long codepoint2 = jsonnet_string_parse_unicode(loc, c);
@@ -159,7 +159,7 @@ UString jsonnet_string_unescape(const LocationRange &loc, const UString &s)
 
                     case '\0': {
                         auto msg = "Truncated escape sequence in string literal.";
-                        jsonnet_throw_static(StaticError(loc, msg));
+                        jsonnet_throw(StaticError(loc, msg));
                     }
 
                     default: {
@@ -167,7 +167,7 @@ UString jsonnet_string_unescape(const LocationRange &loc, const UString &s)
                         std::string utf8;
                         encode_utf8(*c, utf8);
                         ss << "Unknown escape sequence in string literal: '" << utf8 << "'";
-                        jsonnet_throw_static(StaticError(loc, ss.str()));
+                        jsonnet_throw(StaticError(loc, ss.str()));
                     }
                 }
                 break;

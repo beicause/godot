@@ -132,12 +132,12 @@ class Parser {
         if (tok.kind != k) {
             std::stringstream ss;
             ss << "expected token " << k << " but got " << tok;
-            jsonnet_throw_static(StaticError(tok.location, ss.str()));
+            jsonnet_throw(StaticError(tok.location, ss.str()));
         }
         if (data != nullptr && tok.data != data) {
             std::stringstream ss;
             ss << "expected operator " << data << " but got " << tok.data;
-            jsonnet_throw_static(StaticError(tok.location, ss.str()));
+            jsonnet_throw(StaticError(tok.location, ss.str()));
         }
         return tok;
     }
@@ -169,7 +169,7 @@ class Parser {
             if (!first && !got_comma) {
                 std::stringstream ss;
                 ss << "expected a comma before next " << element_kind << ".";
-                jsonnet_throw_static(StaticError(next.location, ss.str()));
+                jsonnet_throw(StaticError(next.location, ss.str()));
             }
             // Either id=expr or id or expr, but note that expr could be id==1 so this needs
             // look-ahead.
@@ -209,7 +209,7 @@ class Parser {
         for (auto &p : params) {
             if (p.id == nullptr) {
                 if (p.expr->type != AST_VAR) {
-                    jsonnet_throw_static(StaticError(p.expr->location, "could not parse parameter here."));
+                    jsonnet_throw(StaticError(p.expr->location, "could not parse parameter here."));
                 }
                 auto *pv = static_cast<Var *>(p.expr);
                 p.id = pv->id;
@@ -229,7 +229,7 @@ class Parser {
         auto *id = alloc->makeIdentifier(var_id.data32());
         for (const auto &bind : binds) {
             if (bind.var == id)
-                jsonnet_throw_static(StaticError(var_id.location, "duplicate local var: " + var_id.data));
+                jsonnet_throw(StaticError(var_id.location, "duplicate local var: " + var_id.data));
         }
         bool is_function = false;
         ArgParams params;
@@ -290,22 +290,22 @@ class Parser {
                 }
                 if (num_asserts > 0) {
                     auto msg = "object comprehension cannot have asserts.";
-                    jsonnet_throw_static(StaticError(next.location, msg));
+                    jsonnet_throw(StaticError(next.location, msg));
                 }
                 if (num_fields != 1) {
                     auto msg = "object comprehension can only have one field.";
-                    jsonnet_throw_static(StaticError(next.location, msg));
+                    jsonnet_throw(StaticError(next.location, msg));
                 }
                 const ObjectField &field = *field_ptr;
 
                 if (field.hide != ObjectField::INHERIT) {
                     auto msg = "object comprehensions cannot have hidden fields.";
-                    jsonnet_throw_static(StaticError(next.location, msg));
+                    jsonnet_throw(StaticError(next.location, msg));
                 }
 
                 if (field.kind != ObjectField::FIELD_EXPR) {
                     auto msg = "object comprehensions can only have [e] fields.";
-                    jsonnet_throw_static(StaticError(next.location, msg));
+                    jsonnet_throw(StaticError(next.location, msg));
                 }
 
                 std::vector<ComprehensionSpec> specs;
@@ -317,7 +317,7 @@ class Parser {
             }
 
             if (!got_comma && !first)
-                jsonnet_throw_static(StaticError(next.location, "expected a comma before next field."));
+                jsonnet_throw(StaticError(next.location, "expected a comma before next field."));
 
             first = false;
             got_comma = false;
@@ -411,7 +411,7 @@ class Parser {
                     unsigned colons = 0;
                     for (; *od != '\0'; ++od) {
                         if (*od != ':') {
-                            jsonnet_throw_static(StaticError(
+                            jsonnet_throw(StaticError(
                                 next.location,
                                 "expected one of :, ::, :::, +:, +::, +:::, got: " + op.data));
                         }
@@ -426,19 +426,19 @@ class Parser {
                         case 3: field_hide = ObjectField::VISIBLE; break;
 
                         default:
-                            jsonnet_throw_static(StaticError(
+                            jsonnet_throw(StaticError(
                                 next.location,
                                 "expected one of :, ::, :::, +:, +::, +:::, got: " + op.data));
                     }
 
                     // Basic checks for invalid Jsonnet code.
                     if (is_method && plus_sugar) {
-                        jsonnet_throw_static(StaticError(next.location,
+                        jsonnet_throw(StaticError(next.location,
                                           "cannot use +: syntax sugar in a method: " + next.data));
                     }
                     if (kind != ObjectField::FIELD_EXPR) {
                         if (!literal_fields.insert(next.data).second) {
-                            jsonnet_throw_static(StaticError(next.location, "duplicate field: " + next.data));
+                            jsonnet_throw(StaticError(next.location, "duplicate field: " + next.data));
                         }
                     }
 
@@ -476,7 +476,7 @@ class Parser {
                     auto *id = alloc->makeIdentifier(var_id.data32());
 
                     if (binds.find(id) != binds.end()) {
-                        jsonnet_throw_static(StaticError(var_id.location, "duplicate local var: " + var_id.data));
+                        jsonnet_throw(StaticError(var_id.location, "duplicate local var: " + var_id.data));
                     }
                     bool is_method = false;
                     bool func_comma = false;
@@ -536,7 +536,7 @@ class Parser {
                         ObjectField::Assert(assert_fodder, cond, colon_fodder, msg, comma_fodder));
                 } break;
 
-                default: jsonnet_throw_static(unexpected(next, "parsing field definition"));
+                default: jsonnet_throw(unexpected(next, "parsing field definition"));
             }
 
         } while (true);
@@ -567,7 +567,7 @@ class Parser {
             if (maybe_if.kind != Token::FOR) {
                 std::stringstream ss;
                 ss << "expected for, if or " << end << " after for clause, got: " << maybe_if;
-                jsonnet_throw_static(StaticError(maybe_if.location, ss.str()));
+                jsonnet_throw(StaticError(maybe_if.location, ss.str()));
             }
             for_fodder = maybe_if.fodder;
         }
@@ -595,16 +595,16 @@ class Parser {
             case Token::PAREN_R:
             case Token::SEMICOLON:
             case Token::TAILSTRICT:
-            case Token::THEN: jsonnet_throw_static(unexpected(tok, "parsing terminal"));
+            case Token::THEN: jsonnet_throw(unexpected(tok, "parsing terminal"));
 
-            case Token::END_OF_FILE: jsonnet_throw_static(StaticError(tok.location, "unexpected end of file."));
+            case Token::END_OF_FILE: jsonnet_throw(StaticError(tok.location, "unexpected end of file."));
 
             case Token::OPERATOR: {
                 UnaryOp uop;
                 if (!op_is_unary(tok.data, uop)) {
                     std::stringstream ss;
                     ss << "not a unary operator: " << tok.data;
-                    jsonnet_throw_static(StaticError(tok.location, ss.str()));
+                    jsonnet_throw(StaticError(tok.location, ss.str()));
                 }
                 AST *expr = parse(UNARY_PRECEDENCE);
                 return alloc->make<Unary>(span(tok, expr), tok.fodder, uop, expr);
@@ -659,7 +659,7 @@ class Parser {
                     if (!got_comma) {
                         std::stringstream ss;
                         ss << "expected a comma before next array element.";
-                        jsonnet_throw_static(StaticError(next.location, ss.str()));
+                        jsonnet_throw(StaticError(next.location, ss.str()));
                     }
                     AST *expr = parse(MAX_PRECEDENCE);
                     comma_fodder.clear();
@@ -734,7 +734,7 @@ class Parser {
                         Token bracket_r = popExpect(Token::BRACKET_R);
                         id_fodder = bracket_r.fodder;  // Not id_fodder, but use the same var.
                     } break;
-                    default: jsonnet_throw_static(StaticError(tok.location, "expected . or [ after super."));
+                    default: jsonnet_throw(StaticError(tok.location, "expected . or [ after super."));
                 }
                 return alloc->make<SuperIndex>(
                     span(tok), tok.fodder, next.fodder, index, id_fodder, id);
@@ -829,7 +829,7 @@ class Parser {
                 } else {
                     std::stringstream ss;
                     ss << "expected ( but got " << paren_l;
-                    jsonnet_throw_static(StaticError(paren_l.location, ss.str()));
+                    jsonnet_throw(StaticError(paren_l.location, ss.str()));
                 }
             }
 
@@ -839,14 +839,14 @@ class Parser {
                 if (body->type == AST_LITERAL_STRING) {
                     auto *lit = static_cast<LiteralString *>(body);
                     if (lit->tokenKind == LiteralString::BLOCK) {
-                        jsonnet_throw_static(StaticError(lit->location,
+                        jsonnet_throw(StaticError(lit->location,
                                           "Cannot use text blocks in import statements."));
                     }
                     return alloc->make<Import>(span(begin, body), begin.fodder, lit);
                 } else {
                     std::stringstream ss;
                     ss << "computed imports are not allowed.";
-                    jsonnet_throw_static(StaticError(body->location, ss.str()));
+                    jsonnet_throw(StaticError(body->location, ss.str()));
                 }
             }
 
@@ -856,14 +856,14 @@ class Parser {
                 if (body->type == AST_LITERAL_STRING) {
                     auto *lit = static_cast<LiteralString *>(body);
                     if (lit->tokenKind == LiteralString::BLOCK) {
-                        jsonnet_throw_static(StaticError(lit->location,
+                        jsonnet_throw(StaticError(lit->location,
                                           "Cannot use text blocks in import statements."));
                     }
                     return alloc->make<Importstr>(span(begin, body), begin.fodder, lit);
                 } else {
                     std::stringstream ss;
                     ss << "computed imports are not allowed.";
-                    jsonnet_throw_static(StaticError(body->location, ss.str()));
+                    jsonnet_throw(StaticError(body->location, ss.str()));
                 }
             }
 
@@ -873,14 +873,14 @@ class Parser {
                 if (body->type == AST_LITERAL_STRING) {
                     auto *lit = static_cast<LiteralString *>(body);
                     if (lit->tokenKind == LiteralString::BLOCK) {
-                        jsonnet_throw_static(StaticError(lit->location,
+                        jsonnet_throw(StaticError(lit->location,
                                           "Cannot use text blocks in import statements."));
                     }
                     return alloc->make<Importbin>(span(begin, body), begin.fodder, lit);
                 } else {
                     std::stringstream ss;
                     ss << "computed imports are not allowed.";
-                    jsonnet_throw_static(StaticError(body->location, ss.str()));
+                    jsonnet_throw(StaticError(body->location, ss.str()));
                 }
             }
 
@@ -892,7 +892,7 @@ class Parser {
                     if (delim.kind != Token::SEMICOLON && delim.kind != Token::COMMA) {
                         std::stringstream ss;
                         ss << "expected , or ; but got " << delim;
-                        jsonnet_throw_static(StaticError(delim.location, ss.str()));
+                        jsonnet_throw(StaticError(delim.location, ss.str()));
                     }
                     if (delim.kind == Token::SEMICOLON)
                         break;
@@ -945,7 +945,7 @@ class Parser {
                     if (!op_is_binary(peek().data, bop)) {
                         std::stringstream ss;
                         ss << "not a binary operator: " << peek().data;
-                        jsonnet_throw_static(StaticError(peek().location, ss.str()));
+                        jsonnet_throw(StaticError(peek().location, ss.str()));
                     }
                     op_precedence = precedence_map[bop];
                     break;
@@ -979,7 +979,7 @@ class Parser {
                     AST *third = nullptr;
 
                     if (peek().kind == Token::BRACKET_R)
-                        jsonnet_throw_static(unexpected(pop(), "parsing index"));
+                        jsonnet_throw(unexpected(pop(), "parsing index"));
 
                     if (peek().data != ":" && peek().data != "::") {
                         first = parse(MAX_PRECEDENCE);
@@ -998,7 +998,7 @@ class Parser {
                         is_slice = true;
                         Token delim = pop();
                         if (delim.data != ":")
-                            jsonnet_throw_static(unexpected(delim, "parsing slice"));
+                            jsonnet_throw(unexpected(delim, "parsing slice"));
 
                         second_fodder = delim.fodder;
 
@@ -1008,7 +1008,7 @@ class Parser {
                         if (peek().kind != Token::BRACKET_R) {
                             Token delim = pop();
                             if (delim.data != ":")
-                                jsonnet_throw_static(unexpected(delim, "parsing slice"));
+                                jsonnet_throw(unexpected(delim, "parsing slice"));
 
                             third_fodder = delim.fodder;
 
@@ -1053,7 +1053,7 @@ class Parser {
                             got_named = true;
                         } else {
                             if (got_named) {
-                                jsonnet_throw_static(StaticError(arg.expr->location, "Positional argument after a named argument is not allowed"));
+                                jsonnet_throw(StaticError(arg.expr->location, "Positional argument after a named argument is not allowed"));
                             }
                         }
                     }
@@ -1130,7 +1130,7 @@ AST *jsonnet_parse(Allocator *alloc, Tokens &tokens)
     if (tokens.front().kind != Token::END_OF_FILE) {
         std::stringstream ss;
         ss << "did not expect: " << tokens.front();
-        jsonnet_throw_static(StaticError(tokens.front().location, ss.str()));
+        jsonnet_throw(StaticError(tokens.front().location, ss.str()));
     }
 
     return expr;

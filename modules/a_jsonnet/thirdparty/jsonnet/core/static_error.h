@@ -112,9 +112,9 @@ static inline std::ostream &operator<<(std::ostream &o, const StaticError &err)
 }
 
 
-inline void jsonnet_throw_static(const StaticError& err){
+static inline void jsonnet_throw(const StaticError& err){
     ERR_PRINT(err.toString().c_str());
-    abort();
+    std::abort();
 }
 
 
