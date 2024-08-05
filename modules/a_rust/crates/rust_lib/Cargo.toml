@@ -12,5 +12,4 @@ name = "rust_lib"
 
 [dependencies]
 gd_glicol = { path = "../gd_glicol" }
-gd_jmespath = { path = "../gd_jmespath" }
 gd_json_converter = { path = "../gd_json_converter" }

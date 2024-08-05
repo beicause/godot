@@ -54,7 +54,7 @@ print("Run cargo build cmd: ",cargo_cmd)
 assert os.system(cargo_cmd) == 0, "cargo build failed"
 
 # generate bindings
-rust_libs = ["gd_glicol", "gd_jmespath", "gd_json_converter"]
+rust_libs = ["gd_glicol", "gd_json_converter"]
 
 try:
     os.mkdir("cxxbridge")
