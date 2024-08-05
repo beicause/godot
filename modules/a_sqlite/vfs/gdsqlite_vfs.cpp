@@ -63,7 +63,7 @@ static int gdsqlite_vfs_open(sqlite3_vfs *pVfs, const char *zName, sqlite3_file 
 	};
 	gdsqlite_file *p = reinterpret_cast<gdsqlite_file *>(pFile);
 	Ref<FileAccess> file;
-	FileAccess::ModeFlags godot_flags;
+	FileAccess::ModeFlags godot_flags = FileAccess::READ;
 
 	ERR_FAIL_COND_V(zName == nullptr, SQLITE_IOERR); /* How does this respond to :memory:? */
 
@@ -74,22 +74,18 @@ static int gdsqlite_vfs_open(sqlite3_vfs *pVfs, const char *zName, sqlite3_file 
 	*/
 
 	/* Convert SQLite's flags to something Godot might understand! */
-	if (flags & SQLITE_OPEN_READONLY) {
-		// UtilityFunctions::print("READ");
-		godot_flags = FileAccess::READ;
-	}
+	// if (flags & SQLITE_OPEN_READONLY) {
+	// 	godot_flags = FileAccess::READ;
+	// }
 	// TODO: Figure out if checking for SQLITE_OPEN_READWRITE is necessary when the database is readonly?
 	if (flags & SQLITE_OPEN_READWRITE) {
 		if (flags & SQLITE_OPEN_CREATE) {
 			if (file->file_exists(String(zName))) {
-				// UtilityFunctions::print("READ WRITE");
 				godot_flags = FileAccess::READ_WRITE;
 			} else {
-				// UtilityFunctions::print("WRITE READ");
 				godot_flags = FileAccess::WRITE_READ;
 			}
 		} else {
-			// UtilityFunctions::print("READ WRITE");
 			godot_flags = FileAccess::READ_WRITE;
 		}
 	}
