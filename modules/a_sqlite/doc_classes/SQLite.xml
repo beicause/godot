@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SQLite" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="backup_to">
+			<return type="bool" />
+			<param index="0" name="destination" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="close_db">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="create_function">
+			<return type="bool" />
+			<param index="0" name="function_name" type="String" />
+			<param index="1" name="callable" type="Callable" />
+			<param index="2" name="arguments" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="create_table">
+			<return type="bool" />
+			<param index="0" name="table_name" type="String" />
+			<param index="1" name="table_data" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="delete_rows">
+			<return type="bool" />
+			<param index="0" name="table_name" type="String" />
+			<param index="1" name="conditions" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="drop_table">
+			<return type="bool" />
+			<param index="0" name="table_name" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="get_autocommit" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="insert_row">
+			<return type="bool" />
+			<param index="0" name="table_name" type="String" />
+			<param index="1" name="row_data" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+		<method name="insert_rows">
+			<return type="bool" />
+			<param index="0" name="table_name" type="String" />
+			<param index="1" name="row_array" type="Array" />
+			<description>
+			</description>
+		</method>
+		<method name="open_db">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="query">
+			<return type="bool" />
+			<param index="0" name="query_string" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="query_with_bindings">
+			<return type="bool" />
+			<param index="0" name="query_string" type="String" />
+			<param index="1" name="param_bindings" type="Array" />
+			<description>
+			</description>
+		</method>
+		<method name="restore_from">
+			<return type="bool" />
+			<param index="0" name="source" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="select_rows">
+			<return type="Array" />
+			<param index="0" name="table_name" type="String" />
+			<param index="1" name="conditions" type="String" />
+			<param index="2" name="columns" type="Array" />
+			<description>
+			</description>
+		</method>
+		<method name="update_rows">
+			<return type="bool" />
+			<param index="0" name="table_name" type="String" />
+			<param index="1" name="conditions" type="String" />
+			<param index="2" name="row_data" type="Dictionary" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="db_path" type="String" setter="set_db_path" getter="get_db_path" default="&quot;default&quot;">
+		</member>
+		<member name="default_extension" type="String" setter="set_default_extension" getter="get_default_extension" default="&quot;db&quot;">
+		</member>
+		<member name="error_message" type="String" setter="set_error_message" getter="get_error_message" default="&quot;&quot;">
+		</member>
+		<member name="foreign_keys" type="bool" setter="set_foreign_keys" getter="get_foreign_keys" default="false">
+		</member>
+		<member name="last_insert_rowid" type="int" setter="set_last_insert_rowid" getter="get_last_insert_rowid" default="0">
+		</member>
+		<member name="query_result" type="Dictionary[]" setter="set_query_result" getter="get_query_result" default="[]">
+		</member>
+		<member name="query_result_by_reference" type="Dictionary[]" setter="set_query_result" getter="get_query_result_by_reference" default="[]">
+		</member>
+		<member name="read_only" type="bool" setter="set_read_only" getter="get_read_only" default="false">
+		</member>
+		<member name="verbosity_level" type="int" setter="set_verbosity_level" getter="get_verbosity_level" default="1">
+		</member>
+	</members>
+	<constants>
+		<constant name="QUIET" value="0" enum="VerbosityLevel">
+		</constant>
+		<constant name="NORMAL" value="1" enum="VerbosityLevel">
+		</constant>
+		<constant name="VERBOSE" value="2" enum="VerbosityLevel">
+		</constant>
+		<constant name="VERY_VERBOSE" value="3" enum="VerbosityLevel">
+		</constant>
+	</constants>
+</class>
