@@ -235,6 +235,7 @@ struct JsonnetVm {
         // jpaths.emplace_back("/usr/share/jsonnet-" + std::string(jsonnet_version()) + "/");
         // jpaths.emplace_back("/usr/local/share/jsonnet-" + std::string(jsonnet_version()) + "/");
         jpaths.emplace_back("res://");
+        jpaths.emplace_back("user://");
     }
 };
 
@@ -250,9 +251,12 @@ static enum ImportStatus try_path(const std::string &dir, const std::string &rel
         return IMPORT_STATUS_IO_ERROR;
     }
     // It is possible that rel is actually absolute.
-    if (rel.substr(0,6) == "res://") {
+    if (rel.substr(0,6) == "res://"|| rel.substr(0,7) == "user://") {
         abs_path = rel;
-    } else {
+    } else if (rel[0] == '/') {
+        abs_path = rel;
+    }
+    else {
         abs_path = dir + rel;
     }
 

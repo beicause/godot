@@ -49,6 +49,7 @@ void TXTZFile::_bind_methods() {
 String TXTZFile::get_as_string() {
 	return Lz4::parse_as_string(get_data(), compression == COMPRESSED);
 }
+
 Ref<TXTZFile> ResourceFormatLoaderTXTZ::load(const PackedByteArray &p_bytes, Error *r_error) {
 	if (r_error) {
 		*r_error = ERR_FILE_CANT_OPEN;
