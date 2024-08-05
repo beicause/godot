@@ -34,7 +34,7 @@
 #include "core/object/ref_counted.h"
 #include "cxxbridge/cxx.h"
 #include "cxxbridge/gd_json_converter.rs.h"
-#include "modules/a_jsonnet/gd_jsonnet.h"
+#include "modules/a_jsonnet/gd_yaml.h"
 
 class JSONConverter : public RefCounted {
 	GDCLASS(JSONConverter, RefCounted);

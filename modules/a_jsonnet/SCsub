@@ -28,7 +28,7 @@ thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources]
 
 env_module.Append(
     CPPPATH=[
-        thirdparty_dir + p
+        (thirdparty_dir + p)
         for p in [
             "core",
             "include",
@@ -41,7 +41,6 @@ env_module.Append(
 )
 
 env_thirdparty = env_module.Clone()
-env_thirdparty.Append(CPPDEFINES=["_USE_MATH_DEFINES"])
 env_thirdparty.disable_warnings()
 env_thirdparty.add_source_files(thirdparty_obj, thirdparty_sources)
 env.modules_sources += thirdparty_obj

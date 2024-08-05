@@ -29,9 +29,9 @@
 /**************************************************************************/
 
 #include "gd_lz4.h"
-#include "lz4.h"
-#include "lz4frame_static.h"
-#include "lz4hc.h"
+#include <lz4.h>
+#include <lz4frame_static.h>
+#include <lz4hc.h>
 
 extern "C" {
 void *LZ4_malloc(size_t s) {
