@@ -33,7 +33,7 @@
 
 #include "core/io/resource_loader.h"
 #include "core/variant/typed_array.h"
-#include "thirdparty/sqlite/sqlite3.h"
+#include <sqlite3.h>
 
 enum OBJECT_TYPE {
 	TABLE,

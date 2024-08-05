@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  gd_jsonnet.cpp                                                        */
+/*  gd_yaml.h                                                             */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,23 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "gd_jsonnet.h"
+#ifndef GD_YAML_H
+#define GD_YAML_H
 
-void JSONNet::_bind_methods() {
-	ClassDB::bind_static_method("JSONNet", D_METHOD("version"), &JSONNet::version);
-	ClassDB::bind_method(D_METHOD("set_max_stack", "depth"), &JSONNet::set_max_stack);
-	ClassDB::bind_method(D_METHOD("set_gc_min_objects", "objects"), &JSONNet::set_gc_min_objects);
-	ClassDB::bind_method(D_METHOD("set_gc_growth_trigger", "growth"), &JSONNet::set_gc_growth_trigger);
-	ClassDB::bind_method(D_METHOD("set_string_output", "string_output"), &JSONNet::set_string_output);
-	ClassDB::bind_method(D_METHOD("set_max_trace", "lines"), &JSONNet::set_max_trace);
-	ClassDB::bind_method(D_METHOD("add_import_path", "path"), &JSONNet::add_import_path);
-	ClassDB::bind_method(D_METHOD("bind_tla_var", "key", "value"), &JSONNet::bind_tla_var);
-	ClassDB::bind_method(D_METHOD("bind_tla_code_var", "key", "value"), &JSONNet::bind_tla_code_var);
-	ClassDB::bind_method(D_METHOD("bind_ext_var", "key", "value"), &JSONNet::bind_ext_var);
-	ClassDB::bind_method(D_METHOD("bind_ext_code_var", "key", "value"), &JSONNet::bind_ext_code_var);
-	ClassDB::bind_method(D_METHOD("evaluate_file", "filename"), &JSONNet::evaluate_file);
-	ClassDB::bind_method(D_METHOD("evaluate_snippet", "snippet", "filename"), &JSONNet::evaluate_snippet, DEFVAL(""));
-	ClassDB::bind_method(D_METHOD("evaluate_file_multi", "filename"), &JSONNet::evaluate_file_multi);
-	ClassDB::bind_method(D_METHOD("evaluate_snippet_multi", "snippet", "filename"), &JSONNet::evaluate_snippet_multi, DEFVAL(""));
-	ClassDB::bind_method(D_METHOD("last_error"), &JSONNet::last_error);
-}
+#include "core/string/ustring.h"
+
+String ryml_json_to_yaml(String str);
+String ryml_yaml_to_json(String data, bool pretty = false);
+
+#endif // GD_YAML_H

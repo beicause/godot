@@ -32,10 +32,7 @@
 #define GD_JSONNET_H
 
 #include "core/object/ref_counted.h"
-#include "thirdparty/jsonnet/include/libjsonnet++.h"
-
-String ryml_json_to_yaml(String str);
-String ryml_yaml_to_json(String data, bool pretty = false);
+#include <libjsonnet++.h>
 
 class JSONNet : public RefCounted {
 	GDCLASS(JSONNet, RefCounted);

@@ -31,8 +31,8 @@
 #ifndef MCU_H
 #define MCU_H
 
-#include "cam/cam.h"
-#include "scheme/scheme.h"
+#include <cam/cam.h>
+#include <scheme/scheme.h>
 
 #include "core/io/resource.h"
 
