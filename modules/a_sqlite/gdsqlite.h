@@ -96,7 +96,7 @@ public:
 	bool update_rows(const String &p_name, const String &p_conditions, const Dictionary &p_updated_row_dict);
 	bool delete_rows(const String &p_name, const String &p_conditions);
 
-	bool create_function(const String &p_name, const Callable &p_callable, int p_argc);
+	bool create_function(const String &p_name, const Callable &p_callable);
 
 	int get_autocommit() const;
 

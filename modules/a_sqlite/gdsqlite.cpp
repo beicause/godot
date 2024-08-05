@@ -54,7 +54,7 @@ void SQLite::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("update_rows", "table_name", "conditions", "row_data"), &SQLite::update_rows);
 	ClassDB::bind_method(D_METHOD("delete_rows", "table_name", "conditions"), &SQLite::delete_rows);
 
-	ClassDB::bind_method(D_METHOD("create_function", "function_name", "callable", "arguments"), &SQLite::create_function);
+	ClassDB::bind_method(D_METHOD("create_function", "function_name", "callable"), &SQLite::create_function);
 
 	ClassDB::bind_method(D_METHOD("get_autocommit"), &SQLite::get_autocommit);
 
@@ -109,10 +109,7 @@ SQLite::~SQLite() {
 }
 
 bool SQLite::open_db() {
-	if (db) {
-		ERR_PRINT("GDSQLite Error: Can't open database if connection is already open!");
-		return false;
-	}
+	ERR_FAIL_COND_V_MSG(db, false, "GDSQLite Error: Can't open database if connection is already open!");
 
 	char *zErrMsg = 0;
 	int rc;
@@ -475,6 +472,7 @@ bool SQLite::drop_table(const String &p_name) {
 }
 
 bool SQLite::backup_to(String destination_path) {
+	ERR_FAIL_COND_V_MSG(db == nullptr, false, "SQLite Error: database has not opened");
 	destination_path = ProjectSettings::get_singleton()->globalize_path(destination_path.strip_edges());
 	CharString dummy_path = destination_path.utf8();
 	const char *char_path = dummy_path.get_data();
@@ -489,6 +487,7 @@ bool SQLite::backup_to(String destination_path) {
 }
 
 bool SQLite::restore_from(String source_path) {
+	ERR_FAIL_COND_V_MSG(db == nullptr, false, "SQLite Error: database has not opened");
 	source_path = ProjectSettings::get_singleton()->globalize_path(source_path.strip_edges());
 	CharString dummy_path = source_path.utf8();
 	const char *char_path = dummy_path.get_data();
@@ -724,7 +723,8 @@ static void function_callback(sqlite3_context *context, int argc, sqlite3_value 
 	}
 }
 
-bool SQLite::create_function(const String &p_name, const Callable &p_callable, int p_argc) {
+bool SQLite::create_function(const String &p_name, const Callable &p_callable) {
+	ERR_FAIL_COND_V_MSG(p_name.is_empty(), false, "SQLite user function name can't be empty");
 	/* The exact memory position of the Vector's elements changes during memory reallocation (= when adding additional elements) */
 	/* Luckily, the pointer to the managed object (of the std::unique_ptr) won't change during execution! (= consistent) */
 	/* The std::unique_ptr is stored in a Vector and is thus allocated on the heap */
@@ -734,7 +734,9 @@ bool SQLite::create_function(const String &p_name, const Callable &p_callable, i
 	CharString dummy_name = p_name.utf8();
 	const char *zFunctionName = dummy_name.get_data();
 	//const char *zFunctionName = p_name.alloc_c_string();
-	int nArg = p_argc;
+	bool arg_valid = false;
+	int nArg = p_callable.get_argument_count(&arg_valid);
+	ERR_FAIL_COND_V_MSG(!arg_valid, false, "SQLite user function argument is invalid");
 	int eTextRep = SQLITE_UTF8;
 
 	/* Get a void pointer to the managed object of the smart pointer that is stored at the back of the vector */

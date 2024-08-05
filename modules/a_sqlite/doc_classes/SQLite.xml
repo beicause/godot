@@ -22,7 +22,6 @@
 			<return type="bool" />
 			<param index="0" name="function_name" type="String" />
 			<param index="1" name="callable" type="Callable" />
-			<param index="2" name="arguments" type="int" />
 			<description>
 			</description>
 		</method>
