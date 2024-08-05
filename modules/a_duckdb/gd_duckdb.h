@@ -33,24 +33,41 @@
 
 #include "core/config/project_settings.h"
 #include "core/object/ref_counted.h"
-#include "thirdparty/duckdb.hpp"
+#include "core/os/os.h"
+#include "thirdparty/duckdb.h"
 
 class DuckDB : public RefCounted {
 	GDCLASS(DuckDB, RefCounted);
 
-	duckdb::DuckDB db = duckdb::DuckDB(nullptr);
-	duckdb::Connection con = duckdb::Connection(db);
+	duckdb_database db = nullptr;
+	duckdb_connection con = nullptr;
+
+	String get_res_path(String path) {
+		if (OS::get_singleton()->has_feature("editor")) {
+			return ProjectSettings::get_singleton()->globalize_path(path);
+		} else {
+			return OS::get_singleton()->get_executable_path().get_base_dir().path_join(path);
+		}
+	}
 
 protected:
 	static void _bind_methods();
 
 public:
 	void open_file(String path) {
-		db = duckdb::DuckDB(ProjectSettings::get_singleton()->globalize_path(path).utf8().get_data());
-		con = duckdb::Connection(db);
+		String abs_path = path;
+		String res_path = get_res_path(path);
+		if (path.begins_with("res://")) {
+			abs_path = res_path;
+		} else if (path.begins_with("user://")) {
+			abs_path = ProjectSettings::get_singleton()->globalize_path(path);
+		} else {
+			abs_path = res_path.path_join(path);
+		}
+		duckdb_open(path.utf8().get_data(), &db);
+		duckdb_connect(db, &con);
 	}
 	void query(String sql) {
-		std::unique_ptr<duckdb::MaterializedQueryResult> res = con.Query(sql.utf8().get_data());
 	}
 };
 #endif // GD_DUCKDB_H

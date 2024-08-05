@@ -15,10 +15,14 @@ limitations under the License.
 */
 
 #include "core/config/project_settings.h"
+#include "core/os/os.h"
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
 
+#include <exception>
+#include <fstream>
+#include <iostream>
 #include <sstream>
 #include <string>
 
@@ -233,8 +237,12 @@ struct JsonnetVm {
     {
         // jpaths.emplace_back("/usr/share/jsonnet-" + std::string(jsonnet_version()) + "/");
         // jpaths.emplace_back("/usr/local/share/jsonnet-" + std::string(jsonnet_version()) + "/");
-        jpaths.emplace_back(ProjectSettings::get_singleton()->globalize_path("res://").utf8().get_data());
-        jpaths.emplace_back(ProjectSettings::get_singleton()->globalize_path("user://").utf8().get_data());
+        if (OS::get_singleton()->has_feature("editor")) {
+            jpaths.emplace_back((ProjectSettings::get_singleton()->globalize_path("res://")+"/").utf8().get_data());
+        }else{
+            jpaths.emplace_back((OS::get_singleton()->get_executable_path().get_base_dir()+"/").utf8().get_data());
+        }
+        jpaths.emplace_back((ProjectSettings::get_singleton()->globalize_path("user://")+"/").utf8().get_data());
     }
 };
 
@@ -251,9 +259,18 @@ static enum ImportStatus try_path(const std::string &dir, const std::string &rel
     }
     // It is possible that rel is actually absolute.
     String rel_string=rel.c_str();
-    if (rel[0] == '/'||rel_string.begins_with("res://")||rel_string.begins_with("user://")) {
+    if (rel[0] == '/') {
         abs_path = rel;
-    } else {
+    } else if (rel_string.begins_with("res://")) {
+        if (OS::get_singleton()->has_feature("editor")) {
+            abs_path = ProjectSettings::get_singleton()->globalize_path(rel_string).utf8().get_data();
+        }else{
+            abs_path = OS::get_singleton()->get_executable_path().get_base_dir().path_join(rel_string).utf8().get_data();
+        }
+    } else if ( rel_string.begins_with("user://")){
+        abs_path = ProjectSettings::get_singleton()->globalize_path(rel_string).utf8().get_data();
+    }
+    else {
         abs_path = dir + rel;
     }
 

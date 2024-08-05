@@ -16792,7 +16792,7 @@ template<typename R, typename... Args> struct vtable
 
     explicit constexpr vtable() noexcept :
         invoke_ptr{ [](storage_ptr_t, Args&&...) -> R
-            { /*throw std::bad_function_call();*/ }
+            { throw std::bad_function_call(); }
         },
         copy_ptr{ [](storage_ptr_t, storage_ptr_t) noexcept -> void {} },
         move_ptr{ [](storage_ptr_t, storage_ptr_t) noexcept -> void {} },
