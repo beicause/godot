@@ -3,7 +3,6 @@ default-members = ["crates/rust_lib"]
 members = [
 	"crates/rust_lib",
 	"crates/gd_glicol",
-	"crates/gd_jmespath",
 	"crates/gd_json_converter",
 ]
 resolver = "1"
@@ -17,5 +16,5 @@ cxx = "1.0"
 
 [profile.release]
 lto = true      # Enable Link Time Optimization
-codegen-units = 1 # Reduce number of codegen units to increase optimizations.
+# codegen-units = 1 # Reduce number of codegen units to increase optimizations.
 panic = 'abort'   # Abort on panic
