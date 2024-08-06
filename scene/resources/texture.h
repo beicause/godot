@@ -54,8 +54,6 @@ class Texture2D : public Texture {
 	GDCLASS(Texture2D, Texture);
 	OBJ_SAVE_TYPE(Texture2D); // Saves derived classes with common type so they can be interchanged.
 
-	Size2i size_override;
-
 protected:
 	static void _bind_methods();
 
@@ -72,9 +70,6 @@ public:
 	virtual int get_width() const;
 	virtual int get_height() const;
 	virtual Size2 get_size() const;
-
-	virtual Vector2i get_size_override() const;
-	virtual void set_size_override(const Vector2i &p_size);
 
 	virtual bool is_pixel_opaque(int p_x, int p_y) const;
 
