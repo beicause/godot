@@ -29,9 +29,8 @@
 /**************************************************************************/
 
 #include "lottie_texture.h"
+
 #include "core/os/memory.h"
-#include "modules/a_lz4/gd_lz4.h"
-#include "modules/a_lz4/resource_loader_jsonz.h"
 
 #include <thorvg.h>
 
@@ -275,7 +274,7 @@ void LottieTexture2D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "columns"), "set_columns", "get_columns");
 }
 
-////////////////////////////////////////////////
+////////////////
 
 Ref<Resource> ResourceFormatLoaderLottie::load(const String &p_path, const String &p_original_path, Error *r_error, bool p_use_sub_threads, float *r_progress, CacheMode p_cache_mode) {
 	if (r_error) {
@@ -289,8 +288,16 @@ Ref<Resource> ResourceFormatLoaderLottie::load(const String &p_path, const Strin
 		return ret;
 	}
 
-	Ref<JSON> json = ResourceFormatLoaderJSONZ::load(FileAccess::get_file_as_bytes(p_path), r_error);
-	if (*r_error != OK || json.is_null()) {
+	Ref<JSON> json;
+	json.instantiate();
+
+	Error err = json->parse(FileAccess::get_file_as_string(p_path), true);
+	if (err != OK) {
+		String err_text = "Error parsing JSON file at '" + p_path + "', on line " + itos(json->get_error_line()) + ": " + json->get_error_message();
+		if (r_error) {
+			*r_error = err;
+		}
+		ERR_PRINT(err_text);
 		return ret;
 	}
 
@@ -326,7 +333,7 @@ String ResourceFormatLoaderLottie::get_resource_type(const String &p_path) const
 	return "LottieTexture2D";
 }
 
-//////////////////////////////////////
+////////////////
 
 Error ResourceFormatSaverLottie::save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags) {
 	Ref<LottieTexture2D> lottie = p_resource;
@@ -347,9 +354,7 @@ Error ResourceFormatSaverLottie::save(const Ref<Resource> &p_resource, const Str
 
 	ERR_FAIL_COND_V_MSG(err, err, "Cannot save lottie json '" + p_path + "'.");
 
-	PackedByteArray compressed = Lz4::compress_frame(source.to_utf8_buffer(), 0);
-	file->store_buffer(compressed);
-
+	file->store_string(source);
 	if (file->get_error() != OK && file->get_error() != ERR_FILE_EOF) {
 		return ERR_CANT_CREATE;
 	}
