@@ -48,11 +48,11 @@ void SQLite::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("restore_from", "source"), &SQLite::restore_from);
 
 	ClassDB::bind_method(D_METHOD("insert_row", "table_name", "row_data"), &SQLite::insert_row);
-	ClassDB::bind_method(D_METHOD("insert_rows", "table_name", "row_array"), &SQLite::insert_rows);
+	ClassDB::bind_method(D_METHOD("insert_rows", "table_name", "row_array", "rollback_on_err"), &SQLite::insert_rows, DEFVAL(true));
 
 	ClassDB::bind_method(D_METHOD("select_rows", "table_name", "conditions", "columns"), &SQLite::select_rows);
-	ClassDB::bind_method(D_METHOD("update_rows", "table_name", "conditions", "row_data"), &SQLite::update_rows);
-	ClassDB::bind_method(D_METHOD("delete_rows", "table_name", "conditions"), &SQLite::delete_rows);
+	ClassDB::bind_method(D_METHOD("update_rows", "table_name", "conditions", "row_data", "rollback_on_err"), &SQLite::update_rows, DEFVAL(true));
+	ClassDB::bind_method(D_METHOD("delete_rows", "table_name", "conditions", "rollback_on_err"), &SQLite::delete_rows, DEFVAL(true));
 
 	ClassDB::bind_method(D_METHOD("create_function", "function_name", "callable"), &SQLite::create_function);
 
@@ -79,13 +79,9 @@ void SQLite::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_db_path"), &SQLite::get_db_path);
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "db_path"), "set_db_path", "get_db_path");
 
-	ClassDB::bind_method(D_METHOD("set_error_message", "error_message"), &SQLite::set_error_message);
-	ClassDB::bind_method(D_METHOD("get_error_message"), &SQLite::get_error_message);
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "error_message"), "set_error_message", "get_error_message");
-
-	ClassDB::bind_method(D_METHOD("set_default_extension", "default_extension"), &SQLite::set_default_extension);
-	ClassDB::bind_method(D_METHOD("get_default_extension"), &SQLite::get_default_extension);
-	ADD_PROPERTY(PropertyInfo(Variant::STRING, "default_extension"), "set_default_extension", "get_default_extension");
+	ClassDB::bind_method(D_METHOD("set_extension_name", "extension_name"), &SQLite::set_extension_name);
+	ClassDB::bind_method(D_METHOD("get_extension_name"), &SQLite::get_extension_name);
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "extension_name"), "set_extension_name", "get_extension_name");
 
 	ClassDB::bind_method(D_METHOD("set_query_result", "query_result"), &SQLite::set_query_result);
 	ClassDB::bind_method(D_METHOD("get_query_result"), &SQLite::get_query_result);
@@ -114,10 +110,10 @@ bool SQLite::open_db() {
 	char *zErrMsg = 0;
 	int rc;
 	if (db_path.find(":memory:") == -1) {
-		/* Add the default_extension to the database path if no extension is present */
-		/* Skip if the default_extension is an empty string to allow for paths without extension */
-		if (db_path.get_extension().is_empty() && !default_extension.is_empty()) {
-			String ending = String(".") + default_extension;
+		/* Add the extension_name to the database path if no extension is present */
+		/* Skip if the extension_name is an empty string to allow for paths without extension */
+		if (db_path.get_extension().is_empty() && !extension_name.is_empty()) {
+			String ending = String(".") + extension_name;
 			db_path += ending;
 		}
 
@@ -209,9 +205,8 @@ bool SQLite::query_with_bindings(const String &p_query, Array param_bindings) {
 	/* Prepare an SQL statement */
 	rc = sqlite3_prepare_v2(db, sql, -1, &stmt, &pzTail);
 	zErrMsg = sqlite3_errmsg(db);
-	error_message = String::utf8(zErrMsg);
 	if (rc != SQLITE_OK) {
-		ERR_PRINT(" --> SQL error: " + error_message);
+		ERR_PRINT(vformat(" --> SQL error: ", zErrMsg));
 		sqlite3_finalize(stmt);
 		return false;
 	}
@@ -252,7 +247,7 @@ bool SQLite::query_with_bindings(const String &p_query, Array param_bindings) {
 				break;
 
 			case Variant::PACKED_BYTE_ARRAY: {
-				PackedByteArray binding = ((const PackedByteArray &)binding_value);
+				PackedByteArray binding = ((PackedByteArray)binding_value);
 				/* Calling .ptr() on an empty PackedByteArray returns an error */
 				if (binding.size() == 0) {
 					sqlite3_bind_null(stmt, i + 1);
@@ -278,47 +273,42 @@ bool SQLite::query_with_bindings(const String &p_query, Array param_bindings) {
 
 	// Execute the statement and iterate over all the resulting rows.
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
-		Dictionary column_dict;
 		int argc = sqlite3_column_count(stmt);
 
 		/* Loop over all columns and add them to the Dictionary */
 		for (int i = 0; i < argc; i++) {
-			Variant column_value;
+			String col_name = sqlite3_column_name(stmt, i);
 			/* Check the column type and do correct casting */
 			switch (sqlite3_column_type(stmt, i)) {
-				case SQLITE_INTEGER:
-					column_value = Variant((int64_t)sqlite3_column_int64(stmt, i));
-					break;
+				case SQLITE_INTEGER: {
+					PackedInt64Array column = query_result.get_or_add(col_name, PackedInt64Array());
+					column.push_back((int64_t)sqlite3_column_int64(stmt, i));
+				} break;
 
-				case SQLITE_FLOAT:
-					column_value = Variant(sqlite3_column_double(stmt, i));
-					break;
+				case SQLITE_FLOAT: {
+					PackedFloat64Array column = query_result.get_or_add(col_name, PackedFloat64Array());
+					column.push_back(sqlite3_column_double(stmt, i));
+				} break;
 
-				case SQLITE_TEXT:
-					column_value = Variant(String::utf8((char *)sqlite3_column_text(stmt, i)));
-					break;
+				case SQLITE_TEXT: {
+					PackedStringArray column = query_result.get_or_add(col_name, PackedStringArray());
+					column.push_back((String)(const char *)sqlite3_column_text(stmt, i));
+				} break;
 
 				case SQLITE_BLOB: {
+					Array column = query_result.get_or_add(col_name, Array());
 					int bytes = sqlite3_column_bytes(stmt, i);
-					PackedByteArray arr = PackedByteArray();
+					PackedByteArray arr;
 					arr.resize(bytes);
-					memcpy((void *)arr.ptrw(), (char *)sqlite3_column_blob(stmt, i), bytes);
-					column_value = arr;
-					break;
-				}
-
+					memcpy(arr.ptrw(), sqlite3_column_blob(stmt, i), bytes);
+					column.push_back(arr);
+				} break;
 				case SQLITE_NULL:
 					break;
-
 				default:
 					break;
 			}
-
-			const char *azColName = sqlite3_column_name(stmt, i);
-			column_dict[String::utf8(azColName)] = column_value;
 		}
-		/* Add result to query_result Array */
-		query_result.append(column_dict);
 	}
 
 	/* Clean up and delete the resources used by the prepared statement */
@@ -326,9 +316,8 @@ bool SQLite::query_with_bindings(const String &p_query, Array param_bindings) {
 
 	rc = sqlite3_errcode(db);
 	zErrMsg = sqlite3_errmsg(db);
-	error_message = String::utf8(zErrMsg);
 	if (rc != SQLITE_OK) {
-		ERR_PRINT(" --> SQL error: " + error_message);
+		ERR_PRINT(vformat(" --> SQL error: ", zErrMsg));
 		return false;
 	} else if (verbosity_level > VerbosityLevel::NORMAL) {
 		print_verbose(" --> Query succeeded");
@@ -363,44 +352,44 @@ bool SQLite::create_table(const String &p_name, const Dictionary &p_table_dict) 
 	int64_t number_of_columns = columns.size();
 	for (int64_t i = 0; i <= number_of_columns - 1; i++) {
 		column_dict = p_table_dict[columns[i]];
-		query_string += (const String &)columns[i] + String(" ");
-		type_string = (const String &)column_dict["data_type"];
+		query_string += (String)columns[i] + " ";
+		type_string = column_dict["data_type"];
 		if (type_string.to_lower().begins_with(integer_datatype)) {
-			query_string += String("INTEGER");
+			query_string += "INTEGER";
 		} else {
 			query_string += type_string;
 		}
 
 		/* Primary key check */
 		if (column_dict.get("primary_key", false)) {
-			query_string += String(" PRIMARY KEY");
+			query_string += " PRIMARY KEY";
 			/* Autoincrement check */
 			if (column_dict.get("auto_increment", false)) {
-				query_string += String(" AUTOINCREMENT");
+				query_string += " AUTOINCREMENT";
 			}
 		}
 		/* Not nullptr check */
 		if (column_dict.get("not_nullptr", false)) {
-			query_string += String(" NOT nullptr");
+			query_string += " NOT nullptr";
 		}
 		/* Unique check */
 		if (column_dict.get("unique", false)) {
-			query_string += String(" UNIQUE");
+			query_string += " UNIQUE";
 		}
 		/* Default check */
 		if (column_dict.has("default")) {
-			query_string += String(" DEFAULT ") + (const String &)column_dict["default"];
+			query_string += " DEFAULT " + (String)column_dict["default"];
 		}
 		/* Apply foreign key constraint. */
 		if (foreign_keys) {
 			if (column_dict.get("foreign_key", false)) {
-				const String foreign_key_definition = (const String &)(column_dict["foreign_key"]);
+				const String foreign_key_definition = (column_dict["foreign_key"]);
 				const PackedStringArray foreign_key_elements = foreign_key_definition.split(".");
 				if (foreign_key_elements.size() == 2) {
-					const String column_name = (const String &)(columns[i]);
-					const String foreign_key_table_name = (const String &)(foreign_key_elements[0]);
-					const String foreign_key_column_name = (const String &)(foreign_key_elements[1]);
-					key_string += String(", FOREIGN KEY (" + column_name + ") REFERENCES " + foreign_key_table_name + "(" + foreign_key_column_name + ")");
+					const String column_name = (columns[i]);
+					const String foreign_key_table_name = (foreign_key_elements[0]);
+					const String foreign_key_column_name = (foreign_key_elements[1]);
+					key_string += ", FOREIGN KEY (" + column_name + ") REFERENCES " + foreign_key_table_name + "(" + foreign_key_column_name + ")";
 				}
 			}
 		}
@@ -439,7 +428,7 @@ bool SQLite::validate_table_dict(const Dictionary &p_table_dict) {
 		if (column_dict.has("default")) {
 			Variant::Type default_type = column_dict["default"].get_type();
 
-			CharString dummy_data_type = ((const String &)column_dict["data_type"]).utf8();
+			CharString dummy_data_type = ((String)column_dict["data_type"]).utf8();
 			const char *char_data_type = dummy_data_type.get_data();
 
 			/* Get the type of the "datatype"-field and compare with the type of the "default"-value */
@@ -517,13 +506,11 @@ bool SQLite::insert_row(const String &p_name, const Dictionary &p_row_dict) {
 	String query_string, key_string, value_string = "";
 	Array keys = p_row_dict.keys();
 	Array param_bindings = p_row_dict.values();
-
-	/* Create SQL statement */
 	query_string = "INSERT INTO " + p_name;
 
 	int64_t number_of_keys = p_row_dict.size();
 	for (int64_t i = 0; i <= number_of_keys - 1; i++) {
-		key_string += (const String &)keys[i];
+		key_string += (String)keys[i];
 		value_string += "?";
 		if (i != number_of_keys - 1) {
 			key_string += ",";
@@ -535,42 +522,59 @@ bool SQLite::insert_row(const String &p_name, const Dictionary &p_row_dict) {
 	return query_with_bindings(query_string, param_bindings);
 }
 
-bool SQLite::insert_rows(const String &p_name, const Array &p_row_array) {
-	query("BEGIN TRANSACTION;");
-	int64_t number_of_rows = p_row_array.size();
-	for (int64_t i = 0; i <= number_of_rows - 1; i++) {
-		if (p_row_array[i].get_type() != Variant::DICTIONARY) {
-			ERR_PRINT("GDSQLite Error: All elements of the Array should be of type Dictionary");
-			/* Don't forget to close the transaction! */
-			/* Maybe we should do a rollback instead? */
-			query("END TRANSACTION;");
+bool SQLite::insert_rows(const String &p_name, const Dictionary &p_row_dict, bool p_rollback_on_err) {
+	ERR_FAIL_COND_V_MSG(p_row_dict.is_empty(), false, "dictionary is empty");
+	int row = 0;
+	bool check_kv = true;
+
+	query("BEGIN;");
+	while (true) {
+		Dictionary insert;
+		bool stop = false;
+		for (int k = 0; k < p_row_dict.size(); k++) {
+			if (check_kv) {
+				if (!p_row_dict.keys()[k].is_string()) {
+					ERR_PRINT("dictionary key is not String");
+					query(p_rollback_on_err ? "ROLLBACK;" : "COMMIT;");
+					return false;
+				}
+				if (!(p_row_dict.values()[k].is_array())) {
+					ERR_PRINT("dictionary value is not Array");
+					query(p_rollback_on_err ? "ROLLBACK;" : "COMMIT;");
+					return false;
+				}
+			}
+			String key = p_row_dict.keys()[k];
+			Array col = p_row_dict[key];
+			if (row >= col.size()) {
+				stop = true;
+				break;
+			}
+			insert[key] = col[row];
+		}
+		if (stop) {
+			break;
+		}
+		if (!insert_row(p_name, insert)) {
+			ERR_PRINT(vformat("Insert failed, db: %s, sql: %s", p_name, insert));
+			query(p_rollback_on_err ? "ROLLBACK;" : "COMMIT;");
 			return false;
 		}
-		if (!insert_row(p_name, p_row_array[i])) {
-			/* Don't forget to close the transaction! */
-			/* Stop the error_message from being overwritten! */
-			String previous_error_message = error_message;
-			query("END TRANSACTION;");
-			error_message = previous_error_message;
-			return false;
-		}
+		check_kv = false;
+		row++;
 	}
-	query("END TRANSACTION;");
+	query("COMMIT;");
 	return true;
 }
 
-Array SQLite::select_rows(const String &p_name, const String &p_conditions, const Array &p_columns_array) {
+Dictionary SQLite::select_rows(const String &p_name, const String &p_conditions, const PackedStringArray &p_columns_array) {
 	String query_string;
 	/* Create SQL statement */
 	query_string = "SELECT ";
 
 	int64_t number_of_columns = p_columns_array.size();
 	for (int64_t i = 0; i <= number_of_columns - 1; i++) {
-		if (p_columns_array[i].get_type() != Variant::STRING) {
-			ERR_PRINT("GDSQLite Error: All elements of the Array should be of type String");
-			return query_result;
-		}
-		query_string += (const String &)p_columns_array[i];
+		query_string += p_columns_array[i];
 
 		if (i != number_of_columns - 1) {
 			query_string += ", ";
@@ -587,21 +591,20 @@ Array SQLite::select_rows(const String &p_name, const String &p_conditions, cons
 	return get_query_result();
 }
 
-bool SQLite::update_rows(const String &p_name, const String &p_conditions, const Dictionary &p_updated_row_dict) {
+bool SQLite::update_rows(const String &p_name, const String &p_conditions, const Dictionary &p_updated_row_dict, bool p_rollback_on_err) {
 	String query_string;
 	Array param_bindings;
-	bool success;
 
 	int64_t number_of_keys = p_updated_row_dict.size();
 	Array keys = p_updated_row_dict.keys();
 	Array values = p_updated_row_dict.values();
 
-	query("BEGIN TRANSACTION;");
+	query("BEGIN;");
 	/* Create SQL statement */
 	query_string += "UPDATE " + p_name + " SET ";
 
 	for (int64_t i = 0; i <= number_of_keys - 1; i++) {
-		query_string += (const String &)keys[i] + String("=?");
+		query_string += keys[i] + String("=?");
 		param_bindings.append(values[i]);
 		if (i != number_of_keys - 1) {
 			query_string += ", ";
@@ -609,33 +612,33 @@ bool SQLite::update_rows(const String &p_name, const String &p_conditions, const
 	}
 	query_string += " WHERE " + p_conditions + ";";
 
-	success = query_with_bindings(query_string, param_bindings);
-	/* Stop the error_message from being overwritten! */
-	String previous_error_message = error_message;
-	query("END TRANSACTION;");
-	error_message = previous_error_message;
-	return success;
+	if (!query_with_bindings(query_string, param_bindings)) {
+		ERR_PRINT(vformat("Insert failed, db: %s, sql: %s", p_name, query_string));
+		query(p_rollback_on_err ? "ROLLBACK;" : "COMMIT;");
+		return false;
+	}
+	query("COMMIT;");
+	return true;
 }
 
-bool SQLite::delete_rows(const String &p_name, const String &p_conditions) {
+bool SQLite::delete_rows(const String &p_name, const String &p_conditions, bool p_rollback_on_err) {
 	String query_string;
-	bool success;
-
-	query("BEGIN TRANSACTION;");
+	query("BEGIN;");
 	/* Create SQL statement */
 	query_string = "DELETE FROM " + p_name;
 	/* If it's empty or * everything is to be deleted */
-	if (!p_conditions.is_empty() && (p_conditions != (const String &)"*")) {
+	if (!p_conditions.is_empty() && (p_conditions != "*")) {
 		query_string += " WHERE " + p_conditions;
 	}
 	query_string += ";";
 
-	success = query(query_string);
-	/* Stop the error_message from being overwritten! */
-	String previous_error_message = error_message;
-	query("END TRANSACTION;");
-	error_message = previous_error_message;
-	return success;
+	if (!query(query_string)) {
+		ERR_PRINT(vformat("Insert failed, db: %s, sql: %s", p_name, query_string));
+		query(p_rollback_on_err ? "ROLLBACK;" : "COMMIT;");
+		return false;
+	}
+	query("COMMIT;");
+	return true;
 }
 
 static void function_callback(sqlite3_context *context, int argc, sqlite3_value **argv) {
@@ -655,22 +658,22 @@ static void function_callback(sqlite3_context *context, int argc, sqlite3_value 
 		/* Check the value type and do correct casting */
 		switch (sqlite3_value_type(value)) {
 			case SQLITE_INTEGER:
-				argument_value = Variant((int64_t)sqlite3_value_int64(value));
+				argument_value = (int64_t)sqlite3_value_int64(value);
 				break;
 
 			case SQLITE_FLOAT:
-				argument_value = Variant(sqlite3_value_double(value));
+				argument_value = sqlite3_value_double(value);
 				break;
 
 			case SQLITE_TEXT:
-				argument_value = Variant((char *)sqlite3_value_text(value));
+				argument_value = (const char *)sqlite3_value_text(value);
 				break;
 
 			case SQLITE_BLOB: {
 				int bytes = sqlite3_value_bytes(value);
-				PackedByteArray arr = PackedByteArray();
+				PackedByteArray arr;
 				arr.resize(bytes);
-				memcpy((void *)arr.ptrw(), (char *)sqlite3_value_blob(value), bytes);
+				memcpy(arr.ptrw(), sqlite3_value_blob(value), bytes);
 				argument_value = arr;
 				break;
 			}
@@ -705,7 +708,7 @@ static void function_callback(sqlite3_context *context, int argc, sqlite3_value 
 		case Variant::STRING:
 			// TODO: Switch back to the `alloc_c_string()`-method once the API gets updated
 			{
-				const CharString dummy_binding = (output.operator String()).utf8();
+				const CharString dummy_binding = ((String)output).utf8();
 				const char *binding = dummy_binding.get_data();
 				sqlite3_result_text(context, binding, -1, SQLITE_STATIC);
 			}
@@ -803,31 +806,23 @@ String SQLite::get_db_path() const {
 	return db_path;
 }
 
-void SQLite::set_error_message(const String &p_error_message) {
-	error_message = p_error_message;
+void SQLite::set_extension_name(const String &p_extension_name) {
+	extension_name = p_extension_name;
 }
 
-String SQLite::get_error_message() const {
-	return error_message;
+String SQLite::get_extension_name() const {
+	return extension_name;
 }
 
-void SQLite::set_default_extension(const String &p_default_extension) {
-	default_extension = p_default_extension;
-}
-
-String SQLite::get_default_extension() const {
-	return default_extension;
-}
-
-void SQLite::set_query_result(const TypedArray<Dictionary> &p_query_result) {
+void SQLite::set_query_result(const Dictionary &p_query_result) {
 	query_result = p_query_result;
 }
 
-TypedArray<Dictionary> SQLite::get_query_result() const {
+Dictionary SQLite::get_query_result() const {
 	return query_result.duplicate(true);
 }
 
-TypedArray<Dictionary> SQLite::get_query_result_by_reference() const {
+Dictionary SQLite::get_query_result_by_reference() const {
 	return query_result;
 }
 

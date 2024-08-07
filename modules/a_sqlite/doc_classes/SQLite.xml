@@ -36,6 +36,7 @@
 			<return type="bool" />
 			<param index="0" name="table_name" type="String" />
 			<param index="1" name="conditions" type="String" />
+			<param index="2" name="rollback_on_err" type="bool" default="true" />
 			<description>
 			</description>
 		</method>
@@ -60,7 +61,8 @@
 		<method name="insert_rows">
 			<return type="bool" />
 			<param index="0" name="table_name" type="String" />
-			<param index="1" name="row_array" type="Array" />
+			<param index="1" name="row_array" type="Dictionary" />
+			<param index="2" name="rollback_on_err" type="bool" default="true" />
 			<description>
 			</description>
 		</method>
@@ -89,10 +91,10 @@
 			</description>
 		</method>
 		<method name="select_rows">
-			<return type="Array" />
+			<return type="Dictionary" />
 			<param index="0" name="table_name" type="String" />
 			<param index="1" name="conditions" type="String" />
-			<param index="2" name="columns" type="Array" />
+			<param index="2" name="columns" type="PackedStringArray" />
 			<description>
 			</description>
 		</method>
@@ -101,24 +103,23 @@
 			<param index="0" name="table_name" type="String" />
 			<param index="1" name="conditions" type="String" />
 			<param index="2" name="row_data" type="Dictionary" />
+			<param index="3" name="rollback_on_err" type="bool" default="true" />
 			<description>
 			</description>
 		</method>
 	</methods>
 	<members>
-		<member name="db_path" type="String" setter="set_db_path" getter="get_db_path" default="&quot;default&quot;">
+		<member name="db_path" type="String" setter="set_db_path" getter="get_db_path" default="&quot;:memory:&quot;">
 		</member>
-		<member name="default_extension" type="String" setter="set_default_extension" getter="get_default_extension" default="&quot;db&quot;">
-		</member>
-		<member name="error_message" type="String" setter="set_error_message" getter="get_error_message" default="&quot;&quot;">
+		<member name="extension_name" type="String" setter="set_extension_name" getter="get_extension_name" default="&quot;db&quot;">
 		</member>
 		<member name="foreign_keys" type="bool" setter="set_foreign_keys" getter="get_foreign_keys" default="false">
 		</member>
 		<member name="last_insert_rowid" type="int" setter="set_last_insert_rowid" getter="get_last_insert_rowid" default="0">
 		</member>
-		<member name="query_result" type="Dictionary[]" setter="set_query_result" getter="get_query_result" default="[]">
+		<member name="query_result" type="Dictionary" setter="set_query_result" getter="get_query_result" default="{}">
 		</member>
-		<member name="query_result_by_reference" type="Dictionary[]" setter="set_query_result" getter="get_query_result_by_reference" default="[]">
+		<member name="query_result_by_reference" type="Dictionary" setter="set_query_result" getter="get_query_result_by_reference" default="{}">
 		</member>
 		<member name="read_only" type="bool" setter="set_read_only" getter="get_read_only" default="false">
 		</member>
