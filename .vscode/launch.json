@@ -8,7 +8,7 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug game",
-            "program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64",
+            "program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64.llvm",
             "args": [
                 "--path",
                 "./bin/test_project"
@@ -20,7 +20,7 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug editor",
-            "program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64",
+            "program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64.llvm",
             "args": [
                 "--editor",
                 "--path",

@@ -15,7 +15,7 @@ dev-asan:
     scons use_asan=yes {{dev_base}}
 
 editor:
-    scons platform=linuxbsd target=editor lto=thin compiledb=no use_llvm=yes linker=mold \
+    scons platform=linuxbsd target=editor lto=none compiledb=no use_llvm=yes linker=mold \
     deprecated=no \
     module_mobile_vr_enabled=no \
     module_openxr_enabled=no \
