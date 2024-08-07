@@ -32,7 +32,6 @@
 #define GDSQLITE_H
 
 #include "core/io/resource_loader.h"
-#include "core/variant/typed_array.h"
 #include <sqlite3.h>
 
 enum OBJECT_TYPE {
@@ -58,10 +57,9 @@ private:
 	int64_t verbosity_level = 1;
 	bool foreign_keys = false;
 	bool read_only = false;
-	String db_path = "default";
-	String error_message = "";
-	String default_extension = "db";
-	TypedArray<Dictionary> query_result;
+	String db_path = ":memory:";
+	String extension_name = "db";
+	Dictionary query_result;
 
 protected:
 	static void _bind_methods();
@@ -90,11 +88,11 @@ public:
 	bool restore_from(String source_path);
 
 	bool insert_row(const String &p_name, const Dictionary &p_row_dict);
-	bool insert_rows(const String &p_name, const Array &p_row_array);
+	bool insert_rows(const String &p_name, const Dictionary &p_row_dict, bool p_rollback_on_err = true);
 
-	Array select_rows(const String &p_name, const String &p_conditions, const Array &p_columns_array);
-	bool update_rows(const String &p_name, const String &p_conditions, const Dictionary &p_updated_row_dict);
-	bool delete_rows(const String &p_name, const String &p_conditions);
+	Dictionary select_rows(const String &p_name, const String &p_conditions, const PackedStringArray &p_columns_array);
+	bool update_rows(const String &p_name, const String &p_conditions, const Dictionary &p_updated_row_dict, bool p_rollback_on_err = true);
+	bool delete_rows(const String &p_name, const String &p_conditions, bool p_rollback_on_err = true);
 
 	bool create_function(const String &p_name, const Callable &p_callable);
 
@@ -119,13 +117,13 @@ public:
 	void set_error_message(const String &p_error_message);
 	String get_error_message() const;
 
-	void set_default_extension(const String &p_default_extension);
-	String get_default_extension() const;
+	void set_extension_name(const String &p_extension_name);
+	String get_extension_name() const;
 
-	void set_query_result(const TypedArray<Dictionary> &p_query_result);
-	TypedArray<Dictionary> get_query_result() const;
+	void set_query_result(const Dictionary &p_query_result);
+	Dictionary get_query_result() const;
 
-	TypedArray<Dictionary> get_query_result_by_reference() const;
+	Dictionary get_query_result_by_reference() const;
 };
 VARIANT_ENUM_CAST(SQLite::VerbosityLevel);
 
