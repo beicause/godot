@@ -35,7 +35,8 @@
 using namespace godot;
 
 void SQLite::_bind_methods() {
-	// Methods.
+	ClassDB::bind_static_method("SQLite", D_METHOD("open", "path"), &SQLite::open, DEFVAL(":memory:"));
+
 	ClassDB::bind_method(D_METHOD("open_db"), &SQLite::open_db);
 	ClassDB::bind_method(D_METHOD("close_db"), &SQLite::close_db);
 	ClassDB::bind_method(D_METHOD("query", "query_string"), &SQLite::query);
@@ -102,6 +103,14 @@ SQLite::~SQLite() {
 	if (db) {
 		close_db();
 	}
+}
+
+Ref<SQLite> SQLite::open(const String &p_path) {
+	Ref<SQLite> db;
+	db.instantiate();
+	db->db_path = p_path;
+	bool success = db->open_db();
+	return success ? db : nullptr;
 }
 
 bool SQLite::open_db() {
@@ -283,16 +292,19 @@ bool SQLite::query_with_bindings(const String &p_query, Array param_bindings) {
 				case SQLITE_INTEGER: {
 					PackedInt64Array column = query_result.get_or_add(col_name, PackedInt64Array());
 					column.push_back((int64_t)sqlite3_column_int64(stmt, i));
+					query_result[col_name] = column;
 				} break;
 
 				case SQLITE_FLOAT: {
 					PackedFloat64Array column = query_result.get_or_add(col_name, PackedFloat64Array());
 					column.push_back(sqlite3_column_double(stmt, i));
+					query_result[col_name] = column;
 				} break;
 
 				case SQLITE_TEXT: {
 					PackedStringArray column = query_result.get_or_add(col_name, PackedStringArray());
 					column.push_back((String)(const char *)sqlite3_column_text(stmt, i));
+					query_result[col_name] = column;
 				} break;
 
 				case SQLITE_BLOB: {
@@ -302,6 +314,7 @@ bool SQLite::query_with_bindings(const String &p_query, Array param_bindings) {
 					arr.resize(bytes);
 					memcpy(arr.ptrw(), sqlite3_column_blob(stmt, i), bytes);
 					column.push_back(arr);
+					query_result[col_name] = column;
 				} break;
 				case SQLITE_NULL:
 					break;

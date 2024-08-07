@@ -66,6 +66,12 @@
 			<description>
 			</description>
 		</method>
+		<method name="open" qualifiers="static">
+			<return type="SQLite" />
+			<param index="0" name="path" type="String" default="&quot;:memory:&quot;" />
+			<description>
+			</description>
+		</method>
 		<method name="open_db">
 			<return type="bool" />
 			<description>
