@@ -33,16 +33,16 @@
 #include <ryml_all.hpp>
 
 String ryml_json_to_yaml(String data) {
-	c4::yml::Tree tree = c4::yml::parse_in_arena(c4::to_csubstr(data.utf8().get_data()));
-	std::string ret = c4::yml::emitrs_yaml<std::string>(tree);
-	return ret.c_str();
+	ryml::Tree tree = ryml::parse_in_arena(ryml::to_csubstr(data.utf8().get_data()));
+	std::string ret = ryml::emitrs_yaml<std::string>(tree);
+	return String::utf8(ret.c_str());
 }
 String ryml_yaml_to_json(String data, bool pretty) {
-	c4::yml::Tree tree = c4::yml::parse_in_arena(c4::to_csubstr(data.utf8().get_data()));
-	std::string ret = c4::yml::emitrs_json<std::string>(tree);
+	ryml::Tree tree = ryml::parse_in_arena(ryml::to_csubstr(data.utf8().get_data()));
+	std::string ret = ryml::emitrs_json<std::string>(tree);
 	if (pretty) {
 		nlohmann::json json = nlohmann::json::parse(ret);
 		ret = json.dump(2);
 	}
-	return ret.c_str();
+	return String::utf8(ret.c_str());
 }
