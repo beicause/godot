@@ -47,7 +47,7 @@ public:
 	/// LIB_JSONNET_VERSION then there is a mismatch between header and compiled
 	/// library.
 	static String version() {
-		return jsonnet::Jsonnet::version().c_str();
+		return String::utf8(jsonnet::Jsonnet::version().c_str());
 	}
 
 	/// Sets the maximum stack depth.
@@ -125,7 +125,7 @@ public:
 		ERR_FAIL_COND_V_MSG(filename.is_empty(), "", "jsonnet filename cannot be empty");
 		std::string ret;
 		jnet.evaluateFile(filename.utf8().get_data(), &ret);
-		return ret.c_str();
+		return String::utf8(ret.c_str());
 	}
 
 	/// Evaluate a string containing Jsonnet code to return a JSON string.
@@ -147,7 +147,7 @@ public:
 			ERR_PRINT(vformat("Jsonnet error: %s", last_error()));
 			return "";
 		}
-		return output.c_str();
+		return String::utf8(output.c_str());
 	}
 
 	/// Evaluate a file containing Jsonnet code, return a number of JSON files.
@@ -169,7 +169,7 @@ public:
 			return ret;
 		}
 		for (auto &it : outputs) {
-			ret[it.first.c_str()] = it.second.c_str();
+			ret[String::utf8(it.first.c_str())] = String::utf8(it.second.c_str());
 		}
 		return ret;
 	}
@@ -196,14 +196,14 @@ public:
 			return ret;
 		}
 		for (auto &it : outputs) {
-			ret[it.first.c_str()] = it.second.c_str();
+			ret[String::utf8(it.first.c_str())] = String::utf8(it.second.c_str());
 		}
 		return ret;
 	}
 
 	/// Returns the last error raised by Jsonnet.
 	String last_error() const {
-		return jnet.lastError().c_str();
+		return String::utf8(jnet.lastError().c_str());
 	}
 
 	JSONNet() {
