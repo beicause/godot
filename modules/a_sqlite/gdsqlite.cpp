@@ -206,7 +206,7 @@ bool SQLite::query_with_bindings(const String &p_query, Array param_bindings) {
 	rc = sqlite3_prepare_v2(db, sql, -1, &stmt, &pzTail);
 	zErrMsg = sqlite3_errmsg(db);
 	if (rc != SQLITE_OK) {
-		ERR_PRINT(vformat(" --> SQL error: ", zErrMsg));
+		ERR_PRINT(vformat(" --> SQL error: %s", zErrMsg));
 		sqlite3_finalize(stmt);
 		return false;
 	}
@@ -317,7 +317,7 @@ bool SQLite::query_with_bindings(const String &p_query, Array param_bindings) {
 	rc = sqlite3_errcode(db);
 	zErrMsg = sqlite3_errmsg(db);
 	if (rc != SQLITE_OK) {
-		ERR_PRINT(vformat(" --> SQL error: ", zErrMsg));
+		ERR_PRINT(vformat(" --> SQL error: %s", zErrMsg));
 		return false;
 	} else if (verbosity_level > VerbosityLevel::NORMAL) {
 		print_verbose(" --> Query succeeded");
