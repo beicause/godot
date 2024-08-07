@@ -74,7 +74,7 @@ public:
 	};
 
 	~SQLite();
-
+	static Ref<SQLite> open(const String &p_path = ":memory:");
 	// Functions.
 	bool open_db();
 	bool close_db();
