@@ -1,21 +1,2 @@
-# Objects.
-.scons-cache/
-*.os
-*.o
-
-# SConstruct
-.sconf_temp
-.sconsign.dblite
-*.pyc
-compile_commands.json
-.cache
-
-# MacOS
-.DS_Store
-
-.vscode
-
-target
-__pycache__
-
-cxxbridge/
+/target
+/cxxbridge
