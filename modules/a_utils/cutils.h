@@ -33,6 +33,8 @@
 
 #include "core/io/image.h"
 #include "core/object/ref_counted.h"
+#include "scene/theme/default_font.gen.h"
+#include "scene/theme/default_theme.h"
 #include <functional>
 
 class CUtils : public RefCounted {
@@ -42,6 +44,61 @@ protected:
 	static void _bind_methods();
 
 public:
+	static Ref<Theme> make_default_theme(float p_scale = 1.0, Ref<Font> p_font = Ref<Font>()) {
+		Ref<Theme> t;
+		t.instantiate();
+
+		TextServer::SubpixelPositioning p_font_subpixel = TextServer::SUBPIXEL_POSITIONING_AUTO;
+		TextServer::Hinting p_font_hinting = TextServer::HINTING_LIGHT;
+		TextServer::FontAntialiasing p_font_antialiased = TextServer::FONT_ANTIALIASING_GRAY;
+		bool p_font_msdf = false;
+		bool p_font_generate_mipmaps = false;
+
+		Ref<StyleBox> default_style;
+		Ref<Texture2D> default_icon;
+		Ref<Font> default_font;
+		Ref<FontVariation> bold_font;
+		Ref<FontVariation> bold_italics_font;
+		Ref<FontVariation> italics_font;
+		float default_scale = CLAMP(p_scale, 0.5, 8.0);
+
+		if (p_font.is_valid()) {
+			// Use the custom font defined in the Project Settings.
+			default_font = p_font;
+		} else {
+			// Use the default DynamicFont (separate from the editor font).
+			// The default DynamicFont is chosen to have a small file size since it's
+			// embedded in both editor and export template binaries.
+			Ref<FontFile> dynamic_font;
+			dynamic_font.instantiate();
+			dynamic_font->set_data_ptr(_font_OpenSans_SemiBold, _font_OpenSans_SemiBold_size);
+			dynamic_font->set_subpixel_positioning(p_font_subpixel);
+			dynamic_font->set_hinting(p_font_hinting);
+			dynamic_font->set_antialiasing(p_font_antialiased);
+			dynamic_font->set_multichannel_signed_distance_field(p_font_msdf);
+			dynamic_font->set_generate_mipmaps(p_font_generate_mipmaps);
+
+			default_font = dynamic_font;
+		}
+
+		if (default_font.is_valid()) {
+			bold_font.instantiate();
+			bold_font->set_base_font(default_font);
+			bold_font->set_variation_embolden(1.2);
+
+			bold_italics_font.instantiate();
+			bold_italics_font->set_base_font(default_font);
+			bold_italics_font->set_variation_embolden(1.2);
+			bold_italics_font->set_variation_transform(Transform2D(1.0, 0.2, 0.0, 1.0, 0.0, 0.0));
+
+			italics_font.instantiate();
+			italics_font->set_base_font(default_font);
+			italics_font->set_variation_transform(Transform2D(1.0, 0.2, 0.0, 1.0, 0.0, 0.0));
+		}
+
+		fill_default_theme(t, default_font, bold_font, bold_italics_font, italics_font, default_icon, default_style, default_scale);
+		return t;
+	}
 	enum BlendMode {
 		NORMAL,
 		MULTIPLY,

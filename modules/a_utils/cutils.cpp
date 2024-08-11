@@ -55,6 +55,7 @@ void ImageIter::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "image"), "set_image", "get_image");
 }
 void CUtils::_bind_methods() {
+	ClassDB::bind_static_method("CUtils", D_METHOD("make_default_theme", "p_scale", "p_font"), &CUtils::make_default_theme, DEFVAL(1.0), DEFVAL(Ref<Font>()));
 	ClassDB::bind_static_method("CUtils", D_METHOD("blend", "p_c1", "p_c2", "p_opaque", "p_blend_mode"), &CUtils::blend, DEFVAL(NORMAL));
 	ClassDB::bind_static_method("CUtils", D_METHOD("mix_audio_frame", "a", "b"), &CUtils::mix_audio_frame);
 	ClassDB::bind_static_method("CUtils", D_METHOD("mix_audio_buffer", "a", "b"), &CUtils::mix_audio_buffer);

@@ -16,6 +16,13 @@
 			<description>
 			</description>
 		</method>
+		<method name="make_default_theme" qualifiers="static">
+			<return type="Theme" />
+			<param index="0" name="p_scale" type="float" default="1.0" />
+			<param index="1" name="p_font" type="Font" default="null" />
+			<description>
+			</description>
+		</method>
 		<method name="mix_audio_buffer" qualifiers="static">
 			<return type="PackedVector2Array" />
 			<param index="0" name="a" type="PackedVector2Array" />
