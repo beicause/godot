@@ -35,6 +35,8 @@ void initialize_a_utils_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
+	ClassDB::register_class<ArrayIter>();
+	ClassDB::register_class<ImageIter>();
 	ClassDB::register_class<CUtils>();
 }
 

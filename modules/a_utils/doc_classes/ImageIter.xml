@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ImageIter" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="blend">
+			<return type="ImageIter" />
+			<param index="0" name="p_color" type="Color" />
+			<description>
+			</description>
+		</method>
+		<method name="clear_tasks">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="collect">
+			<return type="Image" />
+			<description>
+			</description>
+		</method>
+		<method name="create" qualifiers="static">
+			<return type="ImageIter" />
+			<param index="0" name="p_img" type="Image" />
+			<description>
+			</description>
+		</method>
+		<method name="for_each">
+			<return type="ImageIter" />
+			<param index="0" name="p_callable" type="Callable" />
+			<description>
+			</description>
+		</method>
+		<method name="inverted">
+			<return type="ImageIter" />
+			<description>
+			</description>
+		</method>
+		<method name="set_ok_hsl">
+			<return type="ImageIter" />
+			<param index="0" name="p_hsl" type="Vector3" />
+			<param index="1" name="p_strength" type="Vector3" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="image" type="Image" setter="set_image" getter="get_image">
+		</member>
+	</members>
+</class>

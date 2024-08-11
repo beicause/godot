@@ -30,9 +30,30 @@
 
 #include "cutils.h"
 
+void ArrayIter::_bind_methods() {
+	ClassDB::bind_static_method("ArrayIter", D_METHOD("create", "p_array"), &ArrayIter::create);
+	ClassDB::bind_method(D_METHOD("set_array", "p_array"), &ArrayIter::set_array);
+	ClassDB::bind_method(D_METHOD("get_array"), &ArrayIter::get_array);
+	ClassDB::bind_method(D_METHOD("for_each", "p_callable"), &ArrayIter::for_each);
+	ClassDB::bind_method(D_METHOD("collect"), &ArrayIter::collect);
+	ClassDB::bind_method(D_METHOD("clear_tasks"), &ArrayIter::clear_tasks);
+	ADD_PROPERTY(PropertyInfo(Variant::ARRAY, "array"), "set_array", "get_array");
+}
+
+void ImageIter::_bind_methods() {
+	ClassDB::bind_static_method("ImageIter", D_METHOD("create", "p_img"), &ImageIter::create);
+	ClassDB::bind_method(D_METHOD("set_image", "p_img"), &ImageIter::set_image);
+	ClassDB::bind_method(D_METHOD("get_image"), &ImageIter::get_image);
+	ClassDB::bind_method(D_METHOD("blend", "p_color"), &ImageIter::blend);
+	ClassDB::bind_method(D_METHOD("set_ok_hsl", "p_hsl", "p_strength"), &ImageIter::set_ok_hsl);
+	ClassDB::bind_method(D_METHOD("inverted"), &ImageIter::inverted);
+	ClassDB::bind_method(D_METHOD("for_each", "p_callable"), &ImageIter::for_each);
+	ClassDB::bind_method(D_METHOD("collect"), &ImageIter::collect);
+	ClassDB::bind_method(D_METHOD("clear_tasks"), &ImageIter::clear_tasks);
+
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "image"), "set_image", "get_image");
+}
 void CUtils::_bind_methods() {
-	ClassDB::bind_static_method("CUtils", D_METHOD("image_set_ok_hsl", "p_image", "p_hsl", "p_strength"), &CUtils::image_set_ok_hsl);
-	ClassDB::bind_static_method("CUtils", D_METHOD("image_blend", "p_image", "p_color"), &CUtils::image_blend);
 	ClassDB::bind_static_method("CUtils", D_METHOD("mix_audio_frame", "a", "b"), &CUtils::mix_audio_frame);
 	ClassDB::bind_static_method("CUtils", D_METHOD("mix_audio_buffer", "a", "b"), &CUtils::mix_audio_buffer);
 }

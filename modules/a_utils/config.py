@@ -7,9 +7,7 @@ def configure(env):
 
 
 def get_doc_classes():
-    return [
-        "CUtils",
-    ]
+    return ["CUtils", "ArrayIter", "ImageIter"]
 
 
 def get_doc_path():

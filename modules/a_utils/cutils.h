@@ -33,255 +33,126 @@
 
 #include "core/io/image.h"
 #include "core/object/ref_counted.h"
-#include "core/object/worker_thread_pool.h"
+#include <functional>
 
-class CUtils : public RefCounted {
-	GDCLASS(CUtils, RefCounted);
-	struct _ImageOkHslData {
-		uint8_t *buf = nullptr;
-		Image::Format format = Image::Format::FORMAT_RGBA8;
-		Vector3 hsl;
-		Vector3 apply;
-	};
-	struct _ImageBlendData {
-		uint8_t *image_data = nullptr;
-		Image::Format format = Image::Format::FORMAT_RGBA8;
-		Color color;
-	};
+class ArrayIter : public RefCounted {
+	GDCLASS(ArrayIter, RefCounted);
+	Vector<Callable> tasks;
+	Array array;
 
-	static inline Color _get_color_at_ofs(const uint8_t *ptr, uint32_t ofs, Image::Format format) {
-		switch (format) {
-			case Image::Format::FORMAT_L8: {
-				float l = ptr[ofs] / 255.0;
-				return Color(l, l, l, 1);
-			}
-			case Image::Format::FORMAT_LA8: {
-				float l = ptr[ofs * 2 + 0] / 255.0;
-				float a = ptr[ofs * 2 + 1] / 255.0;
-				return Color(l, l, l, a);
-			}
-			case Image::Format::FORMAT_R8: {
-				float r = ptr[ofs] / 255.0;
-				return Color(r, 0, 0, 1);
-			}
-			case Image::Format::FORMAT_RG8: {
-				float r = ptr[ofs * 2 + 0] / 255.0;
-				float g = ptr[ofs * 2 + 1] / 255.0;
-				return Color(r, g, 0, 1);
-			}
-			case Image::Format::FORMAT_RGB8: {
-				float r = ptr[ofs * 3 + 0] / 255.0;
-				float g = ptr[ofs * 3 + 1] / 255.0;
-				float b = ptr[ofs * 3 + 2] / 255.0;
-				return Color(r, g, b, 1);
-			}
-			case Image::Format::FORMAT_RGBA8: {
-				float r = ptr[ofs * 4 + 0] / 255.0;
-				float g = ptr[ofs * 4 + 1] / 255.0;
-				float b = ptr[ofs * 4 + 2] / 255.0;
-				float a = ptr[ofs * 4 + 3] / 255.0;
-				return Color(r, g, b, a);
-			}
-			case Image::Format::FORMAT_RGBA4444: {
-				uint16_t u = ((uint16_t *)ptr)[ofs];
-				float r = ((u >> 12) & 0xF) / 15.0;
-				float g = ((u >> 8) & 0xF) / 15.0;
-				float b = ((u >> 4) & 0xF) / 15.0;
-				float a = (u & 0xF) / 15.0;
-				return Color(r, g, b, a);
-			}
-			case Image::Format::FORMAT_RGB565: {
-				uint16_t u = ((uint16_t *)ptr)[ofs];
-				float r = (u & 0x1F) / 31.0;
-				float g = ((u >> 5) & 0x3F) / 63.0;
-				float b = ((u >> 11) & 0x1F) / 31.0;
-				return Color(r, g, b, 1.0);
-			}
-			case Image::Format::FORMAT_RF: {
-				float r = ((float *)ptr)[ofs];
-				return Color(r, 0, 0, 1);
-			}
-			case Image::Format::FORMAT_RGF: {
-				float r = ((float *)ptr)[ofs * 2 + 0];
-				float g = ((float *)ptr)[ofs * 2 + 1];
-				return Color(r, g, 0, 1);
-			}
-			case Image::Format::FORMAT_RGBF: {
-				float r = ((float *)ptr)[ofs * 3 + 0];
-				float g = ((float *)ptr)[ofs * 3 + 1];
-				float b = ((float *)ptr)[ofs * 3 + 2];
-				return Color(r, g, b, 1);
-			}
-			case Image::Format::FORMAT_RGBAF: {
-				float r = ((float *)ptr)[ofs * 4 + 0];
-				float g = ((float *)ptr)[ofs * 4 + 1];
-				float b = ((float *)ptr)[ofs * 4 + 2];
-				float a = ((float *)ptr)[ofs * 4 + 3];
-				return Color(r, g, b, a);
-			}
-			case Image::Format::FORMAT_RH: {
-				uint16_t r = ((uint16_t *)ptr)[ofs];
-				return Color(Math::half_to_float(r), 0, 0, 1);
-			}
-			case Image::Format::FORMAT_RGH: {
-				uint16_t r = ((uint16_t *)ptr)[ofs * 2 + 0];
-				uint16_t g = ((uint16_t *)ptr)[ofs * 2 + 1];
-				return Color(Math::half_to_float(r), Math::half_to_float(g), 0, 1);
-			}
-			case Image::Format::FORMAT_RGBH: {
-				uint16_t r = ((uint16_t *)ptr)[ofs * 3 + 0];
-				uint16_t g = ((uint16_t *)ptr)[ofs * 3 + 1];
-				uint16_t b = ((uint16_t *)ptr)[ofs * 3 + 2];
-				return Color(Math::half_to_float(r), Math::half_to_float(g), Math::half_to_float(b), 1);
-			}
-			case Image::Format::FORMAT_RGBAH: {
-				uint16_t r = ((uint16_t *)ptr)[ofs * 4 + 0];
-				uint16_t g = ((uint16_t *)ptr)[ofs * 4 + 1];
-				uint16_t b = ((uint16_t *)ptr)[ofs * 4 + 2];
-				uint16_t a = ((uint16_t *)ptr)[ofs * 4 + 3];
-				return Color(Math::half_to_float(r), Math::half_to_float(g), Math::half_to_float(b), Math::half_to_float(a));
-			}
-			case Image::Format::FORMAT_RGBE9995: {
-				return Color::from_rgbe9995(((uint32_t *)ptr)[ofs]);
-			}
-			default: {
-				ERR_FAIL_V_MSG(Color(), "Can't get_pixel() on compressed image, sorry.");
+protected:
+	static void _bind_methods();
+
+public:
+	static Ref<ArrayIter> create(Array p_array) {
+		Ref<ArrayIter> iter;
+		iter.instantiate();
+		iter->array = p_array;
+		return iter;
+	}
+	void set_array(Array p_array) { array = p_array; }
+	Array get_array() { return array; }
+
+	Ref<ArrayIter> for_each(Callable p_callable) {
+		tasks.push_back(p_callable);
+		return this;
+	}
+	Array collect() {
+		for (int i = 0; i < array.size(); i++) {
+			for (const Callable &callable : tasks) {
+				callable.call(array, i);
 			}
 		}
+		return array;
 	}
-
-	static inline void _set_color_at_ofs(uint8_t *ptr, uint32_t ofs, const Color &p_color, Image::Format format) {
-		switch (format) {
-			case Image::Format::FORMAT_L8: {
-				ptr[ofs] = uint8_t(CLAMP(p_color.get_v() * 255.0, 0, 255));
-			} break;
-			case Image::Format::FORMAT_LA8: {
-				ptr[ofs * 2 + 0] = uint8_t(CLAMP(p_color.get_v() * 255.0, 0, 255));
-				ptr[ofs * 2 + 1] = uint8_t(CLAMP(p_color.a * 255.0, 0, 255));
-			} break;
-			case Image::Format::FORMAT_R8: {
-				ptr[ofs] = uint8_t(CLAMP(p_color.r * 255.0, 0, 255));
-			} break;
-			case Image::Format::FORMAT_RG8: {
-				ptr[ofs * 2 + 0] = uint8_t(CLAMP(p_color.r * 255.0, 0, 255));
-				ptr[ofs * 2 + 1] = uint8_t(CLAMP(p_color.g * 255.0, 0, 255));
-			} break;
-			case Image::Format::FORMAT_RGB8: {
-				ptr[ofs * 3 + 0] = uint8_t(CLAMP(p_color.r * 255.0, 0, 255));
-				ptr[ofs * 3 + 1] = uint8_t(CLAMP(p_color.g * 255.0, 0, 255));
-				ptr[ofs * 3 + 2] = uint8_t(CLAMP(p_color.b * 255.0, 0, 255));
-			} break;
-			case Image::Format::FORMAT_RGBA8: {
-				ptr[ofs * 4 + 0] = uint8_t(CLAMP(p_color.r * 255.0, 0, 255));
-				ptr[ofs * 4 + 1] = uint8_t(CLAMP(p_color.g * 255.0, 0, 255));
-				ptr[ofs * 4 + 2] = uint8_t(CLAMP(p_color.b * 255.0, 0, 255));
-				ptr[ofs * 4 + 3] = uint8_t(CLAMP(p_color.a * 255.0, 0, 255));
-
-			} break;
-			case Image::Format::FORMAT_RGBA4444: {
-				uint16_t rgba = 0;
-
-				rgba = uint16_t(CLAMP(p_color.r * 15.0, 0, 15)) << 12;
-				rgba |= uint16_t(CLAMP(p_color.g * 15.0, 0, 15)) << 8;
-				rgba |= uint16_t(CLAMP(p_color.b * 15.0, 0, 15)) << 4;
-				rgba |= uint16_t(CLAMP(p_color.a * 15.0, 0, 15));
-
-				((uint16_t *)ptr)[ofs] = rgba;
-
-			} break;
-			case Image::Format::FORMAT_RGB565: {
-				uint16_t rgba = 0;
-
-				rgba = uint16_t(CLAMP(p_color.r * 31.0, 0, 31));
-				rgba |= uint16_t(CLAMP(p_color.g * 63.0, 0, 33)) << 5;
-				rgba |= uint16_t(CLAMP(p_color.b * 31.0, 0, 31)) << 11;
-
-				((uint16_t *)ptr)[ofs] = rgba;
-
-			} break;
-			case Image::Format::FORMAT_RF: {
-				((float *)ptr)[ofs] = p_color.r;
-			} break;
-			case Image::Format::FORMAT_RGF: {
-				((float *)ptr)[ofs * 2 + 0] = p_color.r;
-				((float *)ptr)[ofs * 2 + 1] = p_color.g;
-			} break;
-			case Image::Format::FORMAT_RGBF: {
-				((float *)ptr)[ofs * 3 + 0] = p_color.r;
-				((float *)ptr)[ofs * 3 + 1] = p_color.g;
-				((float *)ptr)[ofs * 3 + 2] = p_color.b;
-			} break;
-			case Image::Format::FORMAT_RGBAF: {
-				((float *)ptr)[ofs * 4 + 0] = p_color.r;
-				((float *)ptr)[ofs * 4 + 1] = p_color.g;
-				((float *)ptr)[ofs * 4 + 2] = p_color.b;
-				((float *)ptr)[ofs * 4 + 3] = p_color.a;
-			} break;
-			case Image::Format::FORMAT_RH: {
-				((uint16_t *)ptr)[ofs] = Math::make_half_float(p_color.r);
-			} break;
-			case Image::Format::FORMAT_RGH: {
-				((uint16_t *)ptr)[ofs * 2 + 0] = Math::make_half_float(p_color.r);
-				((uint16_t *)ptr)[ofs * 2 + 1] = Math::make_half_float(p_color.g);
-			} break;
-			case Image::Format::FORMAT_RGBH: {
-				((uint16_t *)ptr)[ofs * 3 + 0] = Math::make_half_float(p_color.r);
-				((uint16_t *)ptr)[ofs * 3 + 1] = Math::make_half_float(p_color.g);
-				((uint16_t *)ptr)[ofs * 3 + 2] = Math::make_half_float(p_color.b);
-			} break;
-			case Image::Format::FORMAT_RGBAH: {
-				((uint16_t *)ptr)[ofs * 4 + 0] = Math::make_half_float(p_color.r);
-				((uint16_t *)ptr)[ofs * 4 + 1] = Math::make_half_float(p_color.g);
-				((uint16_t *)ptr)[ofs * 4 + 2] = Math::make_half_float(p_color.b);
-				((uint16_t *)ptr)[ofs * 4 + 3] = Math::make_half_float(p_color.a);
-			} break;
-			case Image::Format::FORMAT_RGBE9995: {
-				((uint32_t *)ptr)[ofs] = p_color.to_rgbe9995();
-
-			} break;
-			default: {
-				ERR_FAIL_MSG("Can't set_pixel() on compressed image, sorry.");
-			}
-		}
+	void clear_tasks() {
+		tasks.clear();
 	}
-	static void _image_set_ok_hsl(void *p_data, uint32_t idx) {
-		_ImageOkHslData *data = (_ImageOkHslData *)p_data;
-		Color c = _get_color_at_ofs(data->buf, idx, data->format);
-		c.set_ok_hsl(data->hsl.x + data->apply.x * c.get_ok_hsl_h(), data->hsl.y + data->apply.y * c.get_ok_hsl_s(), data->hsl.z + data->apply.z * c.get_ok_hsl_l());
-		_set_color_at_ofs(data->buf, idx, c, data->format);
+};
+
+class ImageIter : public RefCounted {
+	GDCLASS(ImageIter, RefCounted);
+	typedef void(native_func)(int x, int y);
+	Vector<Callable> tasks;
+	Vector<std::function<native_func>> native_tasks;
+	Ref<Image> img;
+
+	static void pixel_blend(int x, int y, Ref<Image> p_img, Color p_color) {
+		p_img->set_pixel(x, y, p_img->get_pixel(x, y).blend(p_color));
 	}
-	static void _image_blend(void *p_data, uint32_t idx) {
-		_ImageBlendData *data = (_ImageBlendData *)p_data;
-		Color c = _get_color_at_ofs(data->image_data, idx, data->format).blend(data->color);
-		_set_color_at_ofs(data->image_data, idx, c, data->format);
+	static void pixel_set_ok_hsl(int x, int y, Ref<Image> p_img, Vector3 p_hsl, Vector3 p_strength) {
+		Vector3 apply = Vector3(1, 1, 1) - p_strength;
+		Vector3 hsl_a = p_hsl * p_strength;
+
+		Color c = p_img->get_pixel(x, y);
+		int h = c.get_ok_hsl_h();
+		int s = c.get_ok_hsl_s();
+		int l = c.get_ok_hsl_l();
+		c.set_ok_hsl(h * apply.x + hsl_a.x, s * apply.x + hsl_a.y, l * apply.z + hsl_a.z);
+		p_img->set_pixel(x, y, c);
+	}
+	static void pixel_inverted(int x, int y, Ref<Image> p_img) {
+		p_img->set_pixel(x, y, p_img->get_pixel(x, y).inverted());
 	}
 
 protected:
 	static void _bind_methods();
 
 public:
-	static Ref<Image> image_set_ok_hsl(Ref<Image> p_image, Vector3 p_hsl, Vector3 p_strength) {
-		Ref<Image> img = p_image->duplicate();
-		Vector3 hsl = p_hsl * p_strength;
-		Vector3 apply = Vector3(1, 1, 1) - p_strength;
-		_ImageOkHslData data{ img->ptrw(), img->get_format(), hsl, apply };
+	static Ref<ImageIter> create(Ref<Image> p_img) {
+		Ref<ImageIter> iter;
+		iter.instantiate();
+		iter->img = p_img;
+		return iter;
+	}
+	void set_image(Ref<Image> p_img) { img = p_img; }
+	Ref<Image> get_image() { return img; }
 
-		WorkerThreadPool::GroupID task_id = WorkerThreadPool::get_singleton()->add_native_group_task(&CUtils::_image_set_ok_hsl, &data, img->get_width() * img->get_height());
-		WorkerThreadPool::get_singleton()->wait_for_group_task_completion(task_id);
-
+	Ref<ImageIter> blend(Color p_color) {
+		std::function<native_func> func = std::bind(pixel_blend, std::placeholders::_1, std::placeholders::_2, img, p_color);
+		native_tasks.push_back(func);
+		return this;
+	}
+	Ref<ImageIter> set_ok_hsl(Vector3 p_hsl, Vector3 p_strength) {
+		std::function<native_func> func = std::bind(pixel_set_ok_hsl, std::placeholders::_1, std::placeholders::_2, img, p_hsl, p_strength);
+		native_tasks.push_back(func);
+		return this;
+	}
+	Ref<ImageIter> inverted() {
+		std::function<native_func> func = std::bind(pixel_inverted, std::placeholders::_1, std::placeholders::_2, img);
+		native_tasks.push_back(func);
+		return this;
+	}
+	Ref<ImageIter> for_each(Callable p_callable) {
+		tasks.push_back(p_callable);
+		return this;
+	}
+	Ref<Image> collect() {
+		ERR_FAIL_COND_V_MSG(img.is_null(), nullptr, "image is null");
+		for (int x = 0; x < img->get_width(); x++) {
+			for (int y = 0; y < img->get_height(); y++) {
+				for (const auto &func : native_tasks) {
+					func(x, y);
+				}
+				for (const Callable &callable : tasks) {
+					callable.call(img, x, y);
+				}
+			}
+		}
 		return img;
 	}
-
-	static Ref<Image> image_blend(Ref<Image> p_image, Color p_color) {
-		Ref<Image> img = p_image->duplicate();
-		_ImageBlendData data{ img->ptrw(), img->get_format(), p_color };
-
-		WorkerThreadPool::GroupID task_id = WorkerThreadPool::get_singleton()->add_native_group_task(&CUtils::_image_blend, &data, img->get_width() * img->get_height());
-		WorkerThreadPool::get_singleton()->wait_for_group_task_completion(task_id);
-
-		return img;
+	void clear_tasks() {
+		tasks.clear();
 	}
+};
 
+class CUtils : public RefCounted {
+	GDCLASS(CUtils, RefCounted);
+
+protected:
+	static void _bind_methods();
+
+public:
 	static Vector2 mix_audio_frame(Vector2 a, Vector2 b) {
 		Vector2 ret;
 		Vector2 s = a * b;
@@ -294,13 +165,9 @@ public:
 		PackedVector2Array ret;
 		ERR_FAIL_COND_V_MSG(a.size() != b.size(), ret, "Audio buffer sizes don't match.");
 		ret.resize(a.size());
-		Vector2 *data[] = { ret.ptrw(), a.ptrw(), b.ptrw() };
-		WorkerThreadPool::GroupID task_id = WorkerThreadPool::get_singleton()->add_native_group_task([](void *p_data, uint32_t idx) {
-			Vector2 **data = (Vector2 **)p_data;
-			data[0][idx] = CUtils::mix_audio_frame(data[1][idx], data[2][idx]);
-		},
-				&data, ret.size());
-		WorkerThreadPool::get_singleton()->wait_for_group_task_completion(task_id);
+		for (int i = 0; i < a.size(); i++) {
+			ret.set(i, mix_audio_frame(a[i], b[i]));
+		}
 		return ret;
 	}
 };
