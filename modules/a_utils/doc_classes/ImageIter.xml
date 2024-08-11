@@ -10,6 +10,14 @@
 		<method name="blend">
 			<return type="ImageIter" />
 			<param index="0" name="p_color" type="Color" />
+			<param index="1" name="p_opaque" type="float" />
+			<param index="2" name="p_mode" type="int" enum="CUtils.BlendMode" />
+			<description>
+			</description>
+		</method>
+		<method name="blend_alpha">
+			<return type="ImageIter" />
+			<param index="0" name="p_color" type="Color" />
 			<description>
 			</description>
 		</method>

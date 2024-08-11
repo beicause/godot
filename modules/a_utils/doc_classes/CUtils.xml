@@ -7,6 +7,15 @@
 	<tutorials>
 	</tutorials>
 	<methods>
+		<method name="blend" qualifiers="static">
+			<return type="Color" />
+			<param index="0" name="p_c1" type="Color" />
+			<param index="1" name="p_c2" type="Color" />
+			<param index="2" name="p_opaque" type="float" />
+			<param index="3" name="p_blend_mode" type="int" enum="CUtils.BlendMode" default="0" />
+			<description>
+			</description>
+		</method>
 		<method name="mix_audio_buffer" qualifiers="static">
 			<return type="PackedVector2Array" />
 			<param index="0" name="a" type="PackedVector2Array" />
@@ -22,4 +31,28 @@
 			</description>
 		</method>
 	</methods>
+	<constants>
+		<constant name="NORMAL" value="0" enum="BlendMode">
+		</constant>
+		<constant name="MULTIPLY" value="1" enum="BlendMode">
+		</constant>
+		<constant name="SCREEN" value="2" enum="BlendMode">
+		</constant>
+		<constant name="OVERLAY" value="3" enum="BlendMode">
+		</constant>
+		<constant name="HARD_LIGHT" value="4" enum="BlendMode">
+		</constant>
+		<constant name="SOFT_LIGHT" value="5" enum="BlendMode">
+		</constant>
+		<constant name="DODGE" value="6" enum="BlendMode">
+		</constant>
+		<constant name="LIGHTEN" value="7" enum="BlendMode">
+		</constant>
+		<constant name="DARKEN" value="8" enum="BlendMode">
+		</constant>
+		<constant name="ADDITIVE" value="9" enum="BlendMode">
+		</constant>
+		<constant name="ADDSUB" value="10" enum="BlendMode">
+		</constant>
+	</constants>
 </class>

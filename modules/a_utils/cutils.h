@@ -35,6 +35,93 @@
 #include "core/object/ref_counted.h"
 #include <functional>
 
+class CUtils : public RefCounted {
+	GDCLASS(CUtils, RefCounted);
+
+protected:
+	static void _bind_methods();
+
+public:
+	enum BlendMode {
+		NORMAL,
+		MULTIPLY,
+		SCREEN,
+		OVERLAY,
+		HARD_LIGHT,
+		SOFT_LIGHT,
+		DODGE,
+		LIGHTEN,
+		DARKEN,
+		ADDITIVE,
+		ADDSUB
+	};
+	static Color blend(const Color &p_c1, const Color &p_c2, float p_opaque, BlendMode p_blend_mode = NORMAL) {
+		Color res;
+		Color c1 = p_c1;
+		Color c2 = p_c2;
+		switch (p_blend_mode) {
+			case NORMAL: {
+				res = p_opaque * c1 + (1 - p_opaque) * c2;
+			} break;
+			case MULTIPLY: {
+				res = p_opaque * c1 * c2 + (1 - p_opaque) * c2;
+			} break;
+			case SCREEN: {
+				res = p_opaque * (Color(1, 1, 1) - (Color(1, 1, 1) - c1) * (Color(1, 1, 1) - c2)) + (1 - p_opaque) * c2;
+			} break;
+			case OVERLAY: {
+				auto overlau_f = [](float a, float b) { return (a < 0.5) ? (2 * a * b) : (1 - 2 * (1 - a) * (1 - b)); };
+				res = p_opaque * Color(overlau_f(c1.r, c2.r), overlau_f(c1.g, c2.g), overlau_f(c1.b, c2.b)) + (1 - p_opaque) * c2;
+			} break;
+			case HARD_LIGHT: {
+				res = p_opaque * 0.5 * (c1 * c2 + blend(c1, c2, 1, OVERLAY)) + (1 - p_opaque) * c2;
+			} break;
+			case SOFT_LIGHT: {
+				auto soft_light_f = [](float a, float b) {
+					return (b < 0.5) ? (2 * a * b + a * a * (1 - 2 * b)) : (2 * a * (1 - b) + Math::sqrt(a) * (2 * b - 1));
+				};
+				res = p_opaque * Color(soft_light_f(c1.r, c2.r), soft_light_f(c1.g, c2.g), soft_light_f(c1.b, c2.b)) + (1 - p_opaque) * c2;
+			} break;
+			case DODGE: {
+				auto dodge_f = [](float a, float b) { return (a == 1.0) ? a : MIN(b / (1 - a), 1); };
+				res = p_opaque * Color(dodge_f(c1.r, c2.r), dodge_f(c1.g, c2.g), dodge_f(c1.b, c2.b)) + (1 - p_opaque) * c2;
+			} break;
+			case LIGHTEN: {
+				res = p_opaque * Color(MAX(c1.r, c2.r), MAX(c1.g, c2.g), MAX(c1.b, c2.b)) + (1 - p_opaque) * c2;
+			} break;
+			case DARKEN: {
+				res = p_opaque * Color(MIN(c1.r, c2.r), MIN(c1.g, c2.g), MIN(c1.b, c2.b)) + (1 - p_opaque) * c2;
+			} break;
+			case ADDITIVE: {
+				res = p_opaque * c1 + c2;
+			} break;
+			case ADDSUB: {
+				res = c2 * (c1 - Color(0.5, 0.5, 0.5)) * 2 * p_opaque;
+			} break;
+		}
+		res.a = p_c1.a;
+		return res.clamp();
+	}
+	static Vector2 mix_audio_frame(Vector2 a, Vector2 b) {
+		Vector2 ret;
+		Vector2 s = a * b;
+		ret.x = a.x + b.x + s.x <= 0 ? 0 : -SIGN(b.x) * s.x;
+		ret.y = a.y + b.y + s.y <= 0 ? 0 : -SIGN(b.y) * s.y;
+		return ret;
+	}
+
+	static PackedVector2Array mix_audio_buffer(PackedVector2Array a, PackedVector2Array b) {
+		PackedVector2Array ret;
+		ERR_FAIL_COND_V_MSG(a.size() != b.size(), ret, "Audio buffer sizes don't match.");
+		ret.resize(a.size());
+		for (int i = 0; i < a.size(); i++) {
+			ret.set(i, mix_audio_frame(a[i], b[i]));
+		}
+		return ret;
+	}
+};
+VARIANT_ENUM_CAST(CUtils::BlendMode);
+
 class ArrayIter : public RefCounted {
 	GDCLASS(ArrayIter, RefCounted);
 	Vector<Callable> tasks;
@@ -77,24 +164,6 @@ class ImageIter : public RefCounted {
 	Vector<std::function<native_func>> native_tasks;
 	Ref<Image> img;
 
-	static void pixel_blend(int x, int y, Ref<Image> p_img, Color p_color) {
-		p_img->set_pixel(x, y, p_img->get_pixel(x, y).blend(p_color));
-	}
-	static void pixel_set_ok_hsl(int x, int y, Ref<Image> p_img, Vector3 p_hsl, Vector3 p_strength) {
-		Vector3 apply = Vector3(1, 1, 1) - p_strength;
-		Vector3 hsl_a = p_hsl * p_strength;
-
-		Color c = p_img->get_pixel(x, y);
-		int h = c.get_ok_hsl_h();
-		int s = c.get_ok_hsl_s();
-		int l = c.get_ok_hsl_l();
-		c.set_ok_hsl(h * apply.x + hsl_a.x, s * apply.x + hsl_a.y, l * apply.z + hsl_a.z);
-		p_img->set_pixel(x, y, c);
-	}
-	static void pixel_inverted(int x, int y, Ref<Image> p_img) {
-		p_img->set_pixel(x, y, p_img->get_pixel(x, y).inverted());
-	}
-
 protected:
 	static void _bind_methods();
 
@@ -108,18 +177,39 @@ public:
 	void set_image(Ref<Image> p_img) { img = p_img; }
 	Ref<Image> get_image() { return img; }
 
-	Ref<ImageIter> blend(Color p_color) {
-		std::function<native_func> func = std::bind(pixel_blend, std::placeholders::_1, std::placeholders::_2, img, p_color);
+	Ref<ImageIter> blend_alpha(Color p_color) {
+		std::function<native_func> func = [&](int x, int y) {
+			img->set_pixel(x, y, img->get_pixel(x, y).blend(p_color));
+		};
+		native_tasks.push_back(func);
+		return this;
+	}
+	Ref<ImageIter> blend(Color p_color, float p_opaque, CUtils::BlendMode p_mode) {
+		std::function<native_func> func = [&](int x, int y) {
+			img->set_pixel(x, y, CUtils::blend(img->get_pixel(x, y), p_color, p_opaque, p_mode));
+		};
 		native_tasks.push_back(func);
 		return this;
 	}
 	Ref<ImageIter> set_ok_hsl(Vector3 p_hsl, Vector3 p_strength) {
-		std::function<native_func> func = std::bind(pixel_set_ok_hsl, std::placeholders::_1, std::placeholders::_2, img, p_hsl, p_strength);
+		std::function<native_func> func = [&](int x, int y) {
+			Vector3 apply = Vector3(1, 1, 1) - p_strength;
+			Vector3 hsl_a = p_hsl * p_strength;
+
+			Color c = img->get_pixel(x, y);
+			int h = c.get_ok_hsl_h();
+			int s = c.get_ok_hsl_s();
+			int l = c.get_ok_hsl_l();
+			c.set_ok_hsl(h * apply.x + hsl_a.x, s * apply.x + hsl_a.y, l * apply.z + hsl_a.z);
+			img->set_pixel(x, y, c);
+		};
 		native_tasks.push_back(func);
 		return this;
 	}
 	Ref<ImageIter> inverted() {
-		std::function<native_func> func = std::bind(pixel_inverted, std::placeholders::_1, std::placeholders::_2, img);
+		std::function<native_func> func = [&](int x, int y) {
+			img->set_pixel(x, y, img->get_pixel(x, y).inverted());
+		};
 		native_tasks.push_back(func);
 		return this;
 	}
@@ -143,32 +233,6 @@ public:
 	}
 	void clear_tasks() {
 		tasks.clear();
-	}
-};
-
-class CUtils : public RefCounted {
-	GDCLASS(CUtils, RefCounted);
-
-protected:
-	static void _bind_methods();
-
-public:
-	static Vector2 mix_audio_frame(Vector2 a, Vector2 b) {
-		Vector2 ret;
-		Vector2 s = a * b;
-		ret.x = a.x + b.x + s.x <= 0 ? 0 : -SIGN(b.x) * s.x;
-		ret.y = a.y + b.y + s.y <= 0 ? 0 : -SIGN(b.y) * s.y;
-		return ret;
-	}
-
-	static PackedVector2Array mix_audio_buffer(PackedVector2Array a, PackedVector2Array b) {
-		PackedVector2Array ret;
-		ERR_FAIL_COND_V_MSG(a.size() != b.size(), ret, "Audio buffer sizes don't match.");
-		ret.resize(a.size());
-		for (int i = 0; i < a.size(); i++) {
-			ret.set(i, mix_audio_frame(a[i], b[i]));
-		}
-		return ret;
 	}
 };
 
