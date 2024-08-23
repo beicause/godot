@@ -33,6 +33,7 @@
 
 #include "editor/plugins/editor_plugin.h"
 #include "scene/2d/sprite_2d.h"
+#include "scene/gui/option_button.h"
 #include "scene/gui/spin_box.h"
 
 class AcceptDialog;
@@ -78,10 +79,13 @@ class Sprite2DEditor : public Control {
 	Vector2 draw_offset;
 	real_t draw_zoom = 1.0;
 
+	Label *concavity_label = nullptr;
+	SpinBox *concavity = nullptr;
 	SpinBox *simplification = nullptr;
 	SpinBox *grow_pixels = nullptr;
 	SpinBox *shrink_pixels = nullptr;
 	Button *update_preview = nullptr;
+	OptionButton *clip_mode = nullptr;
 
 	void _menu_option(int p_option);
 
@@ -104,6 +108,14 @@ class Sprite2DEditor : public Control {
 	void _create_light_occluder_2d_node();
 
 	void _add_as_sibling_or_child(Node *p_own_node, Node *p_new_node);
+
+	void _on_clip_mode_selected(int idx);
+
+	enum ClipMode {
+		CLIP_MODE_POLYGONS,
+		CLIP_MODE_CONVEX_HULL,
+		CLIP_MODE_CONCAVE_HULL
+	};
 
 protected:
 	void _node_removed(Node *p_node);
