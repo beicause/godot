@@ -242,6 +242,7 @@ void ResourceImporterTexture::get_import_options(const String &p_path, List<Impo
 	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "process/hdr_as_srgb"), false));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "process/hdr_clamp_exposure"), false));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "process/size_limit", PROPERTY_HINT_RANGE, "0,4096,1"), 0));
+	r_options->push_back(ImportOption(PropertyInfo(Variant::VECTOR2I, "2d/size_override"), Vector2i(0, 0)));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "detect_3d/compress_to", PROPERTY_HINT_ENUM, "Disabled,VRAM Compressed,Basis Universal"), (p_preset == PRESET_DETECT) ? 1 : 0));
 
 	// Do path based customization only if a path was passed.
@@ -455,6 +456,7 @@ Error ResourceImporterTexture::import(const String &p_source_file, const String 
 	// Support for texture streaming is not implemented yet.
 	const bool stream = false;
 	const int size_limit = p_options["process/size_limit"];
+	const Vector2i size_override = p_options["2d/size_override"];
 	const bool hdr_as_srgb = p_options["process/hdr_as_srgb"];
 	if (hdr_as_srgb) {
 		loader_flags |= ImageFormatLoader::FLAG_FORCE_LINEAR;
@@ -517,18 +519,26 @@ Error ResourceImporterTexture::import(const String &p_source_file, const String 
 	}
 
 	for (Ref<Image> &target_image : images_imported) {
+		// Apply the size override.
+		if (size_override.width > 0 && size_override.height > 0) {
+			target_image->resize(size_override.width, size_override.height, Image::INTERPOLATE_LANCZOS);
+			if (normal == 1) {
+				target_image->normalize();
+			}
+		}
+
 		// Apply the size limit.
 		if (size_limit > 0 && (target_image->get_width() > size_limit || target_image->get_height() > size_limit)) {
 			if (target_image->get_width() >= target_image->get_height()) {
 				int new_width = size_limit;
 				int new_height = target_image->get_height() * new_width / target_image->get_width();
 
-				target_image->resize(new_width, new_height, Image::INTERPOLATE_CUBIC);
+				target_image->resize(new_width, new_height, Image::INTERPOLATE_LANCZOS);
 			} else {
 				int new_height = size_limit;
 				int new_width = target_image->get_width() * new_height / target_image->get_height();
 
-				target_image->resize(new_width, new_height, Image::INTERPOLATE_CUBIC);
+				target_image->resize(new_width, new_height, Image::INTERPOLATE_LANCZOS);
 			}
 
 			if (normal == 1) {
