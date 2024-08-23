@@ -65,6 +65,21 @@
 				Applies morphological dilation or erosion to the bitmap. If [param pixels] is positive, dilation is applied to the bitmap. If [param pixels] is negative, erosion is applied to the bitmap. [param rect] defines the area where the morphological operation is applied. Pixels located outside the [param rect] are unaffected by [method grow_mask].
 			</description>
 		</method>
+		<method name="opaque_to_concave_polygon" qualifiers="const">
+			<return type="PackedVector2Array" />
+			<param index="0" name="rect" type="Rect2i" />
+			<param index="1" name="concavity" type="float" default="2" />
+			<param index="2" name="epsilon" type="float" default="2" />
+			<param index="3" name="length_threshold" type="float" default="0" />
+			<description>
+			</description>
+		</method>
+		<method name="opaque_to_convex_polygon" qualifiers="const">
+			<return type="PackedVector2Array" />
+			<param index="0" name="rect" type="Rect2i" />
+			<description>
+			</description>
+		</method>
 		<method name="opaque_to_polygons" qualifiers="const">
 			<return type="PackedVector2Array[]" />
 			<param index="0" name="rect" type="Rect2i" />
