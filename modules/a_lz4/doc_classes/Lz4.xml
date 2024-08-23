@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="Lz4" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="compress_block_prepend_size" qualifiers="static">
+			<return type="PackedByteArray" />
+			<param index="0" name="data" type="PackedByteArray" />
+			<param index="1" name="compression_level" type="int" default="0" />
+			<description>
+			</description>
+		</method>
+		<method name="compress_frame" qualifiers="static">
+			<return type="PackedByteArray" />
+			<param index="0" name="data" type="PackedByteArray" />
+			<param index="1" name="compression_level" type="int" default="0" />
+			<description>
+			</description>
+		</method>
+		<method name="decompress_block" qualifiers="static">
+			<return type="PackedByteArray" />
+			<param index="0" name="data" type="PackedByteArray" />
+			<param index="1" name="dst_capacity" type="int" default="0" />
+			<description>
+			</description>
+		</method>
+		<method name="decompress_frame" qualifiers="static">
+			<return type="PackedByteArray" />
+			<param index="0" name="data" type="PackedByteArray" />
+			<description>
+			</description>
+		</method>
+		<method name="parse_as_string" qualifiers="static">
+			<return type="String" />
+			<param index="0" name="p_bytes" type="PackedByteArray" />
+			<param index="1" name="p_hint_compressed" type="bool" default="false" />
+			<description>
+			</description>
+		</method>
+	</methods>
+</class>
