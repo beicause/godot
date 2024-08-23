@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="Glicol" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="add_sample">
+			<return type="void" />
+			<param index="0" name="name_ptr" type="String" />
+			<param index="1" name="arr" type="PackedFloat32Array" />
+			<param index="2" name="channels" type="int" />
+			<param index="3" name="sample_rate" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="live_coding_mode">
+			<return type="void" />
+			<param index="0" name="boolean" type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="process">
+			<return type="PackedFloat32Array" />
+			<param index="0" name="buf_len" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="reset">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="send_msg">
+			<return type="void" />
+			<param index="0" name="str_ptr" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="set_bpm">
+			<return type="void" />
+			<param index="0" name="bpm" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="set_seed">
+			<return type="void" />
+			<param index="0" name="seed" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="set_sr">
+			<return type="void" />
+			<param index="0" name="sr" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="set_track_amp">
+			<return type="void" />
+			<param index="0" name="amp" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="update_code">
+			<return type="void" />
+			<param index="0" name="str_ptr" type="String" />
+			<description>
+			</description>
+		</method>
+	</methods>
+</class>
