@@ -26,6 +26,14 @@
 				Clips [param polyline] against [param polygon] and returns an array of clipped polylines. This performs [constant OPERATION_DIFFERENCE] between the polyline and the polygon. This operation can be thought of as cutting a line with a closed shape.
 			</description>
 		</method>
+		<method name="concave_hull">
+			<return type="PackedVector2Array" />
+			<param index="0" name="points" type="PackedVector2Array" />
+			<param index="1" name="concavity" type="float" />
+			<param index="2" name="length_threshold" type="float" />
+			<description>
+			</description>
+		</method>
 		<method name="convex_hull">
 			<return type="PackedVector2Array" />
 			<param index="0" name="points" type="PackedVector2Array" />
