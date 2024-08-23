@@ -489,6 +489,8 @@ public:
 		return points;
 	}
 
+	static Vector<Point2> concave_hull(Vector<Point2> p_points, real_t p_concavity = 2, real_t p_length_threshold = 0);
+
 	static Vector<Vector<Vector2>> decompose_polygon_in_convex(const Vector<Point2> &polygon);
 
 	static void make_atlas(const Vector<Size2i> &p_rects, Vector<Point2i> &r_result, Size2i &r_size);

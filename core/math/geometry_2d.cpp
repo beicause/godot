@@ -29,6 +29,7 @@
 /**************************************************************************/
 
 #include "geometry_2d.h"
+#include "concave_hull.h"
 
 #include "thirdparty/clipper2/include/clipper2/clipper.h"
 #include "thirdparty/misc/polypartition.h"
@@ -37,6 +38,12 @@
 
 const int clipper_precision = 5; // Based on CMP_EPSILON.
 const double clipper_scale = Math::pow(10.0, clipper_precision);
+
+Vector<Point2> Geometry2D::concave_hull(Vector<Point2> p_points, real_t p_concavity, real_t p_length_threshold) {
+	Vector<Point2> convex_hull = Geometry2D::convex_hull(p_points);
+	Vector<Vector2> res = concaveman(p_points, convex_hull, p_concavity, p_length_threshold);
+	return res;
+};
 
 Vector<Vector<Vector2>> Geometry2D::decompose_polygon_in_convex(const Vector<Point2> &polygon) {
 	Vector<Vector<Vector2>> decomp;
