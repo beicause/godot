@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="ArrayIter" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="clear_tasks">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="collect">
+			<return type="Array" />
+			<description>
+			</description>
+		</method>
+		<method name="create" qualifiers="static">
+			<return type="ArrayIter" />
+			<param index="0" name="p_array" type="Array" />
+			<description>
+			</description>
+		</method>
+		<method name="for_each">
+			<return type="ArrayIter" />
+			<param index="0" name="p_callable" type="Callable" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="array" type="Array" setter="set_array" getter="get_array" default="[]">
+		</member>
+	</members>
+</class>
