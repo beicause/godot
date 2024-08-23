@@ -63,6 +63,12 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Set up Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          rustup default nightly
+          cargo install cxxbridge-cmd
+
       - name: Restore Godot build cache
         uses: ./.github/actions/godot-cache-restore
         with:
