@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="Mcu" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_scheme" qualifiers="static">
+			<return type="Dictionary" />
+			<param index="0" name="c" type="Color" />
+			<param index="1" name="is_dark" type="bool" default="true" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<constants>
+		<constant name="primary" value="0" enum="Contrast">
+		</constant>
+		<constant name="onPrimary" value="1" enum="Contrast">
+		</constant>
+		<constant name="primaryContainer" value="2" enum="Contrast">
+		</constant>
+		<constant name="onPrimaryContainer" value="3" enum="Contrast">
+		</constant>
+		<constant name="secondary" value="4" enum="Contrast">
+		</constant>
+		<constant name="onSecondary" value="5" enum="Contrast">
+		</constant>
+		<constant name="secondaryContainer" value="6" enum="Contrast">
+		</constant>
+		<constant name="onSecondaryContainer" value="7" enum="Contrast">
+		</constant>
+		<constant name="tertiary" value="8" enum="Contrast">
+		</constant>
+		<constant name="onTertiary" value="9" enum="Contrast">
+		</constant>
+		<constant name="tertiaryContainer" value="10" enum="Contrast">
+		</constant>
+		<constant name="onTertiaryContainer" value="11" enum="Contrast">
+		</constant>
+		<constant name="error" value="12" enum="Contrast">
+		</constant>
+		<constant name="onError" value="13" enum="Contrast">
+		</constant>
+		<constant name="errorContainer" value="14" enum="Contrast">
+		</constant>
+		<constant name="onErrorContainer" value="15" enum="Contrast">
+		</constant>
+		<constant name="background" value="16" enum="Contrast">
+		</constant>
+		<constant name="onBackground" value="17" enum="Contrast">
+		</constant>
+		<constant name="surface" value="18" enum="Contrast">
+		</constant>
+		<constant name="onSurface" value="19" enum="Contrast">
+		</constant>
+		<constant name="surfaceVariant" value="20" enum="Contrast">
+		</constant>
+		<constant name="onSurfaceVariant" value="21" enum="Contrast">
+		</constant>
+		<constant name="outline" value="22" enum="Contrast">
+		</constant>
+		<constant name="outlineVariant" value="23" enum="Contrast">
+		</constant>
+		<constant name="shadow" value="24" enum="Contrast">
+		</constant>
+		<constant name="scrim" value="25" enum="Contrast">
+		</constant>
+		<constant name="inverseSurface" value="26" enum="Contrast">
+		</constant>
+		<constant name="inverseOnSurface" value="27" enum="Contrast">
+		</constant>
+		<constant name="inversePrimary" value="28" enum="Contrast">
+		</constant>
+		<constant name="surfaceContainer" value="29" enum="Contrast">
+		</constant>
+		<constant name="surfaceContainerHigh" value="30" enum="Contrast">
+		</constant>
+	</constants>
+</class>
