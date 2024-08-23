@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="JSONConverter" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="json5_to_json" qualifiers="static">
+			<return type="String" />
+			<param index="0" name="data" type="String" />
+			<param index="1" name="pretty" type="bool" default="false" />
+			<description>
+			</description>
+		</method>
+		<method name="json_to_json5" qualifiers="static">
+			<return type="String" />
+			<param index="0" name="data" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="json_to_toml" qualifiers="static">
+			<return type="String" />
+			<param index="0" name="data" type="String" />
+			<param index="1" name="pretty" type="bool" default="false" />
+			<description>
+			</description>
+		</method>
+		<method name="json_to_yaml" qualifiers="static">
+			<return type="String" />
+			<param index="0" name="data" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="toml_to_json" qualifiers="static">
+			<return type="String" />
+			<param index="0" name="data" type="String" />
+			<param index="1" name="pretty" type="bool" default="false" />
+			<description>
+			</description>
+		</method>
+		<method name="yaml_to_json" qualifiers="static">
+			<return type="String" />
+			<param index="0" name="data" type="String" />
+			<param index="1" name="pretty" type="bool" default="false" />
+			<description>
+			</description>
+		</method>
+	</methods>
+</class>
