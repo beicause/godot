@@ -31,6 +31,7 @@
 #include "resource_importer_lottie.h"
 #include "core/io/dir_access.h"
 #include "core/io/json.h"
+#include "modules/a_lz4/gd_lz4.h"
 #include "modules/svg/lottie_texture.h"
 
 String ResourceImporterLottieJSON::get_importer_name() const {
@@ -86,6 +87,8 @@ void ResourceImporterLottieJSON::get_import_options(const String &p_path, List<I
 	r_options->push_back(ImportOption(PropertyInfo(Variant::FLOAT, "lottie/frame_end"), total_frame_count - 1));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::FLOAT, "lottie/frame_count"), default_frame_count));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::FLOAT, "lottie/columns"), 0));
+	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "compress"), true));
+	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "compression_level", PROPERTY_HINT_RANGE, "0,12"), 9));
 }
 Error ResourceImporterLottieJSON::import(const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
 	// Invalid Lottie file if no import options
@@ -105,10 +108,37 @@ Error ResourceImporterLottieJSON::import(const String &p_source_file, const Stri
 	const float frame_end = p_options["lottie/frame_end"];
 	const int frame_count = p_options["lottie/frame_count"];
 	const int columns = p_options["lottie/columns"];
+	const bool compress = p_options["compress"];
+	const int compression_level = p_options["compression_level"];
+
 	Ref<LottieTexture2D> lottie;
 	lottie.instantiate();
 	lottie->update(json, frame_begin, frame_end, frame_count, scale, columns);
-	err = ResourceSaver::save(lottie, p_save_path + ".lottiejson");
+
+	// Lottie JSON object allows storing additional data
+	Dictionary dict = lottie->get_json().is_valid() ? (Dictionary)lottie->get_json()->get_data() : Dictionary();
+	dict["gd_scale"] = lottie->get_scale();
+	dict["gd_frame_begin"] = lottie->get_frame_begin();
+	dict["gd_frame_end"] = lottie->get_frame_end();
+	dict["gd_frame_count"] = lottie->get_frame_count();
+	dict["gd_columns"] = lottie->get_columns();
+
+	String source = JSON::stringify(dict, "", false);
+
+	Ref<FileAccess> file = FileAccess::open(p_save_path + ".lottiejson", FileAccess::WRITE, &err);
+
+	ERR_FAIL_COND_V_MSG(err, err, "Cannot save lottie json '" + p_save_path + "'.");
+
+	if (!compress) {
+		file->store_string(source);
+	} else {
+		PackedByteArray compressed = Lz4::compress_frame(source.to_utf8_buffer(), compression_level);
+		file->store_buffer(compressed);
+	}
+	if (file->get_error() != OK && file->get_error() != ERR_FILE_EOF) {
+		return ERR_CANT_CREATE;
+	}
+
 	return err;
 }
 
@@ -138,6 +168,9 @@ void ResourceImporterLottieCTEX::get_import_options(const String &p_path, List<I
 	ResourceImporterTexture::get_import_options(p_path, r_options, p_preset);
 }
 bool ResourceImporterLottieCTEX::get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const {
+	if (p_option == "compress" || p_option == "compression_level") {
+		return false;
+	}
 	return ResourceImporterTexture::get_option_visibility(p_path, p_option, p_options);
 }
 void ResourceImporterLottieCTEX::get_recognized_extensions(List<String> *p_extensions) const {
