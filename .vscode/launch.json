@@ -1,0 +1,111 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug unit tests",
+			"program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+			"args": [
+				"--test",
+			],
+			"cwd": "${workspaceFolder}",
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug doctool",
+			"program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+			"args": [
+				"--doctool",
+			],
+			"cwd": "${workspaceFolder}",
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug regression-test-project",
+			"program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+			"args": [
+				"--path",
+				"/home/luo/games/regression-test-project"
+			],
+			"cwd": "${workspaceFolder}",
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug game",
+			"program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+			"args": [
+				"--path",
+				"/home/luo/games/new-game-project"
+			],
+			"cwd": "${workspaceFolder}",
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug editor",
+			"program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+			"args": [
+				"--editor",
+				"--path",
+				"/home/luo/games/new-game-project",
+			],
+			"cwd": "${workspaceFolder}",
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug rust itest",
+			"program": "${workspaceFolder}/bin/godot.linuxbsd.editor.x86_64.llvm",
+			"args": [
+				"--headless",
+				"--verbose",
+				"--path",
+				"/home/luo/gdext/itest/godot",
+			],
+			"cwd": "${workspaceFolder}",
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug game XL",
+			"program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+			"args": [
+				"--path",
+				"/home/luo/games/XkLkQyDcProject/godot/"
+			],
+			"cwd": "${workspaceFolder}",
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug editor XL",
+			"program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+			"args": [
+				"--editor",
+				"--path",
+				"/home/luo/games/XkLkQyDcProject/godot/",
+			],
+			"cwd": "${workspaceFolder}",
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug asset processor XL",
+			"program": "${workspaceFolder}/bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+			"args": [
+				"--path",
+				"/home/luo/games/XkLkQyDcProject/godot/",
+				"--scene",
+				"scene/asset_processor.tscn"
+			],
+			"cwd": "${workspaceFolder}",
+		},
+	]
+}
