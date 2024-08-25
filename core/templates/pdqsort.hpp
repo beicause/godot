@@ -195,12 +195,12 @@ inline void sort3(Iter a, Iter b, Iter c, Compare comp) {
 template <class T>
 inline T *align_cacheline(T *p) {
 #if defined(UINTPTR_MAX) && __cplusplus >= 201103L
-	std::uintptr_t ip = reinterpret_cast<std::uintptr_t>(p);
+	std::uintptr_t ip_ = reinterpret_cast<std::uintptr_t>(p);
 #else
-	std::size_t ip = reinterpret_cast<std::size_t>(p);
+	std::size_t ip_ = reinterpret_cast<std::size_t>(p);
 #endif
-	ip = (ip + cacheline_size - 1) & -cacheline_size;
-	return reinterpret_cast<T *>(ip);
+	ip_ = (ip_ + cacheline_size - 1) & -cacheline_size;
+	return reinterpret_cast<T *>(ip_);
 }
 
 template <class Iter>
