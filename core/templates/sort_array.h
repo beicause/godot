@@ -32,6 +32,7 @@
 #define SORT_ARRAY_H
 
 #include "core/error/error_macros.h"
+#include "core/templates/pdqsort.hpp"
 #include "core/typedefs.h"
 
 #define ERR_BAD_COMPARE(cond)                                         \
@@ -300,8 +301,7 @@ public:
 
 	inline void sort_range(int64_t p_first, int64_t p_last, T *p_array) const {
 		if (p_first != p_last) {
-			introsort(p_first, p_last, p_array, bitlog(p_last - p_first) * 2);
-			final_insertion_sort(p_first, p_last, p_array);
+			boost::sort::pdqsort_branchless(p_array + p_first, p_array + p_last, compare);
 		}
 	}
 
