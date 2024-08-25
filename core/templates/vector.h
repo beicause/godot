@@ -108,7 +108,7 @@ public:
 		sort_custom<_DefaultComparator<T>>();
 	}
 
-	template <typename Comparator, bool Validate = SORT_ARRAY_VALIDATE_ENABLED, typename... Args>
+	template <typename Comparator, bool Validate = SORT_ARRAY_VALIDATE_ENABLED, bool branchless = true, typename... Args>
 	void sort_custom(Args &&...args) {
 		Size len = _cowdata.size();
 		if (len == 0) {
@@ -116,7 +116,7 @@ public:
 		}
 
 		T *data = ptrw();
-		SortArray<T, Comparator, Validate> sorter{ args... };
+		SortArray<T, Comparator, Validate, branchless> sorter{ args... };
 		sorter.sort(data, len);
 	}
 

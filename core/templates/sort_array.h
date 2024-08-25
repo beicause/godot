@@ -52,7 +52,7 @@ struct _DefaultComparator {
 #define SORT_ARRAY_VALIDATE_ENABLED false
 #endif
 
-template <typename T, typename Comparator = _DefaultComparator<T>, bool Validate = SORT_ARRAY_VALIDATE_ENABLED>
+template <typename T, typename Comparator = _DefaultComparator<T>, bool Validate = SORT_ARRAY_VALIDATE_ENABLED, bool branchless = true>
 class SortArray {
 	enum {
 		INTROSORT_THRESHOLD = 16
@@ -301,7 +301,11 @@ public:
 
 	inline void sort_range(int64_t p_first, int64_t p_last, T *p_array) const {
 		if (p_first != p_last) {
-			boost::sort::pdqsort_branchless(p_array + p_first, p_array + p_last, compare);
+			if (branchless) {
+				boost::sort::pdqsort_branchless(p_array + p_first, p_array + p_last, compare);
+			} else {
+				boost::sort::pdqsort(p_array + p_first, p_array + p_last, compare);
+			}
 		}
 	}
 

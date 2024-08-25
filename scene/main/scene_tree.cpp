@@ -1054,7 +1054,7 @@ void SceneTree::_process(bool p_physics) {
 		}
 		{
 			// Then, re-sort groups.
-			process_groups.sort_custom<ProcessGroupSort>();
+			process_groups.sort_custom<ProcessGroupSort, false>();
 		}
 
 		process_groups_dirty = false;

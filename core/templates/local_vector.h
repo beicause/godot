@@ -268,14 +268,14 @@ public:
 		return find(p_val) != -1;
 	}
 
-	template <typename C>
+	template <typename C, bool branchless = true>
 	void sort_custom() {
 		U len = count;
 		if (len == 0) {
 			return;
 		}
 
-		SortArray<T, C> sorter;
+		SortArray<T, C, true, branchless> sorter;
 		sorter.sort(data, len);
 	}
 

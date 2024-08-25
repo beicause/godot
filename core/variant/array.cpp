@@ -629,12 +629,12 @@ struct _ArrayVariantSort {
 
 void Array::sort() {
 	ERR_FAIL_COND_MSG(_p->read_only, "Array is in read-only state.");
-	_p->array.sort_custom<_ArrayVariantSort>();
+	_p->array.sort_custom<_ArrayVariantSort, true, false>();
 }
 
 void Array::sort_custom(const Callable &p_callable) {
 	ERR_FAIL_COND_MSG(_p->read_only, "Array is in read-only state.");
-	_p->array.sort_custom<CallableComparator, true>(p_callable);
+	_p->array.sort_custom<CallableComparator, true, false>(p_callable);
 }
 
 void Array::shuffle() {
