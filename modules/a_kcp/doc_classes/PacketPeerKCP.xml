@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="PacketPeerKCP" inherits="PacketPeer" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="create_from_udp" qualifiers="static">
+			<return type="PacketPeerKCP" />
+			<param index="0" name="p_udp_peer" type="PacketPeerUDP" />
+			<description>
+			</description>
+		</method>
+		<method name="get_kcp_conv" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_udp_peer" qualifiers="const">
+			<return type="PacketPeerUDP" />
+			<description>
+			</description>
+		</method>
+		<method name="init_kcp">
+			<return type="void" />
+			<param index="0" name="p_conv" type="int" />
+			<param index="1" name="p_mode" type="int" default="0" />
+			<description>
+			</description>
+		</method>
+		<method name="set_kcp_mode">
+			<return type="void" />
+			<param index="0" name="p_mode" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="set_udp_peer">
+			<return type="void" />
+			<param index="0" name="p_udp_peer" type="PacketPeerUDP" />
+			<description>
+			</description>
+		</method>
+		<method name="update_kcp">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+	</methods>
+</class>
