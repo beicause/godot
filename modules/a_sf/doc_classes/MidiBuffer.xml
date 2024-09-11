@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MidiBuffer" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../doc/class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="clear">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="create" qualifiers="static">
+			<return type="MidiBuffer" />
+			<param index="0" name="sf" type="SoundFont" />
+			<param index="1" name="midi" type="Midi" />
+			<description>
+			</description>
+		</method>
+		<method name="fill_audio_buffer">
+			<return type="int" />
+			<param index="0" name="p_player" type="AudioStreamPlayer" />
+			<param index="1" name="p_length" type="int" default="-1" />
+			<description>
+			</description>
+		</method>
+		<method name="get_buffer">
+			<return type="PackedFloat32Array" />
+			<param index="0" name="p_length" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_data_left" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_space_left" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="is_render_threading" qualifiers="const">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="render">
+			<return type="int" />
+			<param index="0" name="p_length" type="int" default="-1" />
+			<description>
+			</description>
+		</method>
+		<method name="render_all" qualifiers="const">
+			<return type="PackedFloat32Array" />
+			<description>
+			</description>
+		</method>
+		<method name="render_threading">
+			<return type="void" />
+			<param index="0" name="p_length" type="int" default="-1" />
+			<description>
+			</description>
+		</method>
+		<method name="reset">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="wait_render_threading">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="block_size" type="int" setter="set_block_size" getter="get_block_size" default="256">
+		</member>
+		<member name="capacity" type="int" setter="set_capacity" getter="get_capacity" default="44100">
+		</member>
+		<member name="cursor" type="float" setter="set_cursor" getter="get_cursor" default="0.0">
+		</member>
+		<member name="midi" type="Midi" setter="set_midi" getter="get_midi">
+		</member>
+		<member name="sf" type="SoundFont" setter="set_sf" getter="get_sf">
+		</member>
+	</members>
+</class>
