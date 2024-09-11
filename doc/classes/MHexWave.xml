@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="MHexWave" inherits="RefCounted" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="change">
+			<return type="void" />
+			<param index="0" name="reflect" type="int" />
+			<param index="1" name="peak_time" type="float" />
+			<param index="2" name="half_height" type="float" />
+			<param index="3" name="zero_wait" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="create" qualifiers="static">
+			<return type="MHexWave" />
+			<param index="0" name="reflect" type="int" />
+			<param index="1" name="peak_time" type="float" />
+			<param index="2" name="half_height" type="float" />
+			<param index="3" name="zero_wait" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="generate_samples">
+			<return type="PackedFloat32Array" />
+			<param index="0" name="num_samples" type="int" />
+			<param index="1" name="freq" type="float" />
+			<description>
+			</description>
+		</method>
+		<method name="init">
+			<return type="void" />
+			<param index="0" name="width" type="int" />
+			<param index="1" name="oversample" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="shutdown">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+	</methods>
+</class>
