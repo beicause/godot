@@ -3813,7 +3813,7 @@ bool TileSet::_set(const StringName &p_name, const Variant &p_value) {
 		} else if (what == "shapes") {
 			Array p = p_value;
 			for (int i = 0; i < p.size(); i++) {
-				CompatibilityShapeData csd;
+				CompatibilityShapeData csd{};
 				Dictionary d = p[i];
 				for (int j = 0; j < d.size(); j++) {
 					String key = d.get_key_at_index(j);
