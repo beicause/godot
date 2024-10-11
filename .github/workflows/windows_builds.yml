@@ -67,6 +67,7 @@ jobs:
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           rustup default nightly
+          rustup target add x86_64-pc-windows-gnu
           cargo install cxxbridge-cmd
 
       - name: Restore Godot build cache
