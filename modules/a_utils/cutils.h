@@ -31,11 +31,9 @@
 #ifndef CUTILS_H
 #define CUTILS_H
 
-#include "core/io/image.h"
 #include "core/object/ref_counted.h"
 #include "scene/theme/default_font.gen.h"
 #include "scene/theme/default_theme.h"
-#include <functional>
 
 class CUtils : public RefCounted {
 	GDCLASS(CUtils, RefCounted);
