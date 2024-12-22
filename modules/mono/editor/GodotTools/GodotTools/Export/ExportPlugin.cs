@@ -296,7 +296,7 @@ namespace GodotTools.Export
 
                     string assemblyPath = Path.Combine(publishOutputDir, $"{GodotSharpDirs.ProjectAssemblyName}.dll");
                     string nativeAotPath = Path.Combine(publishOutputDir,
-                        $"{GodotSharpDirs.ProjectAssemblyName}.{soExt}");
+                        $"lib{GodotSharpDirs.ProjectAssemblyName}.{soExt}");
 
                     if (!File.Exists(assemblyPath) && !File.Exists(nativeAotPath))
                     {
