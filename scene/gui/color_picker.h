@@ -265,6 +265,8 @@ private:
 		Ref<Texture2D> picker_cursor;
 		Ref<Texture2D> color_hue;
 
+		Ref<Texture2D> color_script;
+
 		/* Mode buttons */
 		Ref<StyleBox> mode_button_normal;
 		Ref<StyleBox> mode_button_pressed;
