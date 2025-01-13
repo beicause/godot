@@ -2,7 +2,7 @@
 
 import os
 from argparse import ArgumentParser, Namespace
-from typing import Generator
+from typing import Generator, List
 
 import tree_sitter_cpp as cpp
 from tree_sitter import Language, Node, Parser
@@ -36,7 +36,7 @@ def traverse_node(tree: Node) -> Generator[Node, None, None]:
 
 
 class MethodDefine:
-    def __init__(self, id: str, args: list[str], defvals: list[str], is_static=False, cls_name=""):
+    def __init__(self, id: str, args: List[str], defvals: List[str], is_static=False, cls_name=""):
         self.id = id
         self.args = args
         self.defvals = defvals
@@ -44,7 +44,7 @@ class MethodDefine:
         self.cls_name = cls_name
 
 
-fn_list: list[MethodDefine] = []
+fn_list: List[MethodDefine] = []
 
 for cls_node in [x for x in traverse_node(tree.root_node) if x.type == "class_specifier"]:
     cls_name = str(cls_node.child(1).text, "utf8")
@@ -101,9 +101,9 @@ for fn in fn_list:
 
     if fn.is_static:
         print(
-            f"""ClassDB::bind_static_method("{fn.cls_name}", D_METHOD("{fn.id}"{'' if len(fn.args)==0 else ','+','.join(['"'+a+'"' for a in fn.args])}), &{fn.cls_name}::{fn.id}{'' if len(fn.defvals)==0 else ','+','.join(["DEFVAL("+v+")" for v in fn.defvals])});"""
+            f"""ClassDB::bind_static_method("{fn.cls_name}", D_METHOD("{fn.id}"{"" if len(fn.args) == 0 else "," + ",".join(['"' + a + '"' for a in fn.args])}), &{fn.cls_name}::{fn.id}{"" if len(fn.defvals) == 0 else "," + ",".join(["DEFVAL(" + v + ")" for v in fn.defvals])});"""
         )
     else:
         print(
-            f"""ClassDB::bind_method(D_METHOD("{fn.id}"{'' if len(fn.args)==0 else ','+','.join(['"'+a+'"' for a in fn.args])}), &{fn.cls_name}::{fn.id}{'' if len(fn.defvals)==0 else ','+','.join(["DEFVAL("+v+")" for v in fn.defvals])});"""
+            f"""ClassDB::bind_method(D_METHOD("{fn.id}"{"" if len(fn.args) == 0 else "," + ",".join(['"' + a + '"' for a in fn.args])}), &{fn.cls_name}::{fn.id}{"" if len(fn.defvals) == 0 else "," + ",".join(["DEFVAL(" + v + ")" for v in fn.defvals])});"""
         )
