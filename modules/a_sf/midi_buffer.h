@@ -38,8 +38,6 @@
 #include <core/templates/ring_buffer.h>
 #include <servers/audio/effects/audio_stream_generator.h>
 
-using namespace godot;
-
 #ifndef CLZ32
 inline uint32_t __popcnt(uint32_t x) {
 	x -= ((x >> 1) & 0x55555555);
@@ -70,29 +68,57 @@ class MidiBuffer : public RefCounted {
 
 	Ref<Midi> midi = nullptr;
 	Ref<SoundFont> sf = nullptr;
-	tml_message *_tml = nullptr;
-	int rb_init_capacity = 44100 / 2;
-	int rb_target_size = rb_init_capacity * 2;
-	WorkerThreadPool::TaskID running_id = -1;
-	RingBuffer<float> ring_buffer = RingBuffer<float>(msb(rb_init_capacity));
+	int capacity = 44100;
+	RingBuffer<float> ring_buffer = RingBuffer<float>(msb(capacity));
 	SpinLock spin_lock;
+	float cursor = 0;
+	tml_message *tml = nullptr;
+	int block_size = 256;
 
 protected:
 	static void _bind_methods();
 
 public:
-	static Ref<MidiBuffer> new_with_args(Ref<SoundFont> sf = Ref<SoundFont>(), Ref<Midi> midi = Ref<Midi>());
-	void set_midi(Ref<Midi> midi);
-	void set_sf(Ref<SoundFont> sf);
-	int push_buffer(int length);
-	PackedFloat32Array get_buffer(int length);
-	int fill_audio_buffer(Ref<AudioStreamGeneratorPlayback> playback, int length = -1);
-	void reset_tml();
-	void stop();
-	int get_rb_init_capacity() { return rb_init_capacity; }
-	void set_rb_init_capacity(int value) { rb_init_capacity = value; }
-	int get_rb_target_size() { return rb_target_size; }
-	void set_rb_target_size(int value) { rb_target_size = value; }
+	void set_midi(Ref<Midi> p_midi) {
+		ERR_FAIL_COND(p_midi.is_null() || !p_midi.is_valid());
+		midi = p_midi;
+		set_cursor(cursor);
+	}
+	Ref<Midi> get_midi() { return midi; }
+	void set_sf(Ref<SoundFont> p_sf) { sf = p_sf; }
+	Ref<SoundFont> get_sf() { return sf; }
+	int render(int p_length = -1);
+	PackedFloat32Array get_buffer(int p_length);
+	WorkerThreadPool::TaskID render_async(int p_length = -1);
+	int fill_audio_buffer(Ref<AudioStreamGeneratorPlayback> p_playback, int p_length = -1);
+	void clear() { ring_buffer.clear(); }
+	void reset();
+	int get_capacity() {
+		return capacity;
+	}
+	void set_capacity(int p_value) {
+		capacity = p_value;
+		ring_buffer.resize(msb(capacity));
+	}
+	int get_block_size() { return block_size; }
+	void set_block_size(int p_value) { block_size = p_value; }
+	int get_space_left() { return ring_buffer.space_left(); }
+	int get_data_left() { return ring_buffer.data_left(); }
+
+	float get_cursor() { return cursor; }
+	void set_cursor(float p_cursor) {
+		if (midi.is_null()) {
+			return;
+		}
+		for (tml = midi->_get_tml_raw(); tml != nullptr; tml = tml->next) {
+			if (tml->time >= p_cursor) {
+				cursor = tml->time;
+				break;
+			}
+		}
+	}
+
+	PackedFloat32Array render_all();
 };
 
 #endif // MIDI_BUFFER_H

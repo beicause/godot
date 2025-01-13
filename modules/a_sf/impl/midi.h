@@ -34,8 +34,6 @@
 #include "sf_utils.h"
 #include "sound_font.h"
 
-using namespace godot;
-
 class Midi : public Resource {
 	GDCLASS(Midi, Resource);
 
@@ -156,34 +154,29 @@ public:
 		K_NOTE_COUNT,
 	};
 
-	bool tml_header = false;
+	tml_message *tml_head = nullptr;
 
 	/*gd_ignore*/
-	void _set_tml_raw(tml_message *l) { _tml = l; }
+	void _set_tml_raw(tml_message *p_l) { _tml = p_l; }
 	/*gd_ignore*/
 	tml_message *_get_tml_raw() { return _tml; }
 
-	bool is_tml_header() { return tml_header; };
+	bool is_tml_head() { return tml_head != nullptr; }
+	bool is_tml_valid() { return _tml != nullptr; }
 
 	static Ref<Midi> create_from_path(const String &p_path);
-	static Ref<Midi> create_from_file(Ref<FileAccess> file);
-	static Ref<Midi> create_from_memory(const PackedByteArray &buffer);
-	static Ref<Midi> create_from_dicts(const Array &dicts);
-	static Ref<Midi> create_simple_array(const PackedByteArray &arr, int duration_ms = 600, int channel = 0, int vel = 100);
-	static Ref<Midi> create_simple_time_array(const PackedByteArray &notes, const PackedInt32Array &times, int duration_ms = 600, int channel = 0, int vel = 100);
+	static Ref<Midi> create_from_file(Ref<FileAccess> p_file);
+	static Ref<Midi> create_from_memory(const PackedByteArray &p_buffer);
+	static Ref<Midi> create_from_dicts(const Array &p_dicts);
+	static Ref<Midi> create_simple_array(const PackedByteArray &p_arr, int p_duration_ms = 600, int p_channel = 0, int p_vel = 100);
+	static Ref<Midi> create_simple_time_array(const PackedByteArray &p_notes, const PackedInt32Array &p_times, int p_duration_ms = 600, int p_channel = 0, int p_vel = 100);
 
-	Array to_dicts(int len = -1);
-	Array to_simple_array(int selected_channel = -1);
+	Array to_dicts(int p_len = -1);
+	Array to_simple_array(int p_selected_channel = -1);
 	Dictionary get_info();
 	int get_tempo_value();
 	Dictionary read_msg();
 	Ref<Midi> next();
-
-	PackedFloat32Array render_all(Ref<SoundFont> sf);
-	Array render_current(Ref<SoundFont> sf);
-	/*gd_ignore*/
-	static tml_message *render_current_raw(tml_message *t, Ref<SoundFont> sf, PackedFloat32Array *buffer);
-
 	~Midi();
 };
 VARIANT_ENUM_CAST(Midi::MessageType);
