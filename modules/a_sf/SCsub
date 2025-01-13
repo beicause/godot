@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from misc.utility.scons_hints import *
 
 Import("env")
 Import("env_modules")
@@ -7,15 +8,13 @@ env_module = env_modules.Clone()
 
 # Thirdparty source files
 thirdparty_obj = []
-thirdparty_dir = "thirdparty/"
-thirdparty_sources = [
-    "stb/stb_vorbis.cpp"
-]
+thirdparty_dir = "./thirdparty/"
+thirdparty_sources = ["stb/stb_vorbis.cpp"]
 thirdparty_sources = [thirdparty_dir + file for file in thirdparty_sources]
 
 # Impl source files
 impl_obj = []
-impl_dir = "impl/"
+impl_dir = "./impl/"
 impl_sources = [
     "hexwave.cpp",
     "midi.cpp",
@@ -44,4 +43,4 @@ env.modules_sources += module_obj
 
 # Needed to force rebuilding the module files when the thirdparty library is updated.
 env.Depends(module_obj, impl_obj)
-env.Depends(impl_obj,thirdparty_obj)
+env.Depends(impl_obj, thirdparty_obj)

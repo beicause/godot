@@ -39,8 +39,6 @@
 #include <core/io/file_access.h>
 #include <core/os/memory.h>
 
-using namespace godot;
-
 int read_file_access(void *file, void *ptr, unsigned int size);
 int skip_file_access(void *file, unsigned int count);
 

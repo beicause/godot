@@ -35,8 +35,6 @@
 #include "core/io/resource_loader.h"
 #include "sf_utils.h"
 
-using namespace godot;
-
 class SoundFont : public Resource {
 	GDCLASS(SoundFont, Resource);
 
@@ -60,8 +58,8 @@ public:
 	}
 
 	static Ref<SoundFont> create_from_path(const String &p_path);
-	static Ref<SoundFont> create_from_file(Ref<FileAccess> file);
-	static Ref<SoundFont> create_from_memory(const PackedByteArray &buffer);
+	static Ref<SoundFont> create_from_file(Ref<FileAccess> p_file);
+	static Ref<SoundFont> create_from_memory(const PackedByteArray &p_buffer);
 
 	int get_preset_num();
 	int get_voice_num();
@@ -116,8 +114,6 @@ public:
 	float channel_get_pitch_range(int channel);
 	float channel_get_tuning(int channel);
 	~SoundFont();
-
-	void (*render_float_raw)(tsf *f, float *buffer, int samples, int flag_mixing) = tsf_render_float;
 };
 VARIANT_ENUM_CAST(SoundFont::OutputMode);
 

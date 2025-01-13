@@ -22,6 +22,11 @@
 			<description>
 			</description>
 		</method>
+		<method name="is_tml_valid">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
 		<method name="load_dicts" qualifiers="static">
 			<return type="Midi" />
 			<param index="0" name="dicts" type="Array" />
@@ -75,27 +80,15 @@
 			<description>
 			</description>
 		</method>
-		<method name="render_all">
-			<return type="PackedFloat32Array" />
-			<param index="0" name="sf" type="SoundFont" />
-			<description>
-			</description>
-		</method>
-		<method name="render_current">
-			<return type="Array" />
-			<param index="0" name="sf" type="SoundFont" />
-			<description>
-			</description>
-		</method>
 		<method name="to_dicts">
 			<return type="Array" />
-			<param index="0" name="len" type="int" default="-1" />
+			<param index="0" name="p_length" type="int" default="-1" />
 			<description>
 			</description>
 		</method>
 		<method name="to_simple_array">
 			<return type="Array" />
-			<param index="0" name="selected_channel" type="int" default="-1" />
+			<param index="0" name="p_selected_channel" type="int" default="-1" />
 			<description>
 			</description>
 		</method>
