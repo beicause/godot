@@ -42,10 +42,10 @@ static void free_safe(void *ptr) {
 #define TSF_FREE free_safe
 #include "sound_font.h"
 
-static Ref<SoundFont> new_from_tsf(tsf *f) {
-	ERR_FAIL_COND_V(f == nullptr, Ref<SoundFont>());
+static Ref<SoundFont> new_from_tsf(tsf *p_tsf) {
+	ERR_FAIL_COND_V(p_tsf == nullptr, Ref<SoundFont>());
 	Ref<SoundFont> sf = memnew(SoundFont);
-	sf->set_tsf(f);
+	sf->set_tsf(p_tsf);
 	sf->set_output(SoundFont::OUTPUT_MONO, 44100);
 	return sf;
 }
@@ -53,12 +53,12 @@ Ref<SoundFont> SoundFont::create_from_path(const String &p_path) {
 	return new_from_tsf(load_from_path_tsf(p_path));
 }
 
-Ref<SoundFont> SoundFont::create_from_file(Ref<FileAccess> file) {
-	return new_from_tsf(load_from_file_tsf(file));
+Ref<SoundFont> SoundFont::create_from_file(Ref<FileAccess> p_file) {
+	return new_from_tsf(load_from_file_tsf(p_file));
 }
 
-Ref<SoundFont> SoundFont::create_from_memory(const PackedByteArray &buffer) {
-	return new_from_tsf(load_from_memory_tsf(buffer));
+Ref<SoundFont> SoundFont::create_from_memory(const PackedByteArray &p_buffer) {
+	return new_from_tsf(load_from_memory_tsf(p_buffer));
 }
 
 int SoundFont::get_preset_num() {
@@ -126,7 +126,7 @@ Ref<SoundFont> SoundFont::copy() {
 void SoundFont::reset() {
 	ERR_FAIL_COND(_tsf == nullptr);
 	tsf_reset(_tsf);
-};
+}
 
 // Returns the preset index from a bank and preset number, or -1 if it does not exist in the loaded SoundFont
 int SoundFont::get_preset_index(int bank, int preset_number) {
@@ -393,9 +393,9 @@ void SoundFont::_bind_methods() {
 	BIND_ENUM_CONSTANT(OUTPUT_STEREO_UNWEAVED);
 	BIND_ENUM_CONSTANT(OUTPUT_MONO);
 
-	ClassDB::bind_static_method("SoundFont", D_METHOD("load_path", "path"), &SoundFont::create_from_path);
-	ClassDB::bind_static_method("SoundFont", D_METHOD("load_file", "file"), &SoundFont::create_from_file);
-	ClassDB::bind_static_method("SoundFont", D_METHOD("load_memory", "buffer"), &SoundFont::create_from_memory);
+	ClassDB::bind_static_method("SoundFont", D_METHOD("create_from_path", "p_path"), &SoundFont::create_from_path);
+	ClassDB::bind_static_method("SoundFont", D_METHOD("create_from_file", "p_file"), &SoundFont::create_from_file);
+	ClassDB::bind_static_method("SoundFont", D_METHOD("create_from_memory", "p_buffer"), &SoundFont::create_from_memory);
 
 	ClassDB::bind_method(D_METHOD("get_preset_num"), &SoundFont::get_preset_num);
 	ClassDB::bind_method(D_METHOD("get_voice_num"), &SoundFont::get_voice_num);

@@ -189,6 +189,24 @@
 			<description>
 			</description>
 		</method>
+		<method name="create_from_file" qualifiers="static">
+			<return type="SoundFont" />
+			<param index="0" name="p_file" type="FileAccess" />
+			<description>
+			</description>
+		</method>
+		<method name="create_from_memory" qualifiers="static">
+			<return type="SoundFont" />
+			<param index="0" name="p_buffer" type="PackedByteArray" />
+			<description>
+			</description>
+		</method>
+		<method name="create_from_path" qualifiers="static">
+			<return type="SoundFont" />
+			<param index="0" name="p_path" type="String" />
+			<description>
+			</description>
+		</method>
 		<method name="get_global_gain_db">
 			<return type="float" />
 			<description>
@@ -234,24 +252,6 @@
 		</method>
 		<method name="get_voice_num">
 			<return type="int" />
-			<description>
-			</description>
-		</method>
-		<method name="load_file" qualifiers="static">
-			<return type="SoundFont" />
-			<param index="0" name="file" type="FileAccess" />
-			<description>
-			</description>
-		</method>
-		<method name="load_memory" qualifiers="static">
-			<return type="SoundFont" />
-			<param index="0" name="buffer" type="PackedByteArray" />
-			<description>
-			</description>
-		</method>
-		<method name="load_path" qualifiers="static">
-			<return type="SoundFont" />
-			<param index="0" name="path" type="String" />
 			<description>
 			</description>
 		</method>
