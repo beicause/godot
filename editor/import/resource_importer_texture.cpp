@@ -249,6 +249,8 @@ void ResourceImporterTexture::get_import_options(const String &p_path, List<Impo
 	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "process/normal_map_invert_y"), false));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "process/hdr_as_srgb"), false));
 	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "process/hdr_clamp_exposure"), false));
+	r_options->push_back(ImportOption(PropertyInfo(Variant::VECTOR2I, "process/size_override"), Vector2i(0, 0)));
+	r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "process/trim_alpha"), false));
 
 	// Maximum bound is the highest allowed value for lossy compression (the lowest common denominator).
 	r_options->push_back(ImportOption(PropertyInfo(Variant::INT, "process/size_limit", PROPERTY_HINT_RANGE, "0,16383,1"), 0));
@@ -513,7 +515,9 @@ Error ResourceImporterTexture::import(ResourceUID::ID p_source_id, const String 
 
 	const bool hdr_as_srgb = p_options["process/hdr_as_srgb"];
 	const bool hdr_clamp_exposure = p_options["process/hdr_clamp_exposure"];
+	Vector2i size_override = p_options["process/size_override"];
 	int size_limit = p_options["process/size_limit"];
+	const bool trim_alpha = p_options["process/trim_alpha"];
 
 	bool using_fallback_size_limit = false;
 	if (size_limit == 0) {
@@ -595,6 +599,18 @@ Error ResourceImporterTexture::import(ResourceUID::ID p_source_id, const String 
 	}
 
 	for (Ref<Image> &target_image : images_imported) {
+		if (trim_alpha) {
+			Rect2i rect = target_image->get_used_rect();
+			Ref<Image> img = target_image->get_region(rect);
+			target_image->set_data(rect.size.width, rect.size.height, target_image->has_mipmaps(), target_image->get_format(), img->get_data());
+		}
+		if (size_override.width <= 0) {
+			size_override.width = target_image->get_width();
+		}
+		if (size_override.height <= 0) {
+			size_override.height = target_image->get_height();
+		}
+		target_image->resize(size_override.width, size_override.height, Image::INTERPOLATE_LANCZOS);
 		// Apply the size limit.
 		if (size_limit > 0 && (target_image->get_width() > size_limit || target_image->get_height() > size_limit)) {
 			if (target_image->get_width() >= target_image->get_height()) {
@@ -605,7 +621,7 @@ Error ResourceImporterTexture::import(ResourceUID::ID p_source_id, const String 
 					// Only warn if downsizing occurred when the user did not explicitly request it.
 					WARN_PRINT(vformat("%s: Texture was downsized on import as its width (%d pixels) exceeded the importable size limit (%d pixels).", p_source_file, target_image->get_width(), size_limit));
 				}
-				target_image->resize(new_width, new_height, Image::INTERPOLATE_CUBIC);
+				target_image->resize(new_width, new_height, Image::INTERPOLATE_LANCZOS);
 			} else {
 				int new_height = size_limit;
 				int new_width = target_image->get_width() * new_height / target_image->get_height();
@@ -614,7 +630,7 @@ Error ResourceImporterTexture::import(ResourceUID::ID p_source_id, const String 
 					// Only warn if downsizing occurred when the user did not explicitly request it.
 					WARN_PRINT(vformat("%s: Texture was downsized on import as its height (%d pixels) exceeded the importable size limit (%d pixels).", p_source_file, target_image->get_height(), size_limit));
 				}
-				target_image->resize(new_width, new_height, Image::INTERPOLATE_CUBIC);
+				target_image->resize(new_width, new_height, Image::INTERPOLATE_LANCZOS);
 			}
 
 			if (normal == 1) {
