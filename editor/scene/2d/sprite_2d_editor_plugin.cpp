@@ -44,6 +44,7 @@
 #include "scene/2d/polygon_2d.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/menu_button.h"
+#include "scene/gui/option_button.h"
 #include "scene/gui/panel.h"
 #include "scene/gui/view_panner.h"
 #include "thirdparty/clipper2/include/clipper2/clipper.h"
@@ -187,7 +188,26 @@ void Sprite2DEditor::_update_mesh_data() {
 
 	float epsilon = simplification->get_value();
 
-	Vector<Vector<Vector2>> lines = bm->clip_opaque_to_polygons(rect, epsilon);
+	Vector<Vector<Vector2>> lines;
+	switch (clip_mode->get_selected()) {
+		case CLIP_MODE_POLYGONS: {
+			lines = bm->clip_opaque_to_polygons(rect, epsilon);
+		} break;
+		case CLIP_MODE_CONVEX_HULL: {
+			Vector2i size = bm->get_size();
+			Rect2i r = Rect2i(0, 0, size.width, size.height).intersection(rect);
+			PackedVector2Array points;
+			for (int i = r.position.y; i < r.position.y + r.size.height; i++) {
+				for (int j = r.position.x; j < r.position.x + r.size.width; j++) {
+					if (bm->get_bit(j, i)) {
+						points.push_back(Point2(j, i));
+					}
+				}
+			}
+			Vector<Vector2> hull = Geometry2D::convex_hull(points);
+			lines.push_back(hull);
+		} break;
+	}
 
 	uv_lines.clear();
 
@@ -703,6 +723,13 @@ Sprite2DEditor::Sprite2DEditor() {
 	grow_pixels->set_value(2);
 	grow_pixels->set_accessibility_name(TTRC("Grow (Pixels):"));
 	hb->add_child(grow_pixels);
+	hb->add_spacer();
+	clip_mode = memnew(OptionButton);
+	clip_mode->set_text(TTR("Clip Mode"));
+	clip_mode->add_item("Polygons", CLIP_MODE_POLYGONS);
+	clip_mode->add_item("Convex Hull", CLIP_MODE_CONVEX_HULL);
+	clip_mode->select(CLIP_MODE_POLYGONS);
+	hb->add_child(clip_mode);
 	hb->add_spacer();
 	update_preview = memnew(Button);
 	update_preview->set_text(TTR("Update Preview"));

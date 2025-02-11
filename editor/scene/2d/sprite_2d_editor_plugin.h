@@ -42,6 +42,7 @@ class HBoxContainer;
 class MenuButton;
 class Panel;
 class ViewPanner;
+class OptionButton;
 
 class Sprite2DEditor : public Control {
 	GDCLASS(Sprite2DEditor, Control);
@@ -86,6 +87,7 @@ class Sprite2DEditor : public Control {
 	SpinBox *grow_pixels = nullptr;
 	SpinBox *shrink_pixels = nullptr;
 	Button *update_preview = nullptr;
+	OptionButton *clip_mode = nullptr;
 
 	void _menu_option(int p_option);
 
@@ -111,6 +113,11 @@ class Sprite2DEditor : public Control {
 
 	void _sync_sprite_resize_mode();
 	void _update_sprite_resize_mode_button();
+
+	enum ClipMode {
+		CLIP_MODE_POLYGONS,
+		CLIP_MODE_CONVEX_HULL,
+	};
 
 protected:
 	void _node_removed(Node *p_node);
