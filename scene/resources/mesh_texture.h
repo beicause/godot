@@ -34,6 +34,7 @@
 #include "scene/resources/texture.h"
 
 class Mesh;
+class Material;
 
 class MeshTexture : public Texture2D {
 	GDCLASS(MeshTexture, Texture2D);
@@ -41,7 +42,18 @@ class MeshTexture : public Texture2D {
 
 	Ref<Texture2D> base_texture;
 	Ref<Mesh> mesh;
-	Size2i size;
+	RID viewport_texture;
+	RID viewport;
+	RID canvas;
+	RID canvas_item;
+	RID canvas_item_bg;
+	Size2 size = Size2(512, 512);
+	Size2 scale = Size2(1, 1);
+	Size2 offset = Size2(0, 0);
+	Color background = Color(0, 0, 0, 0);
+	Ref<Material> material;
+
+	void _update_viewport_texture();
 
 protected:
 	static void _bind_methods();
@@ -53,6 +65,12 @@ public:
 
 	virtual bool has_alpha() const override;
 
+	virtual bool is_pixel_opaque(int p_x, int p_y) const override;
+
+	virtual Ref<Image> get_image() const override;
+
+	virtual void set_path(const String &p_path, bool p_take_over = false) override;
+
 	void set_mesh(const Ref<Mesh> &p_mesh);
 	Ref<Mesh> get_mesh() const;
 
@@ -62,14 +80,22 @@ public:
 	void set_base_texture(const Ref<Texture2D> &p_texture);
 	Ref<Texture2D> get_base_texture() const;
 
-	virtual void draw(RID p_canvas_item, const Point2 &p_pos, const Color &p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
-	virtual void draw_rect(RID p_canvas_item, const Rect2 &p_rect, bool p_tile = false, const Color &p_modulate = Color(1, 1, 1), bool p_transpose = false) const override;
-	virtual void draw_rect_region(RID p_canvas_item, const Rect2 &p_rect, const Rect2 &p_src_rect, const Color &p_modulate = Color(1, 1, 1), bool p_transpose = false, bool p_clip_uv = true) const override;
-	virtual bool get_rect_region(const Rect2 &p_rect, const Rect2 &p_src_rect, Rect2 &r_rect, Rect2 &r_src_rect) const override;
+	void set_material(const Ref<Material> &p_material);
+	Ref<Material> get_material() const;
 
-	bool is_pixel_opaque(int p_x, int p_y) const override;
+	void set_scale(const Size2 &p_scale);
+	Size2 get_scale() const;
+
+	void set_offset(const Size2 &p_offset);
+	Size2 get_offset() const;
+
+	void set_background(const Color &p_color);
+	Color get_background() const;
+
+	RID get_viewport_rid() { return viewport; }
 
 	MeshTexture();
+	~MeshTexture();
 };
 
 #endif // MESH_TEXTURE_H
