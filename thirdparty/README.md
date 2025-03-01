@@ -646,6 +646,19 @@ Patches:
 - `0001-simplifier-distance-only-error.patch` (GH-98529)
 
 
+## mimalloc
+
+- Upstream: https://github.com/microsoft/mimalloc
+- Version: dev3 (93fe2412238f1e3b5534edae0595e4d2c76437f3, 2025)
+- License: MIT
+
+Files extracted from upstream repository:
+
+- All files in `include/`
+- All files in `src/`
+- `LICENSE`
+
+
 ## mingw-std-threads
 
 - Upstream: https://github.com/meganz/mingw-std-threads
