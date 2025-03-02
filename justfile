@@ -45,7 +45,7 @@ dev-asan:
 
 editor:
     scons platform=linuxbsd target=editor compiledb=no use_llvm=yes linker=mold \
-    {{prod_base}} module_jsonrpc_enabled=yes
+    {{prod_base}} module_jsonrpc_enabled=yes module_multiplayer_enabled=yes module_enet_enabled=yes
 
 android_debug:
     scons dev_build=no platform=android target=template_debug {{template_base}}
@@ -61,6 +61,10 @@ windows_debug:
 
 windows_debug_mingw:
     scons dev_build=yes platform=windows target=template_debug use_llvm=yes use_mingw=yes {{template_base}}
+
+web_debug:
+    scons dev_build=no platform=web target=template_debug {{template_base}} module_mono_enabled=no
+
 
 mono_glue:
     ./bin/godot.linuxbsd.editor.x86_64.llvm.mono --headless --generate-mono-glue modules/mono/glue
