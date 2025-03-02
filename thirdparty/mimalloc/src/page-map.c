@@ -244,8 +244,12 @@ static mi_page_t** mi_page_map_ensure_at(size_t idx) {
     mi_memid_t memid;
     sub = (mi_page_t**)_mi_os_alloc(MI_PAGE_MAP_SUB_COUNT * sizeof(mi_page_t*), &memid);
     mi_page_t** expect = NULL;
+	#ifdef _WIN32
+    if (!mi_atomic_cas_strong_acq_rel(((_Atomic(mi_page_t**)*)&_mi_page_map[idx]), &expect, (uintptr_t)sub)) {	
+	#else
     if (!mi_atomic_cas_strong_acq_rel(((_Atomic(mi_page_t**)*)&_mi_page_map[idx]), &expect, sub)) {
-      // another thread already allocated it.. free and continue
+    #endif
+		// another thread already allocated it.. free and continue
       _mi_os_free(sub, MI_PAGE_MAP_SUB_COUNT * sizeof(mi_page_t*), memid);
       sub = expect;
       mi_assert_internal(sub!=NULL);

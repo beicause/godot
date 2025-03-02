@@ -67,7 +67,16 @@ typedef size_t mi_bfield_t;
 #define MI_BFIELD_LO_BIT8            (((~(mi_bfield_t)0))/0xFF)         // 0x01010101 ..
 #define MI_BFIELD_HI_BIT8            (MI_BFIELD_LO_BIT8 << 7)           // 0x80808080 ..
 
+#ifdef _MSC_VER
+#if SIZE_MAX == UINT64_MAX
+#define MI_BCHUNK_SIZE               64
+#else
+#define MI_BCHUNK_SIZE               32
+#endif
+#else
 #define MI_BCHUNK_SIZE               (MI_BCHUNK_BITS / 8)
+#endif
+
 #define MI_BCHUNK_FIELDS             (MI_BCHUNK_BITS / MI_BFIELD_BITS)  // 8 on both 64- and 32-bit
 
 

@@ -1,0 +1,52 @@
+diff --git a/thirdparty/mimalloc/src/bitmap.h b/thirdparty/mimalloc/src/bitmap.h
+index b17d83e5d9..89df26c521 100644
+--- a/thirdparty/mimalloc/src/bitmap.h
++++ b/thirdparty/mimalloc/src/bitmap.h
+@@ -67,7 +67,16 @@ typedef size_t mi_bfield_t;
+ #define MI_BFIELD_LO_BIT8            (((~(mi_bfield_t)0))/0xFF)         // 0x01010101 ..
+ #define MI_BFIELD_HI_BIT8            (MI_BFIELD_LO_BIT8 << 7)           // 0x80808080 ..
+ 
++#ifdef _MSC_VER
++#if SIZE_MAX == UINT64_MAX
++#define MI_BCHUNK_SIZE               64
++#else
++#define MI_BCHUNK_SIZE               32
++#endif
++#else
+ #define MI_BCHUNK_SIZE               (MI_BCHUNK_BITS / 8)
++#endif
++
+ #define MI_BCHUNK_FIELDS             (MI_BCHUNK_BITS / MI_BFIELD_BITS)  // 8 on both 64- and 32-bit
+ 
+ 
+diff --git a/thirdparty/mimalloc/src/page-map.c b/thirdparty/mimalloc/src/page-map.c
+index 44d6de4a35..c1fe4f747c 100644
+--- a/thirdparty/mimalloc/src/page-map.c
++++ b/thirdparty/mimalloc/src/page-map.c
+@@ -244,8 +244,12 @@ static mi_page_t** mi_page_map_ensure_at(size_t idx) {
+     mi_memid_t memid;
+     sub = (mi_page_t**)_mi_os_alloc(MI_PAGE_MAP_SUB_COUNT * sizeof(mi_page_t*), &memid);
+     mi_page_t** expect = NULL;
++	#ifdef _WIN32
++    if (!mi_atomic_cas_strong_acq_rel(((_Atomic(mi_page_t**)*)&_mi_page_map[idx]), &expect, (uintptr_t)sub)) {	
++	#else
+     if (!mi_atomic_cas_strong_acq_rel(((_Atomic(mi_page_t**)*)&_mi_page_map[idx]), &expect, sub)) {
+-      // another thread already allocated it.. free and continue
++    #endif
++		// another thread already allocated it.. free and continue
+       _mi_os_free(sub, MI_PAGE_MAP_SUB_COUNT * sizeof(mi_page_t*), memid);
+       sub = expect;
+       mi_assert_internal(sub!=NULL);
+diff --git a/thirdparty/mimalloc/src/prim/windows/prim.c b/thirdparty/mimalloc/src/prim/windows/prim.c
+index 88b520c854..574e567827 100644
+--- a/thirdparty/mimalloc/src/prim/windows/prim.c
++++ b/thirdparty/mimalloc/src/prim/windows/prim.c
+@@ -848,7 +848,7 @@ bool _mi_prim_thread_is_in_threadpool(void) {
+   if (win_major_version >= 6) {
+     // check if this thread belongs to a windows threadpool
+     // see: <https://www.geoffchappell.com/studies/windows/km/ntoskrnl/inc/api/pebteb/teb/index.htm>
+-    _TEB* const teb = NtCurrentTeb();
++    struct _TEB* const teb = NtCurrentTeb();
+     void* const pool_data = *((void**)((uint8_t*)teb + (MI_SIZE_BITS == 32 ? 0x0F90 : 0x1778)));
+     return (pool_data != NULL);
+   }
