@@ -3,6 +3,7 @@ set shell := ["fish", "-c"]
 c := ""
 
 base :="\
+	cache_path=bin/scons_cache cache_limit=4 \
 	scu_build=yes \
 	warnings=extra \
 	werror=yes \
@@ -35,39 +36,39 @@ prod_base :=  "\
 template_base := prod_base
 
 dev:
-    scons {{dev_base}} compiledb=yes
+	scons compiledb=yes {{dev_base}}
 
 dev-test:
-    scons {{dev_base}} tests=yes compiledb=yes
+	scons tests=yes compiledb=yes {{dev_base}}
 
 dev-asan:
-    scons {{dev_base}} use_asan=yes
+	scons use_asan=yes {{dev_base}}
 
 editor:
-    scons platform=linuxbsd target=editor compiledb=no use_llvm=yes linker=mold \
-    {{prod_base}} module_jsonrpc_enabled=yes module_multiplayer_enabled=yes module_enet_enabled=yes
+	scons platform=linuxbsd target=editor compiledb=no use_llvm=yes linker=mold \
+	{{prod_base}} module_jsonrpc_enabled=yes module_multiplayer_enabled=yes module_enet_enabled=yes
 
 android_debug:
-    scons dev_build=no platform=android target=template_debug {{template_base}}
+	scons dev_build=no platform=android target=template_debug {{template_base}}
 
 android_release:
-    scons dev_build=no platform=android target=template_debug {{template_base}}
+	scons dev_build=no platform=android target=template_debug {{template_base}}
 
 linux_release:
-    scons dev_build=no use_llvm=yes linker=mold platform=linuxbsd target=template_release {{template_base}}
+	scons dev_build=no use_llvm=yes linker=mold platform=linuxbsd target=template_release {{template_base}}
 
 windows_debug:
-    scons dev_build=yes platform=windows target=template_debug {{template_base}}
+	scons dev_build=yes platform=windows target=template_debug {{template_base}}
 
 windows_debug_mingw:
-    scons dev_build=yes platform=windows target=template_debug use_llvm=yes use_mingw=yes {{template_base}}
+	scons dev_build=yes platform=windows target=template_debug use_llvm=yes use_mingw=yes {{template_base}}
 
 web_debug:
-    scons dev_build=no platform=web target=template_debug {{template_base}} module_mono_enabled=no
-
+	scons dev_build=no platform=web target=template_debug module_mono_enabled=no {{template_base}}
 
 mono_glue:
-    ./bin/godot.linuxbsd.editor.x86_64.llvm.mono --headless --generate-mono-glue modules/mono/glue
+	./bin/godot.linuxbsd.editor.x86_64.llvm.mono --headless --generate-mono-glue modules/mono/glue
 
 mono_sdk:
-    ./modules/mono/build_scripts/build_assemblies.py --godot-output-dir ./bin --push-nupkgs-local ~/MyLocalNugetSource/ --no-deprecated
+	./modules/mono/build_scripts/build_assemblies.py --godot-output-dir ./bin --push-nupkgs-local \
+	~/MyLocalNugetSource/ --no-deprecated
