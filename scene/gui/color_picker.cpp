@@ -451,9 +451,7 @@ void ColorPicker::_slider_value_changed() {
 	intensity = intensity_value->get_value();
 	// Set intensity spinbox prefix.
 	intensity_value->set_prefix(intensity < 0 ? "" : "+");
-	float alpha = alpha_value->get_value() / (current_mode == MODE_HDR ? 1 : 255);
 	Color col_normalized = modes[current_mode]->get_color();
-	color_normalized.a = alpha;
 	Color col = _color_apply_intensity(col_normalized);
 	modes[current_mode]->_value_changed();
 
@@ -495,6 +493,9 @@ void ColorPicker::_slider_value_changed() {
 		col = _color_apply_intensity(col_normalized);
 	}
 	color_normalized = col_normalized;
+	float alpha = alpha_value->get_value() / (current_mode == MODE_HDR ? 1 : 255);
+	color_normalized.a = alpha;
+	col.a = alpha;
 	_set_pick_color(col, false, false);
 	if (!deferred_mode_enabled || !currently_dragging) {
 		emit_signal(SNAME("color_changed"), col);
