@@ -45,14 +45,14 @@ dev-asan:
 	scons use_asan=yes {{dev_base}}
 
 editor:
-	scons platform=linuxbsd target=editor compiledb=no use_llvm=yes linker=mold \
+	scons platform=linuxbsd target=editor debug_symbols=yes compiledb=no use_llvm=yes linker=mold \
 	{{prod_base}} module_jsonrpc_enabled=yes module_multiplayer_enabled=yes module_enet_enabled=yes
 
 android_debug:
 	scons dev_build=no platform=android target=template_debug {{template_base}}
 
 android_release:
-	scons dev_build=no platform=android target=template_debug {{template_base}}
+	scons dev_build=no platform=android target=template_release {{template_base}}
 
 linux_release:
 	scons dev_build=no use_llvm=yes linker=mold platform=linuxbsd target=template_release {{template_base}}
