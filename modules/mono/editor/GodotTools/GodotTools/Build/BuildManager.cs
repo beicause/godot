@@ -380,7 +380,7 @@ namespace GodotTools.Build
             if (GodotSharpEditor.Instance.SkipBuildBeforePlaying)
                 return true; // Requested play from an external editor/IDE which already built the project.
 
-            return BuildProjectBlocking("Debug");
+            return true;//BuildProjectBlocking("Debug");
         }
 
         public static void Initialize()
