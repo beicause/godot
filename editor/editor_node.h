@@ -410,6 +410,7 @@ private:
 
 	Tree *disk_changed_list = nullptr;
 	ConfirmationDialog *disk_changed = nullptr;
+	ConfirmationDialog *project_data_missing = nullptr;
 
 	bool scene_distraction_free = false;
 	bool script_distraction_free = false;
@@ -668,6 +669,8 @@ private:
 	void _load_error_dialog_visibility_changed();
 
 	void _execute_upgrades();
+
+	bool _is_project_data_missing();
 
 protected:
 	friend class FileSystemDock;
