@@ -508,7 +508,7 @@ void ShaderRD::_save_to_cache(Version *p_version, int p_group) {
 	ERR_FAIL_COND(!shader_cache_dir_valid);
 	const String &path = _get_cache_file_path(p_version, p_group);
 	Ref<FileAccess> f = FileAccess::open(path, FileAccess::WRITE);
-	ERR_FAIL_COND(f.is_null());
+	ERR_FAIL_COND_MSG(f.is_null(), "Failed to open shader cache, please restart the editor/game.");
 	f->store_buffer((const uint8_t *)shader_file_header, 4);
 	f->store_32(cache_file_version); // File version.
 	uint32_t variant_count = group_to_variant_map[p_group].size();
