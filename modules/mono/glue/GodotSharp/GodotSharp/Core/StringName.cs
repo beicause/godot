@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Godot.NativeInterop;
 
@@ -19,8 +20,13 @@ namespace Godot
 
         private WeakReference<IDisposable>? _weakReferenceToSelf;
 
+        private string? _cache_key;
+
+        private static readonly ConcurrentDictionary<string, WeakReference<StringName>> StringNameCache = new();
+
         ~StringName()
         {
+            if (_cache_key != null) StringNameCache.TryRemove(_cache_key, out _);
             Dispose(false);
         }
 
@@ -75,16 +81,32 @@ namespace Godot
         }
 
         /// <summary>
-        /// Converts a string to a <see cref="StringName"/>.
+        /// Converts a <see cref="string"/> to a <see cref="StringName"/>.<br/>
+        /// The resulting <see cref="StringName"/> is temporarily cached for future casts.
         /// </summary>
         /// <param name="from">The string to convert.</param>
-        public static implicit operator StringName(string from) => new StringName(from);
+        public static implicit operator StringName(string from)
+        {
+            if (StringNameCache.TryGetValue(from, out WeakReference<StringName>? weakref) && weakref != null)
+            {
+                if (weakref.TryGetTarget(out StringName? val) && val != null)
+                {
+                    return val;
+                }
+            }
+            var ret = new StringName(from)
+            {
+                _cache_key = from
+            };
+            StringNameCache[from] = new(ret);
+            return ret;
+        }
 
         /// <summary>
-        /// Converts a <see cref="StringName"/> to a string.
+        /// Converts a <see cref="StringName"/> to a <see cref="string"/>.
         /// </summary>
         /// <param name="from">The <see cref="StringName"/> to convert.</param>
-        [return: NotNullIfNotNull("from")]
+        [return: NotNullIfNotNull(nameof(from))]
         public static implicit operator string?(StringName? from) => from?.ToString();
 
         /// <summary>
@@ -95,7 +117,10 @@ namespace Godot
         {
             if (IsEmpty)
                 return string.Empty;
-
+            if (_cache_key != null)
+            {
+                return _cache_key;
+            }
             var src = (godot_string_name)NativeValue;
             NativeFuncs.godotsharp_string_name_as_string(out godot_string dest, src);
             using (dest)

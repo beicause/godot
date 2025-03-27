@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Godot.NativeInterop;
 
@@ -48,8 +49,13 @@ namespace Godot
 
         private WeakReference<IDisposable>? _weakReferenceToSelf;
 
+        private string? _cache_key;
+
+        private static readonly ConcurrentDictionary<string, WeakReference<NodePath>> NodePathCache = new();
+
         ~NodePath()
         {
+            if (_cache_key != null) NodePathCache.TryRemove(_cache_key, out _);
             Dispose(false);
         }
 
@@ -129,16 +135,32 @@ namespace Godot
         }
 
         /// <summary>
-        /// Converts a string to a <see cref="NodePath"/>.
+        /// Converts a <see cref="string"/> to a <see cref="NodePath"/>.<br/>
+        /// The resulting <see cref="NodePath"/> is temporarily cached for future casts.
         /// </summary>
         /// <param name="from">The string to convert.</param>
-        public static implicit operator NodePath(string from) => new NodePath(from);
+        public static implicit operator NodePath(string from)
+        {
+            if (NodePathCache.TryGetValue(from, out WeakReference<NodePath>? weakref) && weakref != null)
+            {
+                if (weakref.TryGetTarget(out NodePath? val) && val != null)
+                {
+                    return val;
+                }
+            }
+            var ret = new NodePath(from)
+            {
+                _cache_key = from
+            };
+            NodePathCache[from] = new(ret);
+            return ret;
+        }
 
         /// <summary>
-        /// Converts this <see cref="NodePath"/> to a string.
+        /// Converts a <see cref="NodePath"/> to a <see cref="string"/>.
         /// </summary>
         /// <param name="from">The <see cref="NodePath"/> to convert.</param>
-        [return: NotNullIfNotNull("from")]
+        [return: NotNullIfNotNull(nameof(from))]
         public static implicit operator string?(NodePath? from) => from?.ToString();
 
         /// <summary>
