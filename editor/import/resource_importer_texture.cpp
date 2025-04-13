@@ -41,6 +41,79 @@
 #include "editor/themes/editor_theme_manager.h"
 #include "scene/resources/compressed_texture.h"
 
+Variant EditorTextureImportPlugin::get_option_value(const StringName &p_name) const {
+	ERR_FAIL_COND_V_MSG(current_options == nullptr, Variant(), "get_option_value() called from a function where option values are not available.");
+	ERR_FAIL_COND_V_MSG(!current_options->has(p_name), Variant(), "get_option_value() called with unexisting option argument: " + String(p_name));
+	return (*current_options)[p_name];
+}
+
+void EditorTextureImportPlugin::add_import_option(const String &p_name, const Variant &p_default_value) {
+	ERR_FAIL_NULL_MSG(current_option_list, "add_import_option() can only be called from get_import_options().");
+	add_import_option_advanced(p_default_value.get_type(), p_name, p_default_value);
+}
+
+void EditorTextureImportPlugin::add_import_option_advanced(Variant::Type p_type, const String &p_name, const Variant &p_default_value, PropertyHint p_hint, const String &p_hint_string, int p_usage_flags) {
+	ERR_FAIL_NULL_MSG(current_option_list, "add_import_option_advanced() can only be called from get_import_options().");
+	current_option_list->push_back(ResourceImporter::ImportOption(PropertyInfo(p_type, p_name, p_hint, p_hint_string, p_usage_flags), p_default_value));
+}
+
+void EditorTextureImportPlugin::get_recognized_extensions(List<String> *p_extensions) const {
+	Vector<String> extensions;
+	GDVIRTUAL_CALL(_get_recognized_extensions, extensions);
+	for (int i = 0; i < extensions.size(); i++) {
+		p_extensions->push_back(extensions[i]);
+	}
+}
+
+void EditorTextureImportPlugin::get_import_options(const String &p_path, List<ResourceImporter::ImportOption> *r_options, Preset p_preset) const {
+	current_option_list = r_options;
+	GDVIRTUAL_CALL(_get_import_options, p_path, p_preset);
+	current_option_list = nullptr;
+}
+
+Variant EditorTextureImportPlugin::get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const {
+	current_options = &p_options;
+	Variant ret;
+	GDVIRTUAL_CALL(_get_option_visibility, p_path, p_option, ret);
+	current_options = nullptr;
+	return ret;
+}
+
+Ref<Image> EditorTextureImportPlugin::pre_process(Ref<Image> p_image, const HashMap<StringName, Variant> &p_options) {
+	Ref<Image> image = p_image;
+	current_options = &p_options;
+	GDVIRTUAL_CALL(_pre_process, p_image, image);
+	current_options = nullptr;
+	ERR_FAIL_COND_V_MSG(image.is_null(), p_image, "The returned image of pre_process() is null.");
+	return image;
+}
+Ref<Image> EditorTextureImportPlugin::post_process(Ref<Image> p_image, const HashMap<StringName, Variant> &p_options) {
+	Ref<Image> image = p_image;
+	current_options = &p_options;
+	GDVIRTUAL_CALL(_post_process, p_image, image);
+	current_options = nullptr;
+	ERR_FAIL_COND_V_MSG(image.is_null(), p_image, "The returned image of post_process() is null.");
+	return image;
+}
+
+void EditorTextureImportPlugin::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_option_value", "name"), &EditorTextureImportPlugin::get_option_value);
+	ClassDB::bind_method(D_METHOD("add_import_option", "name", "value"), &EditorTextureImportPlugin::add_import_option);
+	ClassDB::bind_method(D_METHOD("add_import_option_advanced", "type", "name", "default_value", "hint", "hint_string", "usage_flags"), &EditorTextureImportPlugin::add_import_option_advanced, DEFVAL(PROPERTY_HINT_NONE), DEFVAL(""), DEFVAL(PROPERTY_USAGE_DEFAULT));
+
+	BIND_ENUM_CONSTANT(PRESET_DETECT);
+	BIND_ENUM_CONSTANT(PRESET_2D);
+	BIND_ENUM_CONSTANT(PRESET_3D);
+
+	GDVIRTUAL_BIND(_get_recognized_extensions);
+	GDVIRTUAL_BIND(_get_import_options, "path", "preset_index");
+	GDVIRTUAL_BIND(_get_option_visibility, "path", "option");
+	GDVIRTUAL_BIND(_pre_process, "image");
+	GDVIRTUAL_BIND(_post_process, "image");
+}
+
+///////////////////////////////////////////////////////
+
 void ResourceImporterTexture::_texture_reimport_roughness(const Ref<CompressedTexture2D> &p_tex, const String &p_normal_path, RS::TextureDetectRoughnessChannel p_channel) {
 	ERR_FAIL_COND(p_tex.is_null());
 
@@ -170,6 +243,9 @@ String ResourceImporterTexture::get_visible_name() const {
 
 void ResourceImporterTexture::get_recognized_extensions(List<String> *p_extensions) const {
 	ImageLoader::get_recognized_extensions(p_extensions);
+	for (const Ref<EditorTextureImportPlugin> &plugin : texture_import_plugins) {
+		plugin->get_recognized_extensions(p_extensions);
+	}
 }
 
 String ResourceImporterTexture::get_save_extension() const {
@@ -210,6 +286,13 @@ bool ResourceImporterTexture::get_option_visibility(const String &p_path, const 
 
 	} else if (p_option == "compress/uastc_level" || p_option == "compress/rdo_quality_loss") {
 		return int(p_options["compress/mode"]) == COMPRESS_BASIS_UNIVERSAL;
+	}
+
+	for (const Ref<EditorTextureImportPlugin> &plugin : texture_import_plugins) {
+		Variant ret = plugin->get_option_visibility(p_path, p_option, p_options);
+		if (ret.get_type() == Variant::BOOL && !ret) {
+			return false;
+		}
 	}
 
 	return true;
@@ -269,6 +352,10 @@ void ResourceImporterTexture::get_import_options(const String &p_path, List<Impo
 		// Editor use only, applies to SVG.
 		r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "editor/scale_with_editor_scale"), false));
 		r_options->push_back(ImportOption(PropertyInfo(Variant::BOOL, "editor/convert_colors_with_editor_theme"), false));
+	}
+
+	for (const Ref<EditorTextureImportPlugin> &plugin : texture_import_plugins) {
+		plugin->get_import_options(p_path, r_options);
 	}
 }
 
@@ -350,6 +437,23 @@ void ResourceImporterTexture::save_to_ctex_format(Ref<FileAccess> f, const Ref<I
 			f->store_buffer(data.ptr(), data_size);
 		} break;
 	}
+}
+
+void ResourceImporterTexture::add_texture_import_plugin(Ref<EditorTextureImportPlugin> p_plugin, bool p_first_priority) {
+	ERR_FAIL_COND(p_plugin.is_null());
+	if (p_first_priority) {
+		texture_import_plugins.insert(0, p_plugin);
+	} else {
+		texture_import_plugins.push_back(p_plugin);
+	}
+}
+
+void ResourceImporterTexture::remove_texture_import_plugin(Ref<EditorTextureImportPlugin> p_importer) {
+	texture_import_plugins.erase(p_importer);
+}
+
+void ResourceImporterTexture::clean_up_importer_plugins() {
+	texture_import_plugins.clear();
 }
 
 void ResourceImporterTexture::_save_ctex(const Ref<Image> &p_image, const String &p_to_path, CompressMode p_compress_mode, float p_lossy_quality, const Image::BasisUniversalPackerParams &p_basisu_params, Image::CompressMode p_vram_compression, bool p_mipmaps, bool p_streamable, bool p_detect_3d, bool p_detect_roughness, bool p_detect_normal, bool p_force_normal, bool p_srgb_friendly, bool p_force_po2_for_compressed, uint32_t p_limit_mipmap, const Ref<Image> &p_normal, Image::RoughnessChannel p_roughness_channel, float p_resolution_scale) {
@@ -796,6 +900,11 @@ Error ResourceImporterTexture::import(ResourceUID::ID p_source_id, const String 
 	if (err != OK) {
 		return err;
 	}
+
+	for (const Ref<EditorTextureImportPlugin> &plugin : texture_import_plugins) {
+		image = plugin->pre_process(image, p_options);
+	}
+
 	images_imported.push_back(image);
 
 	// Load the editor-only image.
@@ -878,6 +987,10 @@ Error ResourceImporterTexture::import(ResourceUID::ID p_source_id, const String 
 		if (hdr_clamp_exposure) {
 			_clamp_hdr_exposure(target_image);
 		}
+	}
+
+	for (const Ref<EditorTextureImportPlugin> &plugin : texture_import_plugins) {
+		image = plugin->post_process(image, p_options);
 	}
 
 	bool detect_3d = int(p_options["detect_3d/compress_to"]) > 0;
@@ -1081,6 +1194,7 @@ bool ResourceImporterTexture::are_import_settings_valid(const String &p_path, co
 }
 
 ResourceImporterTexture *ResourceImporterTexture::singleton = nullptr;
+Vector<Ref<EditorTextureImportPlugin>> ResourceImporterTexture::texture_import_plugins;
 
 ResourceImporterTexture::ResourceImporterTexture(bool p_singleton) {
 	// This should only be set through the EditorNode.
