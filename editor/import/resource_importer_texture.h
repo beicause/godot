@@ -55,6 +55,7 @@ protected:
 	GDVIRTUAL0RC(Vector<String>, _get_recognized_extensions)
 	GDVIRTUAL2C(_get_import_options, String, int)
 	GDVIRTUAL2RC(Variant, _get_option_visibility, String, String)
+	GDVIRTUAL1RC(Ref<Image>, _load_image, String)
 	GDVIRTUAL1RC(Ref<Image>, _pre_process, Ref<Image>)
 	GDVIRTUAL1RC(Ref<Image>, _post_process, Ref<Image>)
 
@@ -69,8 +70,9 @@ public:
 	virtual void get_import_options(const String &p_path, List<ResourceImporter::ImportOption> *r_options, Preset p_preset = PRESET_DETECT) const;
 	virtual Variant get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const;
 
-	virtual Ref<Image> pre_process(Ref<Image> p_image, const HashMap<StringName, Variant> &p_options);
-	virtual Ref<Image> post_process(Ref<Image> p_image, const HashMap<StringName, Variant> &p_options);
+	virtual Ref<Image> load_image(const String &p_source_file, bool *r_use_custom_loader, const HashMap<StringName, Variant> &p_options) const;
+	virtual Ref<Image> pre_process(Ref<Image> p_image, const HashMap<StringName, Variant> &p_options) const;
+	virtual Ref<Image> post_process(Ref<Image> p_image, const HashMap<StringName, Variant> &p_options) const;
 };
 VARIANT_ENUM_CAST(EditorTextureImportPlugin::Preset);
 
