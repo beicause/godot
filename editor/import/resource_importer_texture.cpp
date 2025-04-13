@@ -79,20 +79,30 @@ Variant EditorTextureImportPlugin::get_option_visibility(const String &p_path, c
 	return ret;
 }
 
-Ref<Image> EditorTextureImportPlugin::pre_process(Ref<Image> p_image, const HashMap<StringName, Variant> &p_options) {
+Ref<Image> EditorTextureImportPlugin::load_image(const String &p_source_file, bool *r_use_custom_loader, const HashMap<StringName, Variant> &p_options) const {
+	Ref<Image> image;
+	current_options = &p_options;
+	bool use_custom_loader = GDVIRTUAL_CALL(_load_image, p_source_file, image);
+	current_options = nullptr;
+	if (r_use_custom_loader) {
+		*r_use_custom_loader = use_custom_loader;
+	}
+	return image;
+}
+
+Ref<Image> EditorTextureImportPlugin::pre_process(Ref<Image> p_image, const HashMap<StringName, Variant> &p_options) const {
 	Ref<Image> image = p_image;
 	current_options = &p_options;
 	GDVIRTUAL_CALL(_pre_process, p_image, image);
 	current_options = nullptr;
-	ERR_FAIL_COND_V_MSG(image.is_null(), p_image, "The returned image of pre_process() is null.");
 	return image;
 }
-Ref<Image> EditorTextureImportPlugin::post_process(Ref<Image> p_image, const HashMap<StringName, Variant> &p_options) {
+
+Ref<Image> EditorTextureImportPlugin::post_process(Ref<Image> p_image, const HashMap<StringName, Variant> &p_options) const {
 	Ref<Image> image = p_image;
 	current_options = &p_options;
 	GDVIRTUAL_CALL(_post_process, p_image, image);
 	current_options = nullptr;
-	ERR_FAIL_COND_V_MSG(image.is_null(), p_image, "The returned image of post_process() is null.");
 	return image;
 }
 
@@ -108,6 +118,7 @@ void EditorTextureImportPlugin::_bind_methods() {
 	GDVIRTUAL_BIND(_get_recognized_extensions);
 	GDVIRTUAL_BIND(_get_import_options, "path", "preset_index");
 	GDVIRTUAL_BIND(_get_option_visibility, "path", "option");
+	GDVIRTUAL_BIND(_load_image, "source_file");
 	GDVIRTUAL_BIND(_pre_process, "image");
 	GDVIRTUAL_BIND(_post_process, "image");
 }
@@ -896,14 +907,23 @@ Error ResourceImporterTexture::import(ResourceUID::ID p_source_id, const String 
 	// Load the main image.
 	Ref<Image> image;
 	image.instantiate();
-	Error err = ImageLoader::load_image(p_source_file, image, nullptr, loader_flags, scale);
-	if (err != OK) {
-		return err;
+	Error err = OK;
+	bool use_custom_loader = false;
+
+	for (const Ref<EditorTextureImportPlugin> &plugin : texture_import_plugins) {
+		image = plugin->load_image(p_source_file, &use_custom_loader, p_options);
+	}
+	ERR_FAIL_COND_V_MSG(image.is_null(), ERR_INVALID_DATA, "The returned image of _load_image() is null.");
+
+	if (!use_custom_loader) {
+		err = ImageLoader::load_image(p_source_file, image, nullptr, loader_flags, scale);
+		ERR_FAIL_COND_V(err != OK, err);
 	}
 
 	for (const Ref<EditorTextureImportPlugin> &plugin : texture_import_plugins) {
 		image = plugin->pre_process(image, p_options);
 	}
+	ERR_FAIL_COND_V_MSG(image.is_null(), ERR_INVALID_DATA, "The returned image of _pre_process() is null.");
 
 	images_imported.push_back(image);
 
@@ -992,6 +1012,7 @@ Error ResourceImporterTexture::import(ResourceUID::ID p_source_id, const String 
 	for (const Ref<EditorTextureImportPlugin> &plugin : texture_import_plugins) {
 		image = plugin->post_process(image, p_options);
 	}
+	ERR_FAIL_COND_V_MSG(image.is_null(), ERR_INVALID_DATA, "The returned image of _post_process() is null.");
 
 	bool detect_3d = int(p_options["detect_3d/compress_to"]) > 0;
 	bool detect_roughness = roughness == 0;
