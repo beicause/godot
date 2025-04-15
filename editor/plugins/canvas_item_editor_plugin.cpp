@@ -5999,11 +5999,10 @@ void CanvasItemEditorViewport::_create_texture_node(Node *p_parent, Node *p_chil
 		Dictionary meta = ResourceFormatImporter::get_singleton()->get_resource_metadata(p_path);
 		if (meta.has("sprite_sheet_sprite_size") && meta["sprite_sheet_sprite_size"].get_type() == Variant::VECTOR2I &&
 				meta.has("sprite_sheet_columns") && meta["sprite_sheet_columns"].get_type() == Variant::INT &&
-				meta.has("sprite_sheet_frame_count") && meta["sprite_sheet_frame_count"].get_type() == Variant::INT &&
-				meta.has("sprite_sheet_fps") && meta["sprite_sheet_fps"].get_type() == Variant::FLOAT) {
+				meta.has("sprite_sheet_frame_count") && meta["sprite_sheet_frame_count"].get_type() == Variant::INT) {
 			Ref<SpriteFrames> frames;
 			frames.instantiate();
-			frames->set_animation_speed(SceneStringName(default_), meta["sprite_sheet_fps"]);
+			frames->set_animation_speed(SceneStringName(default_), meta.get("sprite_sheet_fps", 30));
 			Size2i sprite_size = meta["sprite_sheet_sprite_size"];
 			for (int i = 0; i < (int)meta["sprite_sheet_frame_count"]; i++) {
 				int x = i % (int)meta["sprite_sheet_columns"] * sprite_size.width;
@@ -6017,7 +6016,7 @@ void CanvasItemEditorViewport::_create_texture_node(Node *p_parent, Node *p_chil
 			undo_redo->add_do_property(p_child, SceneStringName(autoplay), SceneStringName(default_));
 			undo_redo->add_do_property(p_child, "sprite_frames", frames);
 		} else {
-			ERR_PRINT("Miss metadata to create AnimationPlayer2D. This only supports textures imported from Lottie");
+			ERR_PRINT("Miss metadata to create AnimationPlayer2D. This only supports textures imported from Lottie now");
 		}
 	}
 
