@@ -184,15 +184,6 @@ Error ResourceImporterLottie::import(ResourceUID::ID p_source_id, const String &
 		err = ResourceImporterTexture::import(p_source_id, tmp_image, p_save_path, p_options, r_platform_variants, r_gen_files, r_metadata);
 		Ref<DirAccess> d = DirAccess::create(DirAccess::ACCESS_RESOURCES);
 		err = d->remove(tmp_image);
-		if (r_metadata) {
-			// Metadata used for dropping this texture as AnimatedSprite2D to CanvasItemEditor.
-			Dictionary meta;
-			meta["sprite_sheet_sprite_size"] = sprite_size;
-			meta["sprite_sheet_columns"] = column_r;
-			meta["sprite_sheet_frame_count"] = frame_count;
-			meta["sprite_sheet_fps"] = fps;
-			*r_metadata = meta;
-		}
 	}
 	return err;
 }
