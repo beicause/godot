@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include <sqlite3.h>
+#include "../thirdparty/sqlite/sqlite3.h"
 
 /*
 ** The maximum pathname length supported by this VFS.
