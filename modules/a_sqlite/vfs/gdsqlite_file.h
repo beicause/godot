@@ -30,8 +30,8 @@
 
 #pragma once
 
+#include "../thirdparty/sqlite/sqlite3.h"
 #include "core/io/file_access.h"
-#include <sqlite3.h>
 
 struct gdsqlite_file {
 	sqlite3_file base; /* Base class. Must be first. */

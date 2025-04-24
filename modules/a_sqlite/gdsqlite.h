@@ -30,8 +30,12 @@
 
 #pragma once
 
-#include "core/io/resource_loader.h"
-#include <sqlite3.h>
+#include "core/object/ref_counted.h"
+#include "core/variant/typed_array.h"
+#include "thirdparty/sqlite/sqlite3.h"
+#include <cstring>
+#include <memory>
+#include <vector>
 
 enum OBJECT_TYPE {
 	TABLE,
@@ -43,22 +47,25 @@ struct object_struct {
 	Array base64_columns, row_array;
 };
 
-class SQLite : public Resource {
-	GDCLASS(SQLite, Resource)
+class SQLite : public RefCounted {
+	GDCLASS(SQLite, RefCounted)
 
 private:
+	bool validate_json(const Array &import_json, std::vector<object_struct> &tables_to_import);
 	bool validate_table_dict(const Dictionary &p_table_dict);
 	int backup_database(sqlite3 *source_db, sqlite3 *destination_db);
+	void remove_shadow_tables(Array &p_array);
 
 	sqlite3 *db = nullptr;
-	Vector<Callable> function_registry;
+	std::vector<std::unique_ptr<Callable>> function_registry;
 
 	int64_t verbosity_level = 1;
 	bool foreign_keys = false;
 	bool read_only = false;
-	String db_path = ":memory:";
-	String extension_name = "db";
-	Dictionary query_result;
+	String path = "default";
+	String error_message = "";
+	String default_extension = "db";
+	TypedArray<Dictionary> query_result;
 
 protected:
 	static void _bind_methods();
@@ -66,14 +73,14 @@ protected:
 public:
 	// Constants.
 	enum VerbosityLevel {
-		QUIET,
-		NORMAL,
-		VERBOSE,
-		VERY_VERBOSE,
+		QUIET = 0,
+		NORMAL = 1,
+		VERBOSE = 2,
+		VERY_VERBOSE = 3
 	};
 
 	~SQLite();
-	static Ref<SQLite> open(const String &p_path = ":memory:");
+
 	// Functions.
 	bool open_db();
 	bool close_db();
@@ -87,15 +94,22 @@ public:
 	bool restore_from(String source_path);
 
 	bool insert_row(const String &p_name, const Dictionary &p_row_dict);
-	bool insert_rows(const String &p_name, const Dictionary &p_row_dict, bool p_rollback_on_err = true);
+	bool insert_rows(const String &p_name, const Array &p_row_array);
 
-	Dictionary select_rows(const String &p_name, const String &p_conditions, const PackedStringArray &p_columns_array);
-	bool update_rows(const String &p_name, const String &p_conditions, const Dictionary &p_updated_row_dict, bool p_rollback_on_err = true);
-	bool delete_rows(const String &p_name, const String &p_conditions, bool p_rollback_on_err = true);
+	Array select_rows(const String &p_name, const String &p_conditions, const Array &p_columns_array);
+	bool update_rows(const String &p_name, const String &p_conditions, const Dictionary &p_updated_row_dict);
+	bool delete_rows(const String &p_name, const String &p_conditions);
 
-	bool create_function(const String &p_name, const Callable &p_callable);
+	bool create_function(const String &p_name, const Callable &p_callable, int p_argc);
+
+	bool import_from_json(String import_path);
+	bool export_to_json(String export_path);
 
 	int get_autocommit() const;
+	int compileoption_used(const String &option_name) const;
+
+	int load_extension(const String &p_path, const String &p_init_func_name);
+	int enable_load_extension(const bool &p_onoff);
 
 	// Properties.
 	void set_last_insert_rowid(const int64_t &p_last_insert_rowid);
@@ -110,26 +124,19 @@ public:
 	void set_read_only(const bool &p_read_only);
 	bool get_read_only() const;
 
-	void set_db_path(const String &p_path);
-	String get_db_path() const;
+	void set_path(const String &p_path);
+	String get_path() const;
 
 	void set_error_message(const String &p_error_message);
 	String get_error_message() const;
 
-	void set_extension_name(const String &p_extension_name);
-	String get_extension_name() const;
+	void set_default_extension(const String &p_default_extension);
+	String get_default_extension() const;
 
-	void set_query_result(const Dictionary &p_query_result);
-	Dictionary get_query_result() const;
+	void set_query_result(const TypedArray<Dictionary> &p_query_result);
+	TypedArray<Dictionary> get_query_result() const;
 
-	Dictionary get_query_result_by_reference() const;
+	TypedArray<Dictionary> get_query_result_by_reference() const;
 };
+
 VARIANT_ENUM_CAST(SQLite::VerbosityLevel);
-
-class ResourceFormatLoaderSQLite : public ResourceFormatLoader {
-public:
-	virtual Ref<Resource> load(const String &p_path, const String &p_original_path = "", Error *r_error = nullptr, bool p_use_sub_threads = false, float *r_progress = nullptr, CacheMode p_cache_mode = CACHE_MODE_REUSE) override;
-	virtual void get_recognized_extensions(List<String> *p_extensions) const override;
-	virtual bool handles_type(const String &p_type) const override;
-	virtual String get_resource_type(const String &p_path) const override;
-};
