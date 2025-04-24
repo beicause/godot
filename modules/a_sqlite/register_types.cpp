@@ -31,23 +31,15 @@
 #include "register_types.h"
 #include "gdsqlite.h"
 
-Ref<ResourceFormatLoaderSQLite> resouce_loader_sqlite;
-
 void initialize_a_sqlite_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
 	ClassDB::register_class<SQLite>();
-
-	resouce_loader_sqlite.instantiate();
-	ResourceLoader::add_resource_format_loader(resouce_loader_sqlite);
 }
 
 void uninitialize_a_sqlite_module(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-
-	ResourceLoader::remove_resource_format_loader(resouce_loader_sqlite);
-	resouce_loader_sqlite.unref();
 }
