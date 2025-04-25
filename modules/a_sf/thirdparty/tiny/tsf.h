@@ -958,7 +958,7 @@ static int tsf_decode_sf3_samples(const void* rawBuffer, float** pFloatBuffer, u
 			}
 
 			// Convert the samples from short to float
-			for (out = res + oldResNum; in < inEnd;)
+			for (out = res + oldResNum; in < inEnd - 1;)
 				*(out++) = (float)(*(in++) / 32767.0);
 		}
 	}
