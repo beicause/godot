@@ -367,9 +367,13 @@ void Slider::_notification(int p_what) {
 }
 
 void Slider::_validate_property(PropertyInfo &p_property) const {
-	if (p_property.name == "ticks_position") {
-		p_property.hint_string = orientation == VERTICAL ? "Right,Left,Both,Center" : "Bottom,Top,Both,Center";
+#if TOOLS_ENABLED
+	if (Engine::get_singleton()->is_editor_hint()) {
+		if (p_property.name == "ticks_position") {
+			p_property.hint_string = orientation == VERTICAL ? "Right,Left,Both,Center" : "Bottom,Top,Both,Center";
+		}
 	}
+#endif
 }
 
 void Slider::set_custom_step(double p_custom_step) {
