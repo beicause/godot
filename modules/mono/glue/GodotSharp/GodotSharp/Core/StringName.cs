@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Godot.NativeInterop;
 
@@ -18,6 +19,8 @@ namespace Godot
         internal godot_string_name.movable NativeValue;
 
         private WeakReference<IDisposable>? _weakReferenceToSelf;
+
+        private static readonly ConcurrentDictionary<string, StringName> _cache = new();
 
         ~StringName()
         {
@@ -76,6 +79,7 @@ namespace Godot
             {
                 NativeValue = (godot_string_name.movable)NativeFuncs.godotsharp_string_name_new_from_string(name);
                 _weakReferenceToSelf = DisposablesTracker.RegisterDisposable(this);
+                if (string.IsInterned(name) != null) _cache[name] = this;
             }
         }
 
@@ -83,7 +87,11 @@ namespace Godot
         /// Converts a string to a <see cref="StringName"/>.
         /// </summary>
         /// <param name="from">The string to convert.</param>
-        public static implicit operator StringName(string from) => new StringName(from);
+        public static implicit operator StringName(string from)
+        {
+            if (_cache.TryGetValue(from, out var value)) return value;
+            return new StringName(from);
+        }
 
         /// <summary>
         /// Converts a <see cref="StringName"/> to a string.
