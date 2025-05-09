@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using Godot.NativeInterop;
 
@@ -47,6 +48,8 @@ namespace Godot
         internal godot_node_path.movable NativeValue;
 
         private WeakReference<IDisposable>? _weakReferenceToSelf;
+
+        private static readonly ConcurrentDictionary<string, NodePath> _cache = new();
 
         ~NodePath()
         {
@@ -130,6 +133,7 @@ namespace Godot
             {
                 NativeValue = (godot_node_path.movable)NativeFuncs.godotsharp_node_path_new_from_string(path);
                 _weakReferenceToSelf = DisposablesTracker.RegisterDisposable(this);
+                if (string.IsInterned(path) != null) _cache[path] = this;
             }
         }
 
@@ -137,7 +141,11 @@ namespace Godot
         /// Converts a string to a <see cref="NodePath"/>.
         /// </summary>
         /// <param name="from">The string to convert.</param>
-        public static implicit operator NodePath(string from) => new NodePath(from);
+        public static implicit operator NodePath(string from)
+        {
+            if (_cache.TryGetValue(from, out var value)) return value;
+            return new NodePath(from);
+        }
 
         /// <summary>
         /// Converts this <see cref="NodePath"/> to a string.
