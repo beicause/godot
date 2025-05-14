@@ -33,6 +33,7 @@
 #include "scene/resources/texture.h"
 
 class Mesh;
+class ShaderMaterial;
 
 class RasterizedMeshTexture : public Texture2D {
 	GDCLASS(RasterizedMeshTexture, Texture2D);
@@ -41,10 +42,11 @@ class RasterizedMeshTexture : public Texture2D {
 	static const String _fragment_code;
 
 	Size2i size = Size2i(256, 256);
-	Ref<Texture2D> base_texture;
+	// Ref<Texture2D> base_texture;
 	Ref<Mesh> mesh;
 	Color bg_color = Color(0, 0, 0, 0);
-	Projection projection;
+	// Projection projection;
+	Ref<ShaderMaterial> material;
 	bool generate_mipmaps = false;
 
 	RID texture;
@@ -55,7 +57,7 @@ class RasterizedMeshTexture : public Texture2D {
 	RID index_array_id;
 	RID pipeline_id;
 	RID sampler_id;
-	RID uniform_set_id;
+	// RID uniform_set_id;
 	RID index_buffer_id;
 	RID vertex_buffer_pos_id;
 	RID vertex_buffer_uv_id;
@@ -66,14 +68,14 @@ class RasterizedMeshTexture : public Texture2D {
 
 	bool pipeline_dirty = false;
 	bool mesh_dirty = false;
-	bool uniform_set_dirty = false;
+	// bool uniform_set_dirty = false;
 
 	bool update_queued = false;
 
 	RD::PipelineRasterizationState pipeline_rasterization_state;
 	RD::TextureFormat tex_format;
 
-	RD::Uniform uniform_tex;
+	// RD::Uniform uniform_tex;
 	Vector<RD::VertexAttribute> vertex_attrs;
 	RD::TextureView tex_view;
 	RD::PipelineMultisampleState pipeline_multisample_state;
@@ -103,14 +105,16 @@ public:
 	void set_mesh(const Ref<Mesh> &p_mesh);
 	Ref<Mesh> get_mesh() const;
 
-	void set_base_texture(const Ref<Texture2D> &p_base_texture);
-	Ref<Texture2D> get_base_texture() const;
+	// void set_base_texture(const Ref<Texture2D> &p_base_texture);
+	// Ref<Texture2D> get_base_texture() const;
 
 	void set_bg_color(const Color &p_color);
 	Color get_bg_color() const;
 
-	void set_projection(const Projection &p_projection);
-	Projection get_projection() const;
+	// void set_projection(const Projection &p_projection);
+	// Projection get_projection() const;
+	void set_material(const Ref<ShaderMaterial> &p_material);
+	Ref<ShaderMaterial> get_material() const;
 
 	void set_generate_mipmaps(bool p_generate_mipmaps);
 	bool is_generating_mipmaps() const;
@@ -123,12 +127,12 @@ private:
 
 	void queue_update();
 	void queue_update_pipeline();
-	void queue_update_uniform_set();
+	// void queue_update_uniform_set();
 	void queue_update_mesh();
 
 	void reset_vertex();
 	void reset_pipeline();
-	void reset_uniform();
+	// void reset_uniform();
 	void draw_list_draw();
 
 	void create_mipmaps();
