@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  rasterized_mesh_texture.h                                             */
+/*  rasterize_mesh.h                                                      */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,91 +30,62 @@
 
 #pragma once
 
-#include "scene/resources/texture.h"
+#include "servers/rendering/renderer_rd/shaders/rasterize_mesh.glsl.gen.h"
+#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 
-class Mesh;
-class ShaderMaterial;
+namespace RendererRD {
 
-class RasterizedMeshTexture : public Texture2D {
-	GDCLASS(RasterizedMeshTexture, Texture2D);
+class RasterizeMeshRD {
+	static RasterizeMeshRD *singleton;
+	constexpr static int SAMPLERS_BINDING_FIRST_INDEX = 0;
 
-	Size2i size = Size2i(256, 256);
-	// Ref<Texture2D> base_texture;
-	Ref<Mesh> mesh;
-	Color bg_color = Color(0, 0, 0, 0);
-	// Projection projection;
-	Ref<ShaderMaterial> material;
-	bool generate_mipmaps = false;
+	RasterizeMeshShaderRD shader_file_rd;
+	RID default_shader;
+	RID default_material;
 
-	RID texture;
+	ShaderCompiler compiler;
 
-	RID framebuffer_texture_id;
-	RID framebuffer_id;
-	RID vertex_array_id;
-	RID index_array_id;
-	RID pipeline_id;
-	RID index_buffer_id;
-	RID vertex_buffer_pos_id;
-	RID vertex_buffer_uv_id;
-	RID vertex_buffer_color_id;
-
-	long vertex_format;
-	bool is_2d_mesh = false;
-	RD::RenderPrimitive primitive_type = RD::RENDER_PRIMITIVE_TRIANGLES;
-
-	bool pipeline_dirty = false;
-	bool mesh_dirty = false;
-
-	bool update_queued = false;
-
-	RD::PipelineRasterizationState pipeline_rasterization_state;
-	RD::TextureFormat tex_format;
-
-	Vector<RD::VertexAttribute> vertex_attrs;
-	RD::TextureView tex_view;
-	RD::PipelineMultisampleState pipeline_multisample_state;
-	RD::PipelineDepthStencilState pipeline_depth_stencil_state;
-	RD::PipelineColorBlendState pipeline_color_blend_state;
-
-protected:
-	static void _bind_methods();
+	static RendererRD::MaterialStorage::ShaderData *_create_rasterize_mesh_shader_funcs();
+	static RendererRD::MaterialStorage::MaterialData *_create_rasterize_mesh_material_funcs(RendererRD::MaterialStorage::ShaderData *p_shader);
 
 public:
-	int get_width() const override;
-	int get_height() const override;
-	bool has_alpha() const override;
-	RID get_rid() const override;
+	enum {
+		BASE_UNIFORM_SET,
+		MATERIAL_UNIFORM_SET
+	};
 
-	Ref<Image> get_image() const override;
+	struct RasterizeMeshShaderData : public RendererRD::MaterialStorage::ShaderData {
+		RID version;
+		RID shader_rd;
+		RID base_uniforms;
+		bool valid = false;
+		Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;
+		Vector<uint32_t> ubo_offsets;
+		uint32_t ubo_size = 0;
 
-	void set_width(int p_width);
-	void set_height(int p_height);
+		String code;
 
-	void set_mesh(const Ref<Mesh> &p_mesh);
-	Ref<Mesh> get_mesh() const;
+		virtual void set_code(const String &p_code);
+		virtual bool is_animated() const;
+		virtual bool casts_shadows() const;
 
-	void set_bg_color(const Color &p_color);
-	Color get_bg_color() const;
+		~RasterizeMeshShaderData();
+	};
 
-	void set_material(const Ref<ShaderMaterial> &p_material);
-	Ref<ShaderMaterial> get_material() const;
+	struct RasterizeMeshMaterialData : public RendererRD::MaterialStorage::MaterialData {
+		RasterizeMeshShaderData *shader_data = nullptr;
+		RID material_uniforms;
 
-	void set_generate_mipmaps(bool p_generate_mipmaps);
-	bool is_generating_mipmaps() const;
+		virtual void set_render_priority(int p_priority);
+		virtual void set_next_pass(RID p_pass);
+		virtual bool update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty);
+	};
 
-	RasterizedMeshTexture();
-	~RasterizedMeshTexture();
-
-private:
-	void update();
-
-	void queue_update();
-	void queue_update_pipeline();
-	void queue_update_mesh();
-
-	void reset_vertex();
-	void reset_pipeline();
-	void draw_list_draw();
-
-	void create_mipmaps();
+	static RasterizeMeshRD *get_singleton();
+	void init();
+	RID get_default_material() const;
+	RID get_default_shader_rd() const;
+	RasterizeMeshRD();
+	~RasterizeMeshRD();
 };
+} //namespace RendererRD

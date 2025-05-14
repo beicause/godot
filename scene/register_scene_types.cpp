@@ -1428,7 +1428,6 @@ void unregister_scene_types() {
 	ProceduralSkyMaterial::cleanup_shader();
 	FogMaterial::cleanup_shader();
 #endif // _3D_DISABLED
-	RasterizedMeshTexture::cleanup_shader();
 	ParticleProcessMaterial::finish_shaders();
 	CanvasItemMaterial::finish_shaders();
 	ColorPicker::finish_shaders();

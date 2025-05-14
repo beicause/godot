@@ -30,40 +30,9 @@
 
 #include "rasterized_mesh_texture.h"
 #include "scene/resources/mesh.h"
-#include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
+#include "servers/rendering/renderer_rd/rasterize_mesh.h"
+#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 #include "servers/rendering/rendering_device.h"
-
-SafeFlag RasterizedMeshTexture::is_shader_cached;
-RID RasterizedMeshTexture::shader_cache;
-
-const String RasterizedMeshTexture::_vertex_code = R"(
-#version 450
-
-layout(location = 0) in vec3 position;
-layout(location = 1) in vec2 uv;
-layout(location = 0) out vec2 uv_interp;
-layout(push_constant) uniform Data {
-	mat4 xform;
-};
-
-void main() {
-	uv_interp = uv;
-	gl_Position = xform * vec4(position, 1.0);
-}
-)";
-
-const String RasterizedMeshTexture::_fragment_code =
-		R"(
-#version 450
-
-layout(location = 0) in vec2 uv_interp;
-layout(location = 0) out vec4 frag_color;
-layout(set = 0, binding = 0) uniform sampler2D tex;
-
-void main() {
-	frag_color = texture(tex, uv_interp);
-}
-)";
 
 int RasterizedMeshTexture::get_width() const {
 	return size.width;
@@ -115,21 +84,6 @@ Ref<Mesh> RasterizedMeshTexture::get_mesh() const {
 	return mesh;
 }
 
-void RasterizedMeshTexture::set_base_texture(const Ref<Texture2D> &p_base_texture) {
-	if (base_texture.is_valid()) {
-		base_texture->disconnect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update_uniform_set));
-	}
-	base_texture = p_base_texture;
-	if (base_texture.is_valid()) {
-		base_texture->connect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update_uniform_set));
-	}
-	queue_update_uniform_set();
-}
-
-Ref<Texture2D> RasterizedMeshTexture::get_base_texture() const {
-	return base_texture;
-}
-
 void RasterizedMeshTexture::set_bg_color(const Color &p_color) {
 	bg_color = p_color;
 	queue_update();
@@ -139,13 +93,25 @@ Color RasterizedMeshTexture::get_bg_color() const {
 	return bg_color;
 }
 
-void RasterizedMeshTexture::set_projection(const Projection &p_projection) {
-	projection = p_projection;
-	queue_update();
+void RasterizedMeshTexture::set_material(const Ref<ShaderMaterial> &p_material) {
+	if (material.is_valid()) {
+		material->disconnect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update_pipeline));
+		if (material->get_shader().is_valid()) {
+			material->get_shader()->disconnect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update_pipeline));
+		}
+	}
+	material = p_material;
+	if (material.is_valid()) {
+		material->connect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update_pipeline));
+		if (material->get_shader().is_valid()) {
+			material->get_shader()->disconnect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update_pipeline));
+		}
+	}
+	queue_update_pipeline();
 }
 
-Projection RasterizedMeshTexture::get_projection() const {
-	return projection;
+Ref<ShaderMaterial> RasterizedMeshTexture::get_material() const {
+	return material;
 }
 
 void RasterizedMeshTexture::set_generate_mipmaps(bool p_generate_mipmaps) {
@@ -169,9 +135,6 @@ RasterizedMeshTexture::RasterizedMeshTexture() {
 	pipeline_rasterization_state.front_face = RenderingDeviceCommons::POLYGON_FRONT_FACE_COUNTER_CLOCKWISE;
 	pipeline_rasterization_state.cull_mode = RenderingDeviceCommons::POLYGON_CULL_BACK;
 
-	uniform_tex.uniform_type = RD::UNIFORM_TYPE_SAMPLER_WITH_TEXTURE;
-	uniform_tex.binding = 0;
-
 	RD::VertexAttribute pos;
 	pos.location = 0,
 	pos.format = RD::DATA_FORMAT_R32G32B32_SFLOAT,
@@ -182,21 +145,16 @@ RasterizedMeshTexture::RasterizedMeshTexture() {
 	uv.format = RD::DATA_FORMAT_R32G32_SFLOAT,
 	uv.stride = sizeof(float) * 2;
 
-	vertex_attrs = { pos, uv };
+	RD::VertexAttribute color;
+	color.location = 2,
+	color.format = RD::DATA_FORMAT_R8G8B8A8_UNORM,
+	color.stride = sizeof(uint8_t) * 4;
+
+	vertex_attrs = { pos, uv, color };
 
 	pipeline_color_blend_state.attachments.append(RD::PipelineColorBlendState::Attachment{});
 
-	sampler_id = RD::get_singleton()->sampler_create(sampler_state);
 	vertex_format = RD::get_singleton()->vertex_format_create(vertex_attrs);
-
-	if (!is_shader_cached.is_set()) {
-		Vector<RD::ShaderStageSPIRVData> spirv = {
-			{ RD::SHADER_STAGE_VERTEX, RD::get_singleton()->shader_compile_spirv_from_source(RD::SHADER_STAGE_VERTEX, _vertex_code) },
-			{ RD::SHADER_STAGE_FRAGMENT, RD::get_singleton()->shader_compile_spirv_from_source(RD::SHADER_STAGE_FRAGMENT, _fragment_code) }
-		};
-		shader_cache = RD::get_singleton()->shader_create_from_spirv(spirv);
-		is_shader_cached.set();
-	}
 }
 
 RasterizedMeshTexture::~RasterizedMeshTexture() {
@@ -206,9 +164,6 @@ RasterizedMeshTexture::~RasterizedMeshTexture() {
 
 	if (framebuffer_texture_id.is_valid()) {
 		RD::get_singleton()->free(framebuffer_texture_id);
-	}
-	if (sampler_id.is_valid()) {
-		RD::get_singleton()->free(sampler_id);
 	}
 	if (index_buffer_id.is_valid()) {
 		RD::get_singleton()->free(index_buffer_id);
@@ -226,28 +181,19 @@ void RasterizedMeshTexture::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_height", "height"), &RasterizedMeshTexture::set_height);
 	ClassDB::bind_method(D_METHOD("set_mesh", "mesh"), &RasterizedMeshTexture::set_mesh);
 	ClassDB::bind_method(D_METHOD("get_mesh"), &RasterizedMeshTexture::get_mesh);
-	ClassDB::bind_method(D_METHOD("set_base_texture", "base_texture"), &RasterizedMeshTexture::set_base_texture);
-	ClassDB::bind_method(D_METHOD("get_base_texture"), &RasterizedMeshTexture::get_base_texture);
 	ClassDB::bind_method(D_METHOD("set_bg_color", "color"), &RasterizedMeshTexture::set_bg_color);
 	ClassDB::bind_method(D_METHOD("get_bg_color"), &RasterizedMeshTexture::get_bg_color);
-	ClassDB::bind_method(D_METHOD("set_projection", "projection"), &RasterizedMeshTexture::set_projection);
-	ClassDB::bind_method(D_METHOD("get_projection"), &RasterizedMeshTexture::get_projection);
+	ClassDB::bind_method(D_METHOD("set_material", "material"), &RasterizedMeshTexture::set_material);
+	ClassDB::bind_method(D_METHOD("get_material"), &RasterizedMeshTexture::get_material);
 	ClassDB::bind_method(D_METHOD("set_generate_mipmaps", "generate_mipmaps"), &RasterizedMeshTexture::set_generate_mipmaps);
 	ClassDB::bind_method(D_METHOD("is_generating_mipmaps"), &RasterizedMeshTexture::is_generating_mipmaps);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "width", PROPERTY_HINT_RANGE, "1,2048,or_greater,suffix:px"), "set_width", "get_width");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "height", PROPERTY_HINT_RANGE, "1,2048,or_greater,suffix:px"), "set_height", "get_height");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "mesh", PROPERTY_HINT_RESOURCE_TYPE, "Mesh"), "set_mesh", "get_mesh");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "base_texture", PROPERTY_HINT_RESOURCE_TYPE, "Texture2D"), "set_base_texture", "get_base_texture");
 	ADD_PROPERTY(PropertyInfo(Variant::COLOR, "bg_color"), "set_bg_color", "get_bg_color");
-	ADD_PROPERTY(PropertyInfo(Variant::PROJECTION, "projection"), "set_projection", "get_projection");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "material", PROPERTY_HINT_RESOURCE_TYPE, "ShaderMaterial"), "set_material", "get_material");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "generate_mipmaps"), "set_generate_mipmaps", "is_generating_mipmaps");
-}
-
-void RasterizedMeshTexture::cleanup_shader() {
-	if (shader_cache.is_valid()) {
-		RD::get_singleton()->free(shader_cache);
-	}
 }
 
 static uint32_t get_image_required_mipmaps(uint32_t p_width, uint32_t p_height /*, uint32_t p_depth*/) {
@@ -290,10 +236,6 @@ void RasterizedMeshTexture::update() {
 		reset_vertex();
 		mesh_dirty = false;
 	}
-	if (uniform_set_dirty) {
-		reset_uniform();
-		uniform_set_dirty = false;
-	}
 	if (pipeline_dirty || framebuffer_id.is_null() || pipeline_id.is_null()) {
 		reset_pipeline();
 		pipeline_dirty = false;
@@ -316,11 +258,6 @@ void RasterizedMeshTexture::queue_update_pipeline() {
 	queue_update();
 }
 
-void RasterizedMeshTexture::queue_update_uniform_set() {
-	uniform_set_dirty = true;
-	queue_update();
-}
-
 void RasterizedMeshTexture::queue_update_mesh() {
 	mesh_dirty = true;
 	queue_update();
@@ -335,6 +272,8 @@ void RasterizedMeshTexture::reset_vertex() {
 	Variant vertex_array = surface_array[Mesh::ARRAY_VERTEX];
 	Vector<int> index_array = surface_array[Mesh::ARRAY_INDEX];
 	Vector<Vector2> uv_array = surface_array[Mesh::ARRAY_TEX_UV];
+	Vector<Color> color_array = surface_array[Mesh::ARRAY_COLOR];
+
 	Vector<Vector3> vertex_array_vec3;
 	Vector<uint8_t> vertex_data;
 	is_2d_mesh = false;
@@ -394,15 +333,34 @@ void RasterizedMeshTexture::reset_vertex() {
 	uv_data.resize(sizeof(float) * 2 * uv_array.size());
 	memcpy(uv_data.ptrw(), uv_array.ptr(), uv_data.size());
 
+	Vector<uint8_t> color_data;
+	color_data.resize(vertex_count * 4);
+	memset(color_data.ptrw(), 1, sizeof(color_data));
+	const Color *src = color_array.ptr();
+	for (uint32_t i = 0; i < color_array.size(); i++) {
+		uint8_t color8[4] = {
+			uint8_t(CLAMP(src[i].r * 255.0, 0.0, 255.0)),
+			uint8_t(CLAMP(src[i].g * 255.0, 0.0, 255.0)),
+			uint8_t(CLAMP(src[i].b * 255.0, 0.0, 255.0)),
+			uint8_t(CLAMP(src[i].a * 255.0, 0.0, 255.0))
+		};
+		memcpy(color_data.ptrw() + i * 4, color8, 4);
+	}
+
 	if (vertex_buffer_pos_id.is_valid()) {
 		RD::get_singleton()->free(vertex_buffer_pos_id);
 	}
 	if (vertex_buffer_uv_id.is_valid()) {
 		RD::get_singleton()->free(vertex_buffer_uv_id);
 	}
+	if (vertex_buffer_color_id.is_valid()) {
+		RD::get_singleton()->free(vertex_buffer_color_id);
+	}
 	vertex_buffer_pos_id = RD::get_singleton()->vertex_buffer_create(vertex_data.size(), vertex_data);
 	vertex_buffer_uv_id = RD::get_singleton()->vertex_buffer_create(uv_data.size(), uv_data);
-	Vector<RID> vertex_buffers = { vertex_buffer_pos_id, vertex_buffer_uv_id };
+	vertex_buffer_color_id = RD::get_singleton()->vertex_buffer_create(color_data.size(), color_data);
+
+	Vector<RID> vertex_buffers = { vertex_buffer_pos_id, vertex_buffer_uv_id, vertex_buffer_color_id };
 
 	vertex_array_id = RD::get_singleton()->vertex_array_create(vertex_count, vertex_format, vertex_buffers);
 }
@@ -423,8 +381,14 @@ void RasterizedMeshTexture::reset_pipeline() {
 
 	pipeline_rasterization_state.cull_mode = is_2d_mesh ? RD::POLYGON_CULL_FRONT : RD::POLYGON_CULL_BACK;
 
+	RID shader = RendererRD::RasterizeMeshRD::get_singleton()->get_default_shader_rd();
+	if (material.is_valid() && material->get_shader_mode() == Shader::MODE_RASTERIZE_MESH && material->get_shader_rid().is_valid()) {
+		RendererRD::RasterizeMeshRD::RasterizeMeshShaderData *shader_data = static_cast<RendererRD::RasterizeMeshRD::RasterizeMeshShaderData *>(RendererRD::MaterialStorage::get_singleton()->material_get_shader_data(material->get_rid()));
+		shader = shader_data->shader_rd;
+	}
+
 	pipeline_id = RD::get_singleton()->render_pipeline_create(
-			shader_cache,
+			shader,
 			RD::get_singleton()->framebuffer_get_format(framebuffer_id),
 			vertex_format,
 			primitive_type,
@@ -434,33 +398,34 @@ void RasterizedMeshTexture::reset_pipeline() {
 			pipeline_color_blend_state);
 }
 
-void RasterizedMeshTexture::reset_uniform() {
-	if (base_texture.is_null() || base_texture->get_rid().is_null()) {
-		return;
-	}
-	uniform_tex.clear_ids();
-	uniform_tex.append_id(sampler_id);
-	uniform_tex.append_id(RS::get_singleton()->texture_get_rd_texture(base_texture->get_rid()));
-
-	uniform_set_id = UniformSetCacheRD::get_singleton()->get_cache(shader_cache, 0, uniform_tex);
-}
-
 void RasterizedMeshTexture::draw_list_draw() {
 	if (!(pipeline_id.is_valid() &&
 				framebuffer_id.is_valid() &&
-				vertex_array_id.is_valid() &&
-				uniform_set_id.is_valid())) {
+				vertex_array_id.is_valid())) {
 		return;
 	}
 
 	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(framebuffer_id, RD::DRAW_CLEAR_COLOR_ALL, { bg_color });
 	RD::get_singleton()->draw_list_bind_render_pipeline(draw_list, pipeline_id);
 	RD::get_singleton()->draw_list_bind_vertex_array(draw_list, vertex_array_id);
-	RD::get_singleton()->draw_list_bind_uniform_set(draw_list, uniform_set_id, 0);
+
+	RID material_rid = RendererRD::RasterizeMeshRD::get_singleton()->get_default_material();
+	if (material.is_valid() && material->get_shader_mode() == Shader::MODE_RASTERIZE_MESH) {
+		material_rid = material->get_rid();
+	}
+	RendererRD::MaterialStorage *material_storage = RendererRD::MaterialStorage::get_singleton();
+	RendererRD::RasterizeMeshRD::RasterizeMeshMaterialData *material_data = static_cast<RendererRD::RasterizeMeshRD::RasterizeMeshMaterialData *>(material_storage->material_get_data(material_rid, RendererRD::MaterialStorage::SHADER_TYPE_RASTERIZE_MESH));
+	RendererRD::RasterizeMeshRD::RasterizeMeshShaderData *shader_data = static_cast<RendererRD::RasterizeMeshRD::RasterizeMeshShaderData *>(material_storage->material_get_shader_data(material_rid));
+
+	RD::get_singleton()->draw_list_bind_uniform_set(draw_list, shader_data->base_uniforms, RendererRD::RasterizeMeshRD::BASE_UNIFORM_SET);
+	if (material_data->material_uniforms.is_valid()) {
+		RD::get_singleton()->draw_list_bind_uniform_set(draw_list, material_data->material_uniforms, RendererRD::RasterizeMeshRD::MATERIAL_UNIFORM_SET);
+	}
+
 	if (index_array_id.is_valid()) {
 		RD::get_singleton()->draw_list_bind_index_array(draw_list, index_array_id);
 	}
-	RD::get_singleton()->draw_list_set_push_constant(draw_list, &projection, sizeof(Projection));
+
 	RD::get_singleton()->draw_list_draw(draw_list, index_array_id.is_valid(), 1);
 	RD::get_singleton()->draw_list_end();
 	if (generate_mipmaps) {
