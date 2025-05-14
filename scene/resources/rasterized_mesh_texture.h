@@ -81,10 +81,8 @@ class RasterizedMeshTexture : public Texture2D {
 	RD::PipelineColorBlendState pipeline_color_blend_state;
 	RD::SamplerState sampler_state;
 
-	static Mutex shader_mutex;
+	static SafeFlag is_shader_cached;
 	static RID shader_cache;
-
-	static void _update_shader();
 
 protected:
 	static void _bind_methods();

@@ -33,7 +33,7 @@
 #include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
 #include "servers/rendering/rendering_device.h"
 
-Mutex RasterizedMeshTexture::shader_mutex;
+SafeFlag RasterizedMeshTexture::is_shader_cached;
 RID RasterizedMeshTexture::shader_cache;
 
 const String RasterizedMeshTexture::_vertex_code = R"(
@@ -189,7 +189,14 @@ RasterizedMeshTexture::RasterizedMeshTexture() {
 	sampler_id = RD::get_singleton()->sampler_create(sampler_state);
 	vertex_format = RD::get_singleton()->vertex_format_create(vertex_attrs);
 
-	_update_shader();
+	if (!is_shader_cached.is_set()) {
+		Vector<RD::ShaderStageSPIRVData> spirv = {
+			{ RD::SHADER_STAGE_VERTEX, RD::get_singleton()->shader_compile_spirv_from_source(RD::SHADER_STAGE_VERTEX, _vertex_code) },
+			{ RD::SHADER_STAGE_FRAGMENT, RD::get_singleton()->shader_compile_spirv_from_source(RD::SHADER_STAGE_FRAGMENT, _fragment_code) }
+		};
+		shader_cache = RD::get_singleton()->shader_create_from_spirv(spirv);
+		is_shader_cached.set();
+	}
 }
 
 RasterizedMeshTexture::~RasterizedMeshTexture() {
@@ -211,17 +218,6 @@ RasterizedMeshTexture::~RasterizedMeshTexture() {
 	}
 	if (vertex_buffer_uv_id.is_valid()) {
 		RD::get_singleton()->free(vertex_buffer_uv_id);
-	}
-}
-
-void RasterizedMeshTexture::_update_shader() {
-	MutexLock shader_lock(shader_mutex);
-	if (shader_cache.is_null()) {
-		Vector<RD::ShaderStageSPIRVData> spirv = {
-			{ RD::SHADER_STAGE_VERTEX, RD::get_singleton()->shader_compile_spirv_from_source(RD::SHADER_STAGE_VERTEX, _vertex_code) },
-			{ RD::SHADER_STAGE_FRAGMENT, RD::get_singleton()->shader_compile_spirv_from_source(RD::SHADER_STAGE_FRAGMENT, _fragment_code) }
-		};
-		shader_cache = RD::get_singleton()->shader_create_from_spirv(spirv);
 	}
 }
 
