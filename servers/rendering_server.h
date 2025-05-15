@@ -513,6 +513,13 @@ public:
 	virtual void multimesh_set_visible_instances(RID p_multimesh, int p_visible) = 0;
 	virtual int multimesh_get_visible_instances(RID p_multimesh) const = 0;
 
+	/* MESH RASTERIZER API */
+	virtual RID mesh_rasterizer_create(int p_width, int p_height, bool p_generate_mipmaps) = 0;
+	virtual void mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color) = 0;
+	virtual void mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index) = 0;
+	virtual void mesh_rasterizer_set_material(RID p_mesh_rasterizer, RID p_material) = 0;
+	virtual RID mesh_rasterizer_get_texture_rd(RID p_mesh_rasterizer) = 0;
+
 	/* SKELETON API */
 
 	virtual RID skeleton_create() = 0;

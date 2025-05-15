@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  rasterize_mesh.h                                                      */
+/*  mesh_rasterizer_dummy.h                                               */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,62 +30,18 @@
 
 #pragma once
 
-#include "servers/rendering/renderer_rd/shaders/rasterize_mesh.glsl.gen.h"
-#include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
+#include "servers/rendering/mesh_rasterizer.h"
 
-namespace RendererRD {
+namespace RendererDummy {
 
-class RasterizeMeshRD {
-	static RasterizeMeshRD *singleton;
-	constexpr static int SAMPLERS_BINDING_FIRST_INDEX = 0;
-
-	RasterizeMeshShaderRD shader_file_rd;
-	RID default_shader;
-	RID default_material;
-
-	ShaderCompiler compiler;
-
-	static RendererRD::MaterialStorage::ShaderData *_create_rasterize_mesh_shader_funcs();
-	static RendererRD::MaterialStorage::MaterialData *_create_rasterize_mesh_material_funcs(RendererRD::MaterialStorage::ShaderData *p_shader);
-
+class MeshRasterizerDummy : public MeshRasterizer {
 public:
-	enum {
-		BASE_UNIFORM_SET,
-		MATERIAL_UNIFORM_SET
-	};
-
-	struct RasterizeMeshShaderData : public RendererRD::MaterialStorage::ShaderData {
-		RID version;
-		RID shader_rd;
-		RID base_uniforms;
-		bool valid = false;
-		Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;
-		Vector<uint32_t> ubo_offsets;
-		uint32_t ubo_size = 0;
-
-		String code;
-
-		virtual void set_code(const String &p_code);
-		virtual bool is_animated() const;
-		virtual bool casts_shadows() const;
-
-		~RasterizeMeshShaderData();
-	};
-
-	struct RasterizeMeshMaterialData : public RendererRD::MaterialStorage::MaterialData {
-		RasterizeMeshShaderData *shader_data = nullptr;
-		RID material_uniforms;
-
-		virtual void set_render_priority(int p_priority);
-		virtual void set_next_pass(RID p_pass);
-		virtual bool update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty);
-	};
-
-	static RasterizeMeshRD *get_singleton();
-	void init();
-	RID get_default_material() const;
-	RID get_default_shader_rd() const;
-	RasterizeMeshRD();
-	~RasterizeMeshRD();
+	virtual RID mesh_rasterizer_allocate() override { return RID(); }
+	virtual void mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, bool p_generate_mipmaps) override {}
+	virtual void mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color) override {}
+	virtual void mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index) override {}
+	virtual void mesh_rasterizer_set_material(RID p_mesh_rasterizer, RID p_material) override {}
+	virtual RID mesh_rasterizer_get_texture_rd(RID p_mesh_rasterizer) override { return RID(); }
+	virtual bool free(RID p_mesh_rasterizer) override { return true; }
 };
-} //namespace RendererRD
+} //namespace RendererDummy

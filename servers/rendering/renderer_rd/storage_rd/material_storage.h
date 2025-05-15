@@ -33,7 +33,6 @@
 #include "texture_storage.h"
 
 #include "core/math/projection.h"
-#include "core/templates/local_vector.h"
 #include "core/templates/rid_owner.h"
 #include "core/templates/self_list.h"
 #include "servers/rendering/shader_compiler.h"

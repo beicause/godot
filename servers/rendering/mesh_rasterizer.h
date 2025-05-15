@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  rasterized_mesh_texture.h                                             */
+/*  mesh_rasterizer.h                                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -30,55 +30,23 @@
 
 #pragma once
 
-#include "scene/resources/texture.h"
+#include "core/math/color.h"
+#include "core/templates/rid.h"
 
-class Mesh;
-class ShaderMaterial;
-
-class RasterizedMeshTexture : public Texture2D {
-	GDCLASS(RasterizedMeshTexture, Texture2D);
-
-	Size2i size = Size2i(256, 256);
-	Ref<Mesh> mesh;
-	Color bg_color = Color(0, 0, 0, 0);
-	Ref<ShaderMaterial> material;
-	int surface_index = 0;
-	bool generate_mipmaps = false;
-
-	RID texture;
-	RID mesh_rasterizer;
-
-	void update_rasterizer();
-
-protected:
-	static void _bind_methods();
+class MeshRasterizer {
+private:
+	static MeshRasterizer *singleton;
 
 public:
-	int get_width() const override;
-	int get_height() const override;
-	bool has_alpha() const override;
-	RID get_rid() const override;
+	virtual RID mesh_rasterizer_allocate() = 0;
+	virtual void mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, bool p_generate_mipmaps) = 0;
+	virtual void mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color) = 0;
+	virtual void mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index) = 0;
+	virtual void mesh_rasterizer_set_material(RID p_mesh_rasterizer, RID p_material) = 0;
+	virtual RID mesh_rasterizer_get_texture_rd(RID p_mesh_rasterizer) = 0;
+	virtual bool free(RID p_mesh_rasterizer) = 0;
 
-	Ref<Image> get_image() const override;
-
-	void set_width(int p_width);
-	void set_height(int p_height);
-
-	void set_mesh(const Ref<Mesh> &p_mesh);
-	Ref<Mesh> get_mesh() const;
-
-	void set_bg_color(const Color &p_color);
-	Color get_bg_color() const;
-
-	void set_material(const Ref<ShaderMaterial> &p_material);
-	Ref<ShaderMaterial> get_material() const;
-
-	void set_surface_index(int p_surface_index);
-	int get_surface_index() const;
-
-	void set_generate_mipmaps(bool p_generate_mipmaps);
-	bool is_generating_mipmaps() const;
-
-	RasterizedMeshTexture();
-	~RasterizedMeshTexture();
+	static MeshRasterizer *get_singleton() { return singleton; }
+	MeshRasterizer();
+	virtual ~MeshRasterizer();
 };

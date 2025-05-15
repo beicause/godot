@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  rasterized_mesh_texture.h                                             */
+/*  mesh_rasterizer.cpp                                                   */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,57 +28,14 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#pragma once
+#include "mesh_rasterizer.h"
 
-#include "scene/resources/texture.h"
+MeshRasterizer *MeshRasterizer::singleton = nullptr;
 
-class Mesh;
-class ShaderMaterial;
+MeshRasterizer::MeshRasterizer() {
+	singleton = this;
+}
 
-class RasterizedMeshTexture : public Texture2D {
-	GDCLASS(RasterizedMeshTexture, Texture2D);
-
-	Size2i size = Size2i(256, 256);
-	Ref<Mesh> mesh;
-	Color bg_color = Color(0, 0, 0, 0);
-	Ref<ShaderMaterial> material;
-	int surface_index = 0;
-	bool generate_mipmaps = false;
-
-	RID texture;
-	RID mesh_rasterizer;
-
-	void update_rasterizer();
-
-protected:
-	static void _bind_methods();
-
-public:
-	int get_width() const override;
-	int get_height() const override;
-	bool has_alpha() const override;
-	RID get_rid() const override;
-
-	Ref<Image> get_image() const override;
-
-	void set_width(int p_width);
-	void set_height(int p_height);
-
-	void set_mesh(const Ref<Mesh> &p_mesh);
-	Ref<Mesh> get_mesh() const;
-
-	void set_bg_color(const Color &p_color);
-	Color get_bg_color() const;
-
-	void set_material(const Ref<ShaderMaterial> &p_material);
-	Ref<ShaderMaterial> get_material() const;
-
-	void set_surface_index(int p_surface_index);
-	int get_surface_index() const;
-
-	void set_generate_mipmaps(bool p_generate_mipmaps);
-	bool is_generating_mipmaps() const;
-
-	RasterizedMeshTexture();
-	~RasterizedMeshTexture();
-};
+MeshRasterizer::~MeshRasterizer() {
+	singleton = nullptr;
+}
