@@ -2472,6 +2472,13 @@ void RenderingServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(MULTIMESH_INTERP_QUALITY_FAST);
 	BIND_ENUM_CONSTANT(MULTIMESH_INTERP_QUALITY_HIGH);
 
+	/* MESH RASTERIZER API */
+	ClassDB::bind_method(D_METHOD("mesh_rasterizer_create", "width", "height", "generate_mipmaps"), &RenderingServer::mesh_rasterizer_create);
+	ClassDB::bind_method(D_METHOD("mesh_rasterizer_set_bg_color", "mesh_rasterizer", "bg_color"), &RenderingServer::mesh_rasterizer_set_bg_color);
+	ClassDB::bind_method(D_METHOD("mesh_rasterizer_set_mesh", "mesh_rasterizer", "mesh", "surface_index"), &RenderingServer::mesh_rasterizer_set_mesh);
+	ClassDB::bind_method(D_METHOD("mesh_rasterizer_set_material", "mesh_rasterizer", "material"), &RenderingServer::mesh_rasterizer_set_material);
+	ClassDB::bind_method(D_METHOD("mesh_rasterizer_get_texture_rd", "mesh_rasterizer"), &RenderingServer::mesh_rasterizer_get_texture_rd);
+
 	/* SKELETON API */
 
 	ClassDB::bind_method(D_METHOD("skeleton_create"), &RenderingServer::skeleton_create);
