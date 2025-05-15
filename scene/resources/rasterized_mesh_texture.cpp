@@ -123,7 +123,7 @@ bool RasterizedMeshTexture::is_generating_mipmaps() const {
 
 RasterizedMeshTexture::RasterizedMeshTexture() {
 	mesh_rasterizer = RS::get_singleton()->mesh_rasterizer_create(size.width, size.height, generate_mipmaps);
-	texture = RS::get_singleton()->texture_rd_create(RS::get_singleton()->mesh_rasterizer_get_texture_rd(mesh_rasterizer));
+	texture = RS::get_singleton()->texture_rd_create(RS::get_singleton()->mesh_rasterizer_get_rd_texture(mesh_rasterizer));
 }
 
 RasterizedMeshTexture::~RasterizedMeshTexture() {
@@ -133,7 +133,7 @@ RasterizedMeshTexture::~RasterizedMeshTexture() {
 
 void RasterizedMeshTexture::update_rasterizer() {
 	RID new_mesh_rasterizer = RS::get_singleton()->mesh_rasterizer_create(size.width, size.height, generate_mipmaps);
-	RID new_texture = RS::get_singleton()->texture_rd_create(RS::get_singleton()->mesh_rasterizer_get_texture_rd(new_mesh_rasterizer));
+	RID new_texture = RS::get_singleton()->texture_rd_create(RS::get_singleton()->mesh_rasterizer_get_rd_texture(new_mesh_rasterizer));
 	RS::get_singleton()->texture_replace(texture, new_texture);
 	RS::get_singleton()->free(mesh_rasterizer);
 	mesh_rasterizer = new_mesh_rasterizer;

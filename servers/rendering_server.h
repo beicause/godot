@@ -518,7 +518,7 @@ public:
 	virtual void mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color) = 0;
 	virtual void mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index) = 0;
 	virtual void mesh_rasterizer_set_material(RID p_mesh_rasterizer, RID p_material) = 0;
-	virtual RID mesh_rasterizer_get_texture_rd(RID p_mesh_rasterizer) = 0;
+	virtual RID mesh_rasterizer_get_rd_texture(RID p_mesh_rasterizer) = 0;
 
 	/* SKELETON API */
 

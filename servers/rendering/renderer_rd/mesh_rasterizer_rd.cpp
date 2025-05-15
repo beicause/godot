@@ -353,7 +353,7 @@ void MeshRasterizerRD::MeshRasterizerData::draw() {
 	}
 }
 
-RID MeshRasterizerRD::mesh_rasterizer_get_texture_rd(RID p_mesh_rasterizer) {
+RID MeshRasterizerRD::mesh_rasterizer_get_rd_texture(RID p_mesh_rasterizer) {
 	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
 	ERR_FAIL_NULL_V(mesh_rasterizer, RID());
 
