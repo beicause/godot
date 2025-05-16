@@ -48,7 +48,14 @@ class RasterizedMeshTexture : public Texture2D {
 	RID texture;
 	RID mesh_rasterizer;
 
-	void update_rasterizer();
+	bool rasterizer_dirty = false;
+	bool mesh_drity = false;
+	bool material_drity = false;
+
+	bool update_queued = false;
+
+	void update_texture();
+	void queue_update_texture();
 
 protected:
 	static void _bind_methods();

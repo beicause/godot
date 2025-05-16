@@ -57,23 +57,21 @@ Ref<Image> RasterizedMeshTexture::get_image() const {
 void RasterizedMeshTexture::set_width(int p_width) {
 	ERR_FAIL_COND(p_width <= 0 || p_width > 16384);
 	size.width = p_width;
-	update_rasterizer();
-	emit_changed();
+	rasterizer_dirty = true;
+	queue_update_texture();
 }
 
 void RasterizedMeshTexture::set_height(int p_height) {
 	ERR_FAIL_COND(p_height <= 0 || p_height > 16384);
 	size.height = p_height;
-	update_rasterizer();
-	emit_changed();
+	rasterizer_dirty = true;
+	queue_update_texture();
 }
 
 void RasterizedMeshTexture::set_mesh(const Ref<Mesh> &p_mesh) {
-	if (p_mesh != mesh) {
-		mesh = p_mesh;
-		RS::get_singleton()->mesh_rasterizer_set_mesh(mesh_rasterizer, mesh.is_valid() ? mesh->get_rid() : RID(), surface_index);
-	}
-	RS::get_singleton()->mesh_rasterizer_draw(mesh_rasterizer);
+	mesh = p_mesh;
+	mesh_drity = true;
+	queue_update_texture();
 }
 
 Ref<Mesh> RasterizedMeshTexture::get_mesh() const {
@@ -82,9 +80,7 @@ Ref<Mesh> RasterizedMeshTexture::get_mesh() const {
 
 void RasterizedMeshTexture::set_bg_color(const Color &p_color) {
 	bg_color = p_color;
-	RS::get_singleton()->mesh_rasterizer_set_bg_color(mesh_rasterizer, bg_color);
-	RS::get_singleton()->mesh_rasterizer_draw(mesh_rasterizer);
-	emit_changed();
+	queue_update_texture();
 }
 
 Color RasterizedMeshTexture::get_bg_color() const {
@@ -92,11 +88,9 @@ Color RasterizedMeshTexture::get_bg_color() const {
 }
 
 void RasterizedMeshTexture::set_material(const Ref<ShaderMaterial> &p_material) {
-	if (material != p_material) {
-		material = p_material;
-		RS::get_singleton()->mesh_rasterizer_set_material(mesh_rasterizer, material.is_valid() ? material->get_rid() : RID());
-	}
-	RS::get_singleton()->mesh_rasterizer_draw(mesh_rasterizer);
+	material = p_material;
+	material_drity = true;
+	queue_update_texture();
 }
 
 Ref<ShaderMaterial> RasterizedMeshTexture::get_material() const {
@@ -104,10 +98,8 @@ Ref<ShaderMaterial> RasterizedMeshTexture::get_material() const {
 }
 
 void RasterizedMeshTexture::set_surface_index(int p_surface_index) {
-	if (p_surface_index != surface_index) {
-		surface_index = p_surface_index;
-		RS::get_singleton()->mesh_rasterizer_set_mesh(mesh_rasterizer, mesh.is_valid() ? mesh->get_rid() : RID(), surface_index);
-	}
+	surface_index = p_surface_index;
+	mesh_drity = true;
 	RS::get_singleton()->mesh_rasterizer_draw(mesh_rasterizer);
 }
 
@@ -117,8 +109,8 @@ int RasterizedMeshTexture::get_surface_index() const {
 
 void RasterizedMeshTexture::set_generate_mipmaps(bool p_generate_mipmaps) {
 	generate_mipmaps = p_generate_mipmaps;
-	update_rasterizer();
-	emit_changed();
+	rasterizer_dirty = true;
+	queue_update_texture();
 }
 
 bool RasterizedMeshTexture::is_generating_mipmaps() const {
@@ -135,17 +127,35 @@ RasterizedMeshTexture::~RasterizedMeshTexture() {
 	RS::get_singleton()->free(mesh_rasterizer);
 }
 
-void RasterizedMeshTexture::update_rasterizer() {
-	RID new_mesh_rasterizer = RS::get_singleton()->mesh_rasterizer_create(size.width, size.height, generate_mipmaps);
+void RasterizedMeshTexture::update_texture() {
+	if (rasterizer_dirty) {
+		RID new_mesh_rasterizer = RS::get_singleton()->mesh_rasterizer_create(size.width, size.height, generate_mipmaps);
+		RID new_texture = RS::get_singleton()->texture_rd_create(RS::get_singleton()->mesh_rasterizer_get_rd_texture(new_mesh_rasterizer));
+		RS::get_singleton()->texture_replace(texture, new_texture);
+		RS::get_singleton()->free(mesh_rasterizer);
+		mesh_rasterizer = new_mesh_rasterizer;
+	}
+	if (rasterizer_dirty || mesh_drity) {
+		RS::get_singleton()->mesh_rasterizer_set_mesh(mesh_rasterizer, mesh.is_valid() ? mesh->get_rid() : RID(), surface_index);
+		mesh_drity = false;
+	}
+	if (rasterizer_dirty || material_drity) {
+		RS::get_singleton()->mesh_rasterizer_set_material(mesh_rasterizer, material.is_valid() ? material->get_rid() : RID());
+		material_drity = false;
+	}
 	RS::get_singleton()->mesh_rasterizer_set_bg_color(mesh_rasterizer, bg_color);
-	RS::get_singleton()->mesh_rasterizer_set_mesh(mesh_rasterizer, mesh.is_valid() ? mesh->get_rid() : RID(), surface_index);
-	RS::get_singleton()->mesh_rasterizer_set_material(mesh_rasterizer, material.is_valid() ? material->get_rid() : RID());
-	RID new_texture = RS::get_singleton()->texture_rd_create(RS::get_singleton()->mesh_rasterizer_get_rd_texture(new_mesh_rasterizer));
-	RS::get_singleton()->texture_replace(texture, new_texture);
-	RS::get_singleton()->free(mesh_rasterizer);
-	mesh_rasterizer = new_mesh_rasterizer;
-
 	RS::get_singleton()->mesh_rasterizer_draw(mesh_rasterizer);
+	rasterizer_dirty = false;
+	update_queued = false;
+	emit_changed();
+}
+
+void RasterizedMeshTexture::queue_update_texture() {
+	if (update_queued) {
+		return;
+	}
+	callable_mp(this, &RasterizedMeshTexture::update_texture).call_deferred();
+	update_queued = true;
 }
 
 void RasterizedMeshTexture::_bind_methods() {
