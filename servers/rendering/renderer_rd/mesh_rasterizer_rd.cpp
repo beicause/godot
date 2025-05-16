@@ -116,7 +116,7 @@ RID MeshRasterizerRD::mesh_rasterizer_allocate() {
 	return mesh_rasterizer_owner.allocate_rid();
 }
 
-void MeshRasterizerRD::mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps) {
+void MeshRasterizerRD::mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, bool p_generate_mipmaps) {
 	mesh_rasterizer_owner.initialize_rid(p_mesh_rasterizer);
 	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
 	ERR_FAIL_NULL(mesh_rasterizer);
@@ -138,20 +138,8 @@ void MeshRasterizerRD::mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_w
 	tex_format.mipmaps = p_generate_mipmaps ? mipmaps : 1;
 	tex_format.texture_type = RD::TEXTURE_TYPE_2D;
 	tex_format.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
-	switch (p_texture_format) {
-		case RenderingServer::RASTERIZED_TEXTURE_FORMAT_RGBA8:
-			tex_format.format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
-			break;
-		case RenderingServer::RASTERIZED_TEXTURE_FORMAT_RGBA8_SRGB:
-			tex_format.format = RD::DATA_FORMAT_R8G8B8A8_SRGB;
-			break;
-		case RenderingServer::RASTERIZED_TEXTURE_FORMAT_RGBA8_RGBAH:
-			tex_format.format = RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
-			break;
-		case RenderingServer::RASTERIZED_TEXTURE_FORMAT_RGBA8_RGBAF:
-			tex_format.format = RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
-			break;
-	}
+	tex_format.format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
+
 	mesh_rasterizer->framebuffer_texture_id = RD::get_singleton()->texture_create(tex_format, {});
 	mesh_rasterizer->framebuffer_id = RD::get_singleton()->framebuffer_create({ mesh_rasterizer->framebuffer_texture_id });
 	mesh_rasterizer->update_vertex();

@@ -115,16 +115,6 @@ int RasterizedMeshTexture::get_surface_index() const {
 	return surface_index;
 }
 
-void RasterizedMeshTexture::set_texture_format(RS::RasterizedTextureFormat p_texture_format) {
-	texture_format = p_texture_format;
-	update_rasterizer();
-	emit_changed();
-}
-
-RS::RasterizedTextureFormat RasterizedMeshTexture::get_texture_format() const {
-	return texture_format;
-}
-
 void RasterizedMeshTexture::set_generate_mipmaps(bool p_generate_mipmaps) {
 	generate_mipmaps = p_generate_mipmaps;
 	update_rasterizer();
@@ -136,7 +126,7 @@ bool RasterizedMeshTexture::is_generating_mipmaps() const {
 }
 
 RasterizedMeshTexture::RasterizedMeshTexture() {
-	mesh_rasterizer = RS::get_singleton()->mesh_rasterizer_create(size.width, size.height, texture_format, generate_mipmaps);
+	mesh_rasterizer = RS::get_singleton()->mesh_rasterizer_create(size.width, size.height, generate_mipmaps);
 	texture = RS::get_singleton()->texture_rd_create(RS::get_singleton()->mesh_rasterizer_get_rd_texture(mesh_rasterizer));
 }
 
@@ -146,7 +136,7 @@ RasterizedMeshTexture::~RasterizedMeshTexture() {
 }
 
 void RasterizedMeshTexture::update_rasterizer() {
-	RID new_mesh_rasterizer = RS::get_singleton()->mesh_rasterizer_create(size.width, size.height, texture_format, generate_mipmaps);
+	RID new_mesh_rasterizer = RS::get_singleton()->mesh_rasterizer_create(size.width, size.height, generate_mipmaps);
 	RS::get_singleton()->mesh_rasterizer_set_bg_color(mesh_rasterizer, bg_color);
 	RS::get_singleton()->mesh_rasterizer_set_mesh(mesh_rasterizer, mesh.is_valid() ? mesh->get_rid() : RID(), surface_index);
 	RS::get_singleton()->mesh_rasterizer_set_material(mesh_rasterizer, material.is_valid() ? material->get_rid() : RID());
@@ -169,8 +159,6 @@ void RasterizedMeshTexture::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_material"), &RasterizedMeshTexture::get_material);
 	ClassDB::bind_method(D_METHOD("set_surface_index", "surface_index"), &RasterizedMeshTexture::set_surface_index);
 	ClassDB::bind_method(D_METHOD("get_surface_index"), &RasterizedMeshTexture::get_surface_index);
-	ClassDB::bind_method(D_METHOD("set_texture_format", "texture_format"), &RasterizedMeshTexture::set_texture_format);
-	ClassDB::bind_method(D_METHOD("get_texture_format"), &RasterizedMeshTexture::get_texture_format);
 	ClassDB::bind_method(D_METHOD("set_generate_mipmaps", "generate_mipmaps"), &RasterizedMeshTexture::set_generate_mipmaps);
 	ClassDB::bind_method(D_METHOD("is_generating_mipmaps"), &RasterizedMeshTexture::is_generating_mipmaps);
 
@@ -180,6 +168,5 @@ void RasterizedMeshTexture::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "mesh", PROPERTY_HINT_RESOURCE_TYPE, "Mesh"), "set_mesh", "get_mesh");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "surface_index", PROPERTY_HINT_RANGE, "0,10,1,or_greater"), "set_surface_index", "get_surface_index");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "material", PROPERTY_HINT_RESOURCE_TYPE, "ShaderMaterial"), "set_material", "get_material");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "texture_format", PROPERTY_HINT_ENUM, "RGBA8,RGBA8_SRGB,RGBAH,RGBAF"), "set_texture_format", "get_texture_format");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "generate_mipmaps"), "set_generate_mipmaps", "is_generating_mipmaps");
 }
