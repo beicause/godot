@@ -81,15 +81,12 @@ void MeshRasterizerRD::RasterizeMeshShaderData::set_code(const String &p_code) {
 	base_uniforms = RD::get_singleton()->uniform_set_create(sampler_uniforms, rasterizer->shader_file_rd.version_get_shader(version, 0), BASE_UNIFORM_SET);
 	shader_rd = rasterizer->shader_file_rd.version_get_shader(version, 0);
 
-	pipeline_cache.setup(shader_rd, RD::RENDER_PRIMITIVE_TRIANGLES, pipeline_rasterization_state, {}, {}, pipeline_color_blend_state);
+	pipeline_cache.setup(shader_rd, RD::RENDER_PRIMITIVE_TRIANGLES, {}, {}, {}, pipeline_color_blend_state);
 
 	valid = true;
 }
 
 MeshRasterizerRD::RasterizeMeshShaderData::RasterizeMeshShaderData() {
-	pipeline_rasterization_state.front_face = RenderingDeviceCommons::POLYGON_FRONT_FACE_COUNTER_CLOCKWISE;
-	pipeline_rasterization_state.cull_mode = RenderingDeviceCommons::POLYGON_CULL_BACK;
-
 	pipeline_color_blend_state.attachments.append({});
 }
 
@@ -119,7 +116,7 @@ RID MeshRasterizerRD::mesh_rasterizer_allocate() {
 	return mesh_rasterizer_owner.allocate_rid();
 }
 
-void MeshRasterizerRD::mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, bool p_generate_mipmaps) {
+void MeshRasterizerRD::mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps) {
 	mesh_rasterizer_owner.initialize_rid(p_mesh_rasterizer);
 	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
 	ERR_FAIL_NULL(mesh_rasterizer);
@@ -140,13 +137,24 @@ void MeshRasterizerRD::mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_w
 	tex_format.height = p_height;
 	tex_format.mipmaps = p_generate_mipmaps ? mipmaps : 1;
 	tex_format.texture_type = RD::TEXTURE_TYPE_2D;
-	tex_format.format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
 	tex_format.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
-
+	switch (p_texture_format) {
+		case RenderingServer::RASTERIZED_TEXTURE_FORMAT_RGBA8:
+			tex_format.format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
+			break;
+		case RenderingServer::RASTERIZED_TEXTURE_FORMAT_RGBA8_SRGB:
+			tex_format.format = RD::DATA_FORMAT_R8G8B8A8_SRGB;
+			break;
+		case RenderingServer::RASTERIZED_TEXTURE_FORMAT_RGBA8_RGBAH:
+			tex_format.format = RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
+			break;
+		case RenderingServer::RASTERIZED_TEXTURE_FORMAT_RGBA8_RGBAF:
+			tex_format.format = RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
+			break;
+	}
 	mesh_rasterizer->framebuffer_texture_id = RD::get_singleton()->texture_create(tex_format, {});
 	mesh_rasterizer->framebuffer_id = RD::get_singleton()->framebuffer_create({ mesh_rasterizer->framebuffer_texture_id });
 	mesh_rasterizer->update_vertex();
-	mesh_rasterizer->draw();
 }
 
 void MeshRasterizerRD::mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color) {
@@ -154,15 +162,14 @@ void MeshRasterizerRD::mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const
 	ERR_FAIL_NULL(mesh_rasterizer);
 
 	mesh_rasterizer->bg_color = p_bg_color;
-	mesh_rasterizer->draw();
 }
 
 void MeshRasterizerRD::mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index) {
 	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
 	ERR_FAIL_NULL(mesh_rasterizer);
 	mesh_rasterizer->mesh = p_mesh;
+	mesh_rasterizer->surface_index = p_surface_index;
 	mesh_rasterizer->update_vertex();
-	mesh_rasterizer->draw();
 	if (p_mesh.is_valid()) {
 		Utilities::get_singleton()->base_update_dependency(p_mesh, &mesh_rasterizer->dependency_tracker);
 	}
@@ -173,10 +180,15 @@ void MeshRasterizerRD::mesh_rasterizer_set_material(RID p_mesh_rasterizer, RID p
 	ERR_FAIL_NULL(mesh_rasterizer);
 	mesh_rasterizer->material = p_material;
 	mesh_rasterizer->update_material();
-	mesh_rasterizer->draw();
 	if (p_material.is_valid()) {
-		Utilities::get_singleton()->base_update_dependency(p_material, &mesh_rasterizer->dependency_tracker);
+		MaterialStorage::get_singleton()->material_update_dependency(p_material, &mesh_rasterizer->dependency_tracker);
 	}
+}
+
+void MeshRasterizerRD::mesh_rasterizer_draw(RID p_mesh_rasterizer) {
+	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
+	ERR_FAIL_NULL(mesh_rasterizer);
+	mesh_rasterizer->draw();
 }
 
 void MeshRasterizerRD::MeshRasterizerData::update_vertex() {
@@ -221,6 +233,7 @@ void MeshRasterizerRD::MeshRasterizerData::update_vertex() {
 
 	for (int i = 0; i < vertex_array_vec3.size(); i++) {
 		Vector3 v = vertex_array_vec3[i];
+		v.y = -v.y;
 		vertex_array_vec3.write[i] = v / (max_pos == 0 ? 1 : max_pos);
 	}
 	uint32_t vertex_count = vertex_array_vec3.size();
@@ -260,15 +273,10 @@ void MeshRasterizerRD::MeshRasterizerData::update_vertex() {
 
 	Vector<uint8_t> color_data;
 	color_data.resize(vertex_count * 4);
-	memset(color_data.ptrw(), 255, sizeof(color_data));
+	color_data.fill(255);
 	const Color *src = color_array.ptr();
 	for (uint32_t i = 0; i < color_array.size(); i++) {
-		uint8_t color8[4] = {
-			uint8_t(CLAMP(src[i].r * 255.0, 0.0, 255.0)),
-			uint8_t(CLAMP(src[i].g * 255.0, 0.0, 255.0)),
-			uint8_t(CLAMP(src[i].b * 255.0, 0.0, 255.0)),
-			uint8_t(CLAMP(src[i].a * 255.0, 0.0, 255.0))
-		};
+		uint8_t color8[4] = { (uint8_t)src->get_r8(), (uint8_t)src->get_g8(), (uint8_t)src->get_b8(), (uint8_t)src->get_a8() };
 		memcpy(color_data.ptrw() + i * 4, color8, 4);
 	}
 
@@ -388,11 +396,10 @@ void MeshRasterizerRD::_dependency_changed(Dependency::DependencyChangedNotifica
 	MeshRasterizerData *mesh_rasterizer = (MeshRasterizerData *)p_tracker->userdata;
 	switch (p_notification) {
 		case Dependency::DEPENDENCY_CHANGED_MATERIAL: {
-			mesh_rasterizer->draw();
+			mesh_rasterizer->update_material();
 		} break;
 		case Dependency::DEPENDENCY_CHANGED_MESH: {
 			mesh_rasterizer->update_vertex();
-			mesh_rasterizer->draw();
 		} break;
 		default: {
 		}
@@ -400,6 +407,14 @@ void MeshRasterizerRD::_dependency_changed(Dependency::DependencyChangedNotifica
 }
 
 void MeshRasterizerRD::_dependency_deleted(const RID &p_dependency, DependencyTracker *p_tracker) {
+	MeshRasterizerData *mesh_rasterizer = (MeshRasterizerData *)p_tracker->userdata;
+	if (p_dependency == mesh_rasterizer->mesh) {
+		mesh_rasterizer->mesh = RID();
+		mesh_rasterizer->update_vertex();
+	} else if (p_dependency == mesh_rasterizer->material) {
+		mesh_rasterizer->material = RID();
+		mesh_rasterizer->update_material();
+	}
 }
 
 MeshRasterizerRD::MeshRasterizerData::MeshRasterizerData() {

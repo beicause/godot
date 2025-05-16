@@ -39,10 +39,11 @@ class RasterizedMeshTexture : public Texture2D {
 	GDCLASS(RasterizedMeshTexture, Texture2D);
 
 	Size2i size = Size2i(256, 256);
-	Ref<Mesh> mesh;
-	Color bg_color = Color(0, 0, 0, 0);
-	Ref<ShaderMaterial> material;
 	int surface_index = 0;
+	Color bg_color = Color(0, 0, 0, 0);
+	Ref<Mesh> mesh;
+	Ref<ShaderMaterial> material;
+	RS::RasterizedTextureFormat texture_format = RS::RASTERIZED_TEXTURE_FORMAT_RGBA8;
 	bool generate_mipmaps = false;
 
 	RID texture;
@@ -75,6 +76,9 @@ public:
 
 	void set_surface_index(int p_surface_index);
 	int get_surface_index() const;
+
+	void set_texture_format(RS::RasterizedTextureFormat p_texture_format);
+	RS::RasterizedTextureFormat get_texture_format() const;
 
 	void set_generate_mipmaps(bool p_generate_mipmaps);
 	bool is_generating_mipmaps() const;

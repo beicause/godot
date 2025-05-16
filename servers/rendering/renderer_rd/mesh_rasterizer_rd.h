@@ -128,12 +128,12 @@ private:
 	static void _dependency_deleted(const RID &p_dependency, DependencyTracker *p_tracker);
 
 public:
-	RID
-	mesh_rasterizer_allocate();
-	void mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, bool p_generate_mipmaps);
+	RID mesh_rasterizer_allocate();
+	void mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps);
 	void mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color);
 	void mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index);
 	void mesh_rasterizer_set_material(RID p_mesh_rasterizer, RID p_material);
+	void mesh_rasterizer_draw(RID p_mesh_rasterizer);
 	RID mesh_rasterizer_get_rd_texture(RID p_mesh_rasterizer);
 	bool free(RID p_mesh_rasterizer);
 
