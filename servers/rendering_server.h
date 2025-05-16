@@ -517,8 +517,8 @@ public:
 	enum RasterizedTextureFormat {
 		RASTERIZED_TEXTURE_FORMAT_RGBA8,
 		RASTERIZED_TEXTURE_FORMAT_RGBA8_SRGB,
-		RASTERIZED_TEXTURE_FORMAT_RGBA8_RGBAH,
-		RASTERIZED_TEXTURE_FORMAT_RGBA8_RGBAF
+		RASTERIZED_TEXTURE_FORMAT_RGBAH,
+		RASTERIZED_TEXTURE_FORMAT_RGBAF
 	};
 	virtual RID mesh_rasterizer_create(int p_width, int p_height, RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps = false) = 0;
 	virtual void mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color) = 0;

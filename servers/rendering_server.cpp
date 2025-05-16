@@ -2475,8 +2475,8 @@ void RenderingServer::_bind_methods() {
 	/* MESH RASTERIZER API */
 	BIND_ENUM_CONSTANT(RASTERIZED_TEXTURE_FORMAT_RGBA8);
 	BIND_ENUM_CONSTANT(RASTERIZED_TEXTURE_FORMAT_RGBA8_SRGB);
-	BIND_ENUM_CONSTANT(RASTERIZED_TEXTURE_FORMAT_RGBA8_RGBAH);
-	BIND_ENUM_CONSTANT(RASTERIZED_TEXTURE_FORMAT_RGBA8_RGBAF);
+	BIND_ENUM_CONSTANT(RASTERIZED_TEXTURE_FORMAT_RGBAH);
+	BIND_ENUM_CONSTANT(RASTERIZED_TEXTURE_FORMAT_RGBAF);
 
 	ClassDB::bind_method(D_METHOD("mesh_rasterizer_create", "width", "height", "texture_format", "generate_mipmaps"), &RenderingServer::mesh_rasterizer_create, DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("mesh_rasterizer_set_bg_color", "mesh_rasterizer", "bg_color"), &RenderingServer::mesh_rasterizer_set_bg_color);

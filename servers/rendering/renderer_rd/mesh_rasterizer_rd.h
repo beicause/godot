@@ -50,14 +50,14 @@ private:
 		MATERIAL_UNIFORM_SET
 	};
 
+	long vertex_format;
+	RD::PipelineColorBlendState pipeline_color_blend_state;
+
 	struct RasterizeMeshShaderData : public RendererRD::MaterialStorage::ShaderData {
 		RID version;
 		RID shader_rd;
 		RID base_uniforms;
-
 		PipelineCacheRD pipeline_cache;
-		RD::PipelineRasterizationState pipeline_rasterization_state;
-		RD::PipelineColorBlendState pipeline_color_blend_state;
 
 		bool valid = false;
 		Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;
@@ -70,7 +70,6 @@ private:
 		virtual bool is_animated() const { return false; }
 		virtual bool casts_shadows() const { return false; }
 
-		RasterizeMeshShaderData();
 		~RasterizeMeshShaderData();
 	};
 
@@ -110,8 +109,6 @@ private:
 		RID vertex_buffer_pos_id;
 		RID vertex_buffer_uv_id;
 		RID vertex_buffer_color_id;
-
-		long vertex_format = 0;
 
 		void update_vertex();
 		void update_material();

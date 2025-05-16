@@ -2269,6 +2269,7 @@ void MaterialStorage::material_set_param(RID p_material, const StringName &p_par
 	} else {
 		_material_queue_update(material, true, true);
 	}
+	material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL_PARAM);
 }
 
 Variant MaterialStorage::material_get_param(RID p_material, const StringName &p_param) const {
