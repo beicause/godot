@@ -56,6 +56,9 @@ void MeshRasterizerRD::RasterizeMeshShaderData::set_code(const String &p_code) {
 
 	actions.entry_point_stages["vertex"] = ShaderCompiler::STAGE_VERTEX;
 	actions.entry_point_stages["fragment"] = ShaderCompiler::STAGE_FRAGMENT;
+	actions.render_mode_values["cull_disabled"] = Pair<int *, int>(&cull_modei, RS::CULL_MODE_DISABLED);
+	actions.render_mode_values["cull_front"] = Pair<int *, int>(&cull_modei, RS::CULL_MODE_FRONT);
+	actions.render_mode_values["cull_back"] = Pair<int *, int>(&cull_modei, RS::CULL_MODE_BACK);
 
 	actions.uniforms = &uniforms;
 
@@ -77,7 +80,9 @@ void MeshRasterizerRD::RasterizeMeshShaderData::set_code(const String &p_code) {
 	base_uniforms = RD::get_singleton()->uniform_set_create(sampler_uniforms, singleton->shader_file_rd.version_get_shader(version, 0), BASE_UNIFORM_SET);
 	shader_rd = singleton->shader_file_rd.version_get_shader(version, 0);
 
-	pipeline_cache.setup(shader_rd, RD::RENDER_PRIMITIVE_TRIANGLES, {}, {}, {}, singleton->pipeline_color_blend_state);
+	RD::PipelineRasterizationState pipeline_rasterization_state;
+	pipeline_rasterization_state.cull_mode = (RD::PolygonCullMode)cull_modei;
+	pipeline_cache.setup(shader_rd, RD::RENDER_PRIMITIVE_TRIANGLES, pipeline_rasterization_state, {}, {}, singleton->pipeline_color_blend_state);
 
 	valid = true;
 }

@@ -58,6 +58,7 @@ private:
 		RID shader_rd;
 		RID base_uniforms;
 		PipelineCacheRD pipeline_cache;
+		int cull_modei = RS::CULL_MODE_BACK;
 
 		bool valid = false;
 		Vector<ShaderCompiler::GeneratedCode::Texture> texture_uniforms;

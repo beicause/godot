@@ -525,6 +525,11 @@ ShaderTypes::ShaderTypes() {
 	shader_modes[RS::SHADER_RASTERIZE_MESH].functions["fragment"].can_discard = true;
 	shader_modes[RS::SHADER_RASTERIZE_MESH].functions["fragment"].main_function = true;
 
+	// rasterize mesh render modes
+	{
+		shader_modes[RS::SHADER_RASTERIZE_MESH].modes.push_back({ PNAME("cull"), "back", "front", "disabled" });
+	}
+
 	shader_types_list.push_back("spatial");
 	shader_types_list.push_back("canvas_item");
 	shader_types_list.push_back("particles");
