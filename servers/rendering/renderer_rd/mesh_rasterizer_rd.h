@@ -50,7 +50,7 @@ private:
 		MATERIAL_UNIFORM_SET
 	};
 
-	long vertex_format;
+	RD::VertexFormatID vertex_format;
 	RD::PipelineColorBlendState pipeline_color_blend_state;
 
 	struct RasterizeMeshShaderData : public RendererRD::MaterialStorage::ShaderData {
