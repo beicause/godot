@@ -62,7 +62,7 @@ void MeshRasterizerRD::RasterizeMeshShaderData::set_code(const String &p_code) {
 
 	actions.uniforms = &uniforms;
 
-	Error err = singleton->compiler.compile(RS::SHADER_RASTERIZE_MESH, code, &actions, path, gen_code);
+	Error err = singleton->compiler.compile(RS::SHADER_MESH_RASTERIZER, code, &actions, path, gen_code);
 	ERR_FAIL_COND_MSG(err != OK, "Shader compilation failed.");
 
 	if (version.is_null()) {
@@ -106,12 +106,12 @@ bool MeshRasterizerRD::RasterizeMeshMaterialData::update_parameters(const HashMa
 	return update_parameters_uniform_set(p_parameters, p_uniform_dirty, p_textures_dirty, shader_data->uniforms, shader_data->ubo_offsets.ptr(), shader_data->texture_uniforms, shader_data->default_texture_params, shader_data->ubo_size, material_uniforms, rasterizer->shader_file_rd.version_get_shader(shader_data->version, 0), MATERIAL_UNIFORM_SET, false, false);
 }
 
-RendererRD::MaterialStorage::ShaderData *MeshRasterizerRD::_create_rasterize_mesh_shader_funcs() {
+RendererRD::MaterialStorage::ShaderData *MeshRasterizerRD::_create_mesh_rasterizer_shader_funcs() {
 	RasterizeMeshShaderData *shader_data = memnew(RasterizeMeshShaderData);
 	return shader_data;
 }
 
-RendererRD::MaterialStorage::MaterialData *MeshRasterizerRD::_create_rasterize_mesh_material_funcs(RendererRD::MaterialStorage::ShaderData *p_shader) {
+RendererRD::MaterialStorage::MaterialData *MeshRasterizerRD::_create_mesh_rasterizer_material_funcs(RendererRD::MaterialStorage::ShaderData *p_shader) {
 	RasterizeMeshMaterialData *material_data = memnew(RasterizeMeshMaterialData);
 	material_data->shader_data = static_cast<RasterizeMeshShaderData *>(p_shader);
 	return material_data;
@@ -122,16 +122,14 @@ RID MeshRasterizerRD::mesh_rasterizer_allocate() {
 }
 
 void MeshRasterizerRD::mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps) {
-	MeshRasterizerData mesh_rasterizer;
+	mesh_rasterizer_owner.initialize_rid(p_mesh_rasterizer);
+	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
 	TextureStorage *texture_storage = TextureStorage::get_singleton();
 
-	mesh_rasterizer.texture = texture_storage->texture_allocate();
-	texture_storage->mesh_rasterizer_texture_initialize(mesh_rasterizer.texture, p_width, p_height, p_texture_format, p_generate_mipmaps);
-	mesh_rasterizer.framebuffer_texture_id = texture_storage->texture_get_rd_texture(mesh_rasterizer.texture, p_texture_format == RS::RASTERIZED_TEXTURE_FORMAT_RGBA8_SRGB);
-	mesh_rasterizer.framebuffer_id = RD::get_singleton()->framebuffer_create({ mesh_rasterizer.framebuffer_texture_id });
-	mesh_rasterizer.texture_format = p_texture_format;
-
-	mesh_rasterizer_owner.initialize_rid(p_mesh_rasterizer, mesh_rasterizer);
+	mesh_rasterizer->texture = texture_storage->texture_allocate();
+	texture_storage->mesh_rasterizer_texture_initialize(mesh_rasterizer->texture, p_width, p_height, p_texture_format, p_generate_mipmaps);
+	mesh_rasterizer->rd_texture = texture_storage->texture_get_rd_texture(mesh_rasterizer->texture, p_texture_format == RS::RASTERIZED_TEXTURE_FORMAT_RGBA8_SRGB);
+	mesh_rasterizer->framebuffer_id = RD::get_singleton()->framebuffer_create({ mesh_rasterizer->rd_texture });
 }
 
 void MeshRasterizerRD::mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color) {
@@ -213,7 +211,7 @@ void MeshRasterizerRD::MeshRasterizerData::update_vertex() {
 	Vector3 center = (max + min) / 2;
 	Vector3 s = max - min;
 
-	// Normalize x,y to [-1,1].
+	// Normalize x,y,z to [-1,1].
 	float scale = 0;
 	if (s.x != 0) {
 		scale = MAX(s.x, scale);
@@ -221,14 +219,15 @@ void MeshRasterizerRD::MeshRasterizerData::update_vertex() {
 	if (s.y != 0) {
 		scale = MAX(s.y, scale);
 	}
+	if (s.z != 0) {
+		scale = MAX(s.z, scale);
+	}
 	float scale_factor = scale == 0 ? 1 : (2 / scale);
 
 	for (int i = 0; i < vertex_array_vec3.size(); i++) {
 		Vector3 v = vertex_array_vec3[i];
 		v -= center;
 		v *= scale_factor;
-		// Invert y.
-		v.y = -v.y;
 		vertex_array_vec3.write[i] = v;
 	}
 
@@ -297,13 +296,14 @@ void MeshRasterizerRD::MeshRasterizerData::update_vertex() {
 void MeshRasterizerRD::MeshRasterizerData::update_material() {
 	MaterialStorage *material_storage = MaterialStorage::get_singleton();
 	if (material.is_valid()) {
-		MaterialStorage::MaterialData *md = material_storage->material_get_data(material, MaterialStorage::SHADER_TYPE_RASTERIZE_MESH);
+		MaterialStorage::MaterialData *md = material_storage->material_get_data(material, MaterialStorage::SHADER_TYPE_MESH_RASTERIZER);
 		if (md != nullptr) {
 			material_data = static_cast<RasterizeMeshMaterialData *>(md);
 			shader_data = static_cast<RasterizeMeshShaderData *>(material_storage->material_get_shader_data(material));
 			return;
 		}
 	}
+	material = RID();
 	material_data = singleton->default_material_data;
 	shader_data = singleton->default_shader_data;
 }
@@ -330,7 +330,7 @@ void MeshRasterizerRD::MeshRasterizerData::draw() {
 	RD::get_singleton()->draw_list_draw(draw_list, index_array_id.is_valid(), 1);
 	RD::get_singleton()->draw_list_end();
 
-	RD::TextureFormat tex_fmt = RD::get_singleton()->texture_get_format(framebuffer_texture_id);
+	RD::TextureFormat tex_fmt = RD::get_singleton()->texture_get_format(rd_texture);
 	if (tex_fmt.mipmaps <= 1) {
 		return;
 	}
@@ -347,7 +347,7 @@ void MeshRasterizerRD::MeshRasterizerData::draw() {
 		default:
 			img_fmt = Image::FORMAT_RGBA8;
 	}
-	Ref<Image> img = Image::create_from_data(tex_fmt.width, tex_fmt.height, true, img_fmt, RD::get_singleton()->texture_get_data(framebuffer_texture_id, 0));
+	Ref<Image> img = Image::create_from_data(tex_fmt.width, tex_fmt.height, true, img_fmt, RD::get_singleton()->texture_get_data(rd_texture, 0));
 	img->generate_mipmaps();
 	Vector<uint8_t> data = img->get_data();
 	int mipmap_count = tex_fmt.mipmaps;
@@ -362,15 +362,15 @@ void MeshRasterizerRD::MeshRasterizerData::draw() {
 		memcpy(d.ptrw(), data.ptr() + start, d.size());
 
 		RID tex = RD::get_singleton()->texture_create(tex_fmt, {}, { d });
-		Error err = RD::get_singleton()->texture_copy(tex, framebuffer_texture_id, Vector3(), Vector3(), Vector3(mipmap_size.x, mipmap_size.y, 0), 0, i, 0, 0);
-
+		Error err = RD::get_singleton()->texture_copy(tex, rd_texture, Vector3(), Vector3(), Vector3(mipmap_size.x, mipmap_size.y, 0), 0, i, 0, 0);
+		RD::get_singleton()->free(tex);
 		ERR_FAIL_COND_MSG(err != OK, vformat("Failed to generate mipmaps: %s", error_names[err]));
 	}
 }
 
 RID MeshRasterizerRD::mesh_rasterizer_get_texture(RID p_mesh_rasterizer) {
 	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
-	return mesh_rasterizer->framebuffer_texture_id;
+	return mesh_rasterizer->texture;
 }
 
 bool MeshRasterizerRD::free(RID p_mesh_rasterizer) {
@@ -378,8 +378,8 @@ bool MeshRasterizerRD::free(RID p_mesh_rasterizer) {
 	if (mesh_rasterizer == nullptr) {
 		return false;
 	}
-	if (mesh_rasterizer->framebuffer_texture_id.is_valid()) {
-		RD::get_singleton()->free(mesh_rasterizer->framebuffer_texture_id);
+	if (TextureStorage::get_singleton()->owns_texture(mesh_rasterizer->texture)) {
+		TextureStorage::get_singleton()->texture_free(mesh_rasterizer->texture);
 	}
 	if (mesh_rasterizer->index_buffer_id.is_valid()) {
 		RD::get_singleton()->free(mesh_rasterizer->index_buffer_id);
@@ -445,8 +445,8 @@ MeshRasterizerRD::MeshRasterizerRD() {
 	MaterialStorage *material_storage = MaterialStorage::get_singleton();
 
 	// register our shader funds
-	material_storage->shader_set_data_request_function(MaterialStorage::SHADER_TYPE_RASTERIZE_MESH, _create_rasterize_mesh_shader_funcs);
-	material_storage->material_set_data_request_function(MaterialStorage::SHADER_TYPE_RASTERIZE_MESH, _create_rasterize_mesh_material_funcs);
+	material_storage->shader_set_data_request_function(MaterialStorage::SHADER_TYPE_MESH_RASTERIZER, _create_mesh_rasterizer_shader_funcs);
+	material_storage->material_set_data_request_function(MaterialStorage::SHADER_TYPE_MESH_RASTERIZER, _create_mesh_rasterizer_material_funcs);
 
 	{
 		//shader compiler
@@ -478,11 +478,11 @@ MeshRasterizerRD::MeshRasterizerRD() {
 	default_material = material_storage->material_allocate();
 	material_storage->shader_initialize(default_shader);
 	material_storage->material_initialize(default_material);
-	material_storage->shader_set_code(default_shader, "shader_type rasterize_mesh;");
+	material_storage->shader_set_code(default_shader, "shader_type mesh_rasterizer;");
 	material_storage->material_set_shader(default_material, default_shader);
 
 	default_shader_data = static_cast<RasterizeMeshShaderData *>(material_storage->material_get_shader_data(default_material));
-	default_material_data = static_cast<RasterizeMeshMaterialData *>(material_storage->material_get_data(default_material, MaterialStorage::SHADER_TYPE_RASTERIZE_MESH));
+	default_material_data = static_cast<RasterizeMeshMaterialData *>(material_storage->material_get_data(default_material, MaterialStorage::SHADER_TYPE_MESH_RASTERIZER));
 
 	RD::VertexAttribute pos;
 	pos.location = 0,

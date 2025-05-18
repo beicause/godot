@@ -143,20 +143,27 @@ bool RasterizedMeshTexture::is_generating_mipmaps() const {
 }
 
 RasterizedMeshTexture::RasterizedMeshTexture() {
-	mesh_rasterizer = RS::get_singleton()->mesh_rasterizer_create(size.width, size.height, texture_format, generate_mipmaps);
-	texture = RS::get_singleton()->mesh_rasterizer_get_texture(mesh_rasterizer);
+	texture = RS::get_singleton()->texture_2d_placeholder_create();
 }
 
 RasterizedMeshTexture::~RasterizedMeshTexture() {
-	RS::get_singleton()->free(mesh_rasterizer);
+	RS::get_singleton()->free(texture);
+	if (mesh_rasterizer.is_valid()) {
+		RS::get_singleton()->free(mesh_rasterizer);
+	}
 }
 
 void RasterizedMeshTexture::update() {
+	if (mesh_rasterizer.is_null()) {
+		rasterizer_dirty = true;
+	}
 	if (rasterizer_dirty) {
 		RID new_mesh_rasterizer = RS::get_singleton()->mesh_rasterizer_create(size.width, size.height, texture_format, generate_mipmaps);
 		RID new_texture = RS::get_singleton()->mesh_rasterizer_get_texture(new_mesh_rasterizer);
 		RS::get_singleton()->texture_replace(texture, new_texture);
-		RS::get_singleton()->free(mesh_rasterizer);
+		if (mesh_rasterizer.is_valid()) {
+			RS::get_singleton()->free(mesh_rasterizer);
+		}
 		mesh_rasterizer = new_mesh_rasterizer;
 	}
 	if (rasterizer_dirty || mesh_dirty) {

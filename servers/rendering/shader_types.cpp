@@ -510,26 +510,26 @@ ShaderTypes::ShaderTypes() {
 
 	/************ RASTERIZER MESH **************************/
 
-	shader_modes[RS::SHADER_RASTERIZE_MESH].functions["constants"].built_ins["PI"] = constt(ShaderLanguage::TYPE_FLOAT);
-	shader_modes[RS::SHADER_RASTERIZE_MESH].functions["constants"].built_ins["TAU"] = constt(ShaderLanguage::TYPE_FLOAT);
-	shader_modes[RS::SHADER_RASTERIZE_MESH].functions["constants"].built_ins["E"] = constt(ShaderLanguage::TYPE_FLOAT);
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["constants"].built_ins["PI"] = constt(ShaderLanguage::TYPE_FLOAT);
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["constants"].built_ins["TAU"] = constt(ShaderLanguage::TYPE_FLOAT);
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["constants"].built_ins["E"] = constt(ShaderLanguage::TYPE_FLOAT);
 
-	shader_modes[RS::SHADER_RASTERIZE_MESH].functions["vertex"].built_ins["VERTEX"] = ShaderLanguage::TYPE_VEC4;
-	shader_modes[RS::SHADER_RASTERIZE_MESH].functions["vertex"].built_ins["UV"] = ShaderLanguage::TYPE_VEC2;
-	shader_modes[RS::SHADER_RASTERIZE_MESH].functions["vertex"].built_ins["COLOR"] = ShaderLanguage::TYPE_VEC4;
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].built_ins["VERTEX"] = ShaderLanguage::TYPE_VEC4;
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].built_ins["UV"] = ShaderLanguage::TYPE_VEC2;
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].built_ins["COLOR"] = ShaderLanguage::TYPE_VEC4;
 
-	shader_modes[RS::SHADER_RASTERIZE_MESH].functions["vertex"].can_discard = true;
-	shader_modes[RS::SHADER_RASTERIZE_MESH].functions["vertex"].main_function = true;
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].can_discard = true;
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].main_function = true;
 
-	shader_modes[RS::SHADER_RASTERIZE_MESH].functions["fragment"].built_ins["UV"] = constt(ShaderLanguage::TYPE_VEC2);
-	shader_modes[RS::SHADER_RASTERIZE_MESH].functions["fragment"].built_ins["COLOR"] = ShaderLanguage::TYPE_VEC4;
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].built_ins["UV"] = constt(ShaderLanguage::TYPE_VEC2);
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].built_ins["COLOR"] = ShaderLanguage::TYPE_VEC4;
 
-	shader_modes[RS::SHADER_RASTERIZE_MESH].functions["fragment"].can_discard = true;
-	shader_modes[RS::SHADER_RASTERIZE_MESH].functions["fragment"].main_function = true;
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].can_discard = true;
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].main_function = true;
 
 	// rasterize mesh render modes
 	{
-		shader_modes[RS::SHADER_RASTERIZE_MESH].modes.push_back({ PNAME("cull"), "back", "front", "disabled" });
+		shader_modes[RS::SHADER_MESH_RASTERIZER].modes.push_back({ PNAME("cull"), "back", "front", "disabled" });
 	}
 
 	shader_types_list.push_back("spatial");
@@ -537,7 +537,7 @@ ShaderTypes::ShaderTypes() {
 	shader_types_list.push_back("particles");
 	shader_types_list.push_back("sky");
 	shader_types_list.push_back("fog");
-	shader_types_list.push_back("rasterize_mesh");
+	shader_types_list.push_back("mesh_rasterizer");
 
 	for (const String &type : shader_types_list) {
 		shader_types.insert(type);

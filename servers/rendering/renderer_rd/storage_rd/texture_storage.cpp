@@ -3250,22 +3250,24 @@ void TextureStorage::update_decal_buffer(const PagedArray<RID> &p_decals, const 
 /* MESH RASTERIZER API */
 
 void TextureStorage::mesh_rasterizer_texture_initialize(RID p_rid, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps) {
-	uint32_t w = p_width;
-	uint32_t h = p_height;
 	uint32_t mipmaps = 1;
-	if (p_generate_mipmaps) {
-		while (true) {
-			if (w == 1 && h == 1) {
-				break;
+	{
+		uint32_t w = p_width;
+		uint32_t h = p_height;
+		if (p_generate_mipmaps) {
+			while (true) {
+				if (w == 1 && h == 1) {
+					break;
+				}
+				w = MAX(1u, w >> 1);
+				h = MAX(1u, h >> 1);
+				mipmaps++;
 			}
-			w = MAX(1u, w >> 1);
-			h = MAX(1u, h >> 1);
-			mipmaps++;
 		}
 	}
 	RD::TextureFormat rd_tex_format;
-	rd_tex_format.width = w;
-	rd_tex_format.height = h;
+	rd_tex_format.width = p_width;
+	rd_tex_format.height = p_height;
 	rd_tex_format.mipmaps = mipmaps;
 	rd_tex_format.texture_type = RD::TEXTURE_TYPE_2D;
 	rd_tex_format.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
@@ -3296,17 +3298,17 @@ void TextureStorage::mesh_rasterizer_texture_initialize(RID p_rid, int p_width, 
 	_texture_format_from_rd(rd_tex_format.format, imfmt);
 	texture.format = imfmt.image_format;
 	texture.validated_format = imfmt.image_format;
-	if (texture.rd_format_srgb != RD::DATA_FORMAT_MAX) {
-		rd_tex_format.shareable_formats.push_back(texture.rd_format);
-		rd_tex_format.shareable_formats.push_back(texture.rd_format_srgb);
-	}
 	texture.rd_type = rd_tex_format.texture_type;
-	texture.rd_format = rd_tex_format.format;
+	texture.rd_format = imfmt.rd_format;
 	texture.rd_format_srgb = imfmt.rd_format_srgb;
 	texture.width_2d = texture.width;
 	texture.height_2d = texture.height;
 	texture.is_render_target = false;
 	texture.is_proxy = false;
+	if (texture.rd_format_srgb != RD::DATA_FORMAT_MAX) {
+		rd_tex_format.shareable_formats.push_back(texture.rd_format);
+		rd_tex_format.shareable_formats.push_back(texture.rd_format_srgb);
+	}
 
 	RD::TextureView rd_view;
 	rd_view.format_override = (imfmt.rd_format == rd_tex_format.format) ? RD::DATA_FORMAT_MAX : imfmt.rd_format;

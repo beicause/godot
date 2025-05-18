@@ -3342,7 +3342,7 @@ void EditorPropertyResource::_update_preferred_shader() {
 		} else if (Object::cast_to<Sky>(ed_object)) {
 			shader_picker->set_preferred_mode(Shader::MODE_SKY);
 		} else if (Object::cast_to<RasterizedMeshTexture>(ed_object)) {
-			shader_picker->set_preferred_mode(Shader::MODE_RASTERIZE_MESH);
+			shader_picker->set_preferred_mode(Shader::MODE_MESH_RASTERIZER);
 		}
 	}
 }

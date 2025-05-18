@@ -39,7 +39,12 @@ void main() {
 
 	uv_interp = uv;
 	color_interp = color;
-	gl_Position = vertex;
+	mat4 m = mat4(
+			1.0, 0.0, 0.0, 0.0,
+			0.0, -1.0, 0.0, 0.0,
+			0.0, 0.0, 0.5, 0.0,
+			0.0, 0.0, 0.5, 1.0);
+	gl_Position = m * vertex;
 }
 
 #[fragment]

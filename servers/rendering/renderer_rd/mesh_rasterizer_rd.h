@@ -32,7 +32,7 @@
 
 #include "servers/rendering/mesh_rasterizer.h"
 #include "servers/rendering/renderer_rd/pipeline_cache_rd.h"
-#include "servers/rendering/renderer_rd/shaders/rasterize_mesh.glsl.gen.h"
+#include "servers/rendering/renderer_rd/shaders/mesh_rasterizer.glsl.gen.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 
 namespace RendererRD {
@@ -42,8 +42,8 @@ private:
 	static MeshRasterizerRD *singleton;
 	static constexpr int SAMPLERS_BINDING_FIRST_INDEX = 1;
 
-	static MaterialStorage::ShaderData *_create_rasterize_mesh_shader_funcs();
-	static MaterialStorage::MaterialData *_create_rasterize_mesh_material_funcs(MaterialStorage::ShaderData *p_shader);
+	static MaterialStorage::ShaderData *_create_mesh_rasterizer_shader_funcs();
+	static MaterialStorage::MaterialData *_create_mesh_rasterizer_material_funcs(MaterialStorage::ShaderData *p_shader);
 
 	enum {
 		BASE_UNIFORM_SET,
@@ -83,7 +83,7 @@ private:
 		virtual bool update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty);
 	};
 
-	RasterizeMeshShaderRD shader_file_rd;
+	MeshRasterizerShaderRD shader_file_rd;
 	RID default_shader;
 	RID default_material;
 	RasterizeMeshShaderData *default_shader_data;
@@ -95,7 +95,6 @@ private:
 		RasterizeMeshShaderData *shader_data = nullptr;
 
 		Color bg_color = Color(0, 0, 0, 0);
-		RS::RasterizedTextureFormat texture_format = RS::RASTERIZED_TEXTURE_FORMAT_RGBA8;
 
 		RID material;
 		RID mesh;
@@ -103,7 +102,7 @@ private:
 
 		RID texture;
 
-		RID framebuffer_texture_id;
+		RID rd_texture;
 		RID framebuffer_id;
 		RID vertex_array_id;
 		RID index_array_id;

@@ -213,7 +213,7 @@ void fog() {
 }
 )";
 						break;
-					case Shader::MODE_RASTERIZE_MESH:
+					case Shader::MODE_MESH_RASTERIZER:
 						code += R"(
 uniform mat4 projection;
 uniform sampler2D base_texture: source_color;
