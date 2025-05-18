@@ -184,12 +184,12 @@ void MeshRasterizerRD::MeshRasterizerData::update_vertex() {
 	Vector<uint8_t> vertex_data;
 
 	if (vertex_array.get_type() == Variant::PACKED_VECTOR2_ARRAY) {
-		// Convert 2D Mesh to 3D;
+		// Flip 2D Mesh y-axis and convert to 3D.
 		Vector<Vector2> array_vec2 = vertex_array;
 		vertex_array_vec3.resize(array_vec2.size());
 		for (int i = 0; i < array_vec2.size(); i++) {
 			Vector2 vec2 = array_vec2[i];
-			vertex_array_vec3.write[i] = Vector3(vec2.x, vec2.y, 0);
+			vertex_array_vec3.write[i] = Vector3(vec2.x, -vec2.y, 0);
 		}
 	} else {
 		vertex_array_vec3 = vertex_array;
@@ -211,7 +211,7 @@ void MeshRasterizerRD::MeshRasterizerData::update_vertex() {
 	Vector3 center = (max + min) / 2;
 	Vector3 s = max - min;
 
-	// Normalize x,y,z to [-1,1].
+	// Normalize x,y,z to [-1,1]. We will normalize z to [0,1] and flip y in glsl.
 	float scale = 0;
 	if (s.x != 0) {
 		scale = MAX(s.x, scale);
@@ -268,7 +268,7 @@ void MeshRasterizerRD::MeshRasterizerData::update_vertex() {
 
 	Vector<uint8_t> color_data;
 	color_data.resize(vertex_count * 4);
-	color_data.fill(255);
+	memset(color_data.ptrw(), 255, color_data.size());
 	const Color *src = color_array.ptr();
 	for (uint32_t i = 0; i < color_array.size(); i++) {
 		uint8_t color8[4] = { (uint8_t)src[i].get_r8(), (uint8_t)src[i].get_g8(), (uint8_t)src[i].get_b8(), (uint8_t)src[i].get_a8() };
@@ -309,7 +309,8 @@ void MeshRasterizerRD::MeshRasterizerData::update_material() {
 }
 
 void MeshRasterizerRD::MeshRasterizerData::draw() {
-	Utilities::get_singleton()->update_dirty_resources();
+	MaterialStorage::get_singleton()->_update_global_shader_uniforms(); //must do before materials, so it can queue them for update
+	MaterialStorage::get_singleton()->_update_queued_materials();
 
 	RID pipeline = shader_data->pipeline_cache.get_render_pipeline(singleton->vertex_format, RD::get_singleton()->framebuffer_get_format(framebuffer_id));
 	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(framebuffer_id, RD::DrawFlags::DRAW_CLEAR_COLOR_ALL, { bg_color });

@@ -29,7 +29,13 @@ material;
 #GLOBALS
 
 void main() {
-	vec4 vertex = vec4(vertex_attrib, 1);
+	// Flip y-axis and convert z-axis to [0,1].
+	mat4 m = mat4(
+			1.0, 0.0, 0.0, 0.0,
+			0.0, -1.0, 0.0, 0.0,
+			0.0, 0.0, 0.5, 0.0,
+			0.0, 0.0, 0.5, 1.0);
+	vec4 vertex = m * vec4(vertex_attrib, 1);
 	vec2 uv = uv_attrib;
 	vec4 color = color_attrib;
 
@@ -39,12 +45,7 @@ void main() {
 
 	uv_interp = uv;
 	color_interp = color;
-	mat4 m = mat4(
-			1.0, 0.0, 0.0, 0.0,
-			0.0, -1.0, 0.0, 0.0,
-			0.0, 0.0, 0.5, 0.0,
-			0.0, 0.0, 0.5, 1.0);
-	gl_Position = m * vertex;
+	gl_Position = vertex;
 }
 
 #[fragment]

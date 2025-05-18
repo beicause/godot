@@ -2276,6 +2276,7 @@ void MaterialStorage::material_set_param(RID p_material, const StringName &p_par
 	} else {
 		_material_queue_update(material, true, true);
 	}
+
 	if (Engine::get_singleton()->is_editor_hint()) {
 		material->dependency.changed_notify(Dependency::DEPENDENCY_CHANGED_MATERIAL_PARAM);
 	}
