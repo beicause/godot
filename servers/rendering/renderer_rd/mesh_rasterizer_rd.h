@@ -40,7 +40,7 @@ namespace RendererRD {
 class MeshRasterizerRD : public MeshRasterizer {
 private:
 	static MeshRasterizerRD *singleton;
-	static constexpr int SAMPLERS_BINDING_FIRST_INDEX = 0;
+	static constexpr int SAMPLERS_BINDING_FIRST_INDEX = 1;
 
 	static MaterialStorage::ShaderData *_create_rasterize_mesh_shader_funcs();
 	static MaterialStorage::MaterialData *_create_rasterize_mesh_material_funcs(MaterialStorage::ShaderData *p_shader);
@@ -95,12 +95,13 @@ private:
 		RasterizeMeshShaderData *shader_data = nullptr;
 
 		Color bg_color = Color(0, 0, 0, 0);
-
-		RD::RenderPrimitive primitive_type = RD::RENDER_PRIMITIVE_TRIANGLES;
+		RS::RasterizedTextureFormat texture_format = RS::RASTERIZED_TEXTURE_FORMAT_RGBA8;
 
 		RID material;
 		RID mesh;
 		int surface_index = 0;
+
+		RID texture;
 
 		RID framebuffer_texture_id;
 		RID framebuffer_id;
@@ -132,7 +133,7 @@ public:
 	void mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index);
 	void mesh_rasterizer_set_material(RID p_mesh_rasterizer, RID p_material);
 	void mesh_rasterizer_draw(RID p_mesh_rasterizer);
-	RID mesh_rasterizer_get_rd_texture(RID p_mesh_rasterizer);
+	RID mesh_rasterizer_get_texture(RID p_mesh_rasterizer);
 	bool free(RID p_mesh_rasterizer);
 
 	void free_shader();

@@ -3,6 +3,11 @@
 
 #VERSION_DEFINES
 
+layout(set = 0, binding = 0, std430) restrict readonly buffer GlobalShaderUniformData {
+	vec4 data[];
+}
+global_shader_uniforms;
+
 #include "samplers_inc.glsl"
 
 layout(location = 0) in vec3 vertex_attrib;
@@ -16,7 +21,8 @@ layout(location = 1) out vec4 color_interp;
 /* clang-format off */
 layout(set = 1, binding = 0, std140) uniform MaterialUniforms {
 #MATERIAL_UNIFORMS
-} material;
+}
+material;
 /* clang-format on */
 #endif
 
@@ -41,6 +47,11 @@ void main() {
 
 #VERSION_DEFINES
 
+layout(set = 0, binding = 0, std430) restrict readonly buffer GlobalShaderUniformData {
+	vec4 data[];
+}
+global_shader_uniforms;
+
 #include "samplers_inc.glsl"
 
 layout(location = 0) in vec2 uv_interp;
@@ -52,7 +63,8 @@ layout(location = 0) out vec4 frag_color;
 /* clang-format off */
 layout(set = 1, binding = 0, std140) uniform MaterialUniforms {
 #MATERIAL_UNIFORMS
-} material;
+}
+material;
 /* clang-format on */
 #endif
 

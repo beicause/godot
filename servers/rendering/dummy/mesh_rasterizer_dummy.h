@@ -42,7 +42,7 @@ public:
 	virtual void mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index) override {}
 	virtual void mesh_rasterizer_set_material(RID p_mesh_rasterizer, RID p_material) override {}
 	virtual void mesh_rasterizer_draw(RID p_mesh_rasterizer) override {}
-	virtual RID mesh_rasterizer_get_rd_texture(RID p_mesh_rasterizer) override { return RID(); }
+	virtual RID mesh_rasterizer_get_texture(RID p_mesh_rasterizer) override { return RID(); }
 	virtual bool free(RID p_mesh_rasterizer) override { return true; }
 };
 } //namespace RendererDummy

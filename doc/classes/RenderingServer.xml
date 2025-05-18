@@ -2437,7 +2437,7 @@
 			<description>
 			</description>
 		</method>
-		<method name="mesh_rasterizer_get_rd_texture">
+		<method name="mesh_rasterizer_get_texture">
 			<return type="RID" />
 			<param index="0" name="mesh_rasterizer" type="RID" />
 			<description>

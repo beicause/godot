@@ -75,9 +75,18 @@ void MeshRasterizerRD::RasterizeMeshShaderData::set_code(const String &p_code) {
 	ubo_offsets = gen_code.uniform_offsets;
 	texture_uniforms = gen_code.texture_uniforms;
 
-	Vector<RD::Uniform> sampler_uniforms;
-	MaterialStorage::get_singleton()->samplers_rd_get_default().append_uniforms(sampler_uniforms, SAMPLERS_BINDING_FIRST_INDEX);
-	base_uniforms = RD::get_singleton()->uniform_set_create(sampler_uniforms, singleton->shader_file_rd.version_get_shader(version, 0), BASE_UNIFORM_SET);
+	{
+		// Global shader uniforms.
+		RD::Uniform u;
+		u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
+		u.binding = 0;
+		u.append_id(RendererRD::MaterialStorage::get_singleton()->global_shader_uniforms_get_storage_buffer());
+
+		Vector<RD::Uniform> us = { u };
+		MaterialStorage::get_singleton()->samplers_rd_get_default().append_uniforms(us, SAMPLERS_BINDING_FIRST_INDEX);
+		base_uniforms = RD::get_singleton()->uniform_set_create(us, singleton->shader_file_rd.version_get_shader(version, 0), BASE_UNIFORM_SET);
+	}
+
 	shader_rd = singleton->shader_file_rd.version_get_shader(version, 0);
 
 	RD::PipelineRasterizationState pipeline_rasterization_state;
@@ -113,43 +122,16 @@ RID MeshRasterizerRD::mesh_rasterizer_allocate() {
 }
 
 void MeshRasterizerRD::mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps) {
-	mesh_rasterizer_owner.initialize_rid(p_mesh_rasterizer);
-	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
+	MeshRasterizerData mesh_rasterizer;
+	TextureStorage *texture_storage = TextureStorage::get_singleton();
 
-	uint32_t w = p_width;
-	uint32_t h = p_height;
-	uint32_t mipmaps = 1;
-	while (true) {
-		if (w == 1 && h == 1) {
-			break;
-		}
-		w = MAX(1u, w >> 1);
-		h = MAX(1u, h >> 1);
-		mipmaps++;
-	}
-	RD::TextureFormat tex_format;
-	tex_format.width = p_width;
-	tex_format.height = p_height;
-	tex_format.mipmaps = p_generate_mipmaps ? mipmaps : 1;
-	tex_format.texture_type = RD::TEXTURE_TYPE_2D;
-	tex_format.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
-	switch (p_texture_format) {
-		case RenderingServer::RASTERIZED_TEXTURE_FORMAT_RGBA8:
-			tex_format.format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
-			break;
-		case RenderingServer::RASTERIZED_TEXTURE_FORMAT_RGBA8_SRGB:
-			tex_format.format = RD::DATA_FORMAT_R8G8B8A8_SRGB;
-			break;
-		case RenderingServer::RASTERIZED_TEXTURE_FORMAT_RGBAH:
-			tex_format.format = RD::DATA_FORMAT_R16G16B16A16_SFLOAT;
-			break;
-		case RenderingServer::RASTERIZED_TEXTURE_FORMAT_RGBAF:
-			tex_format.format = RD::DATA_FORMAT_R32G32B32A32_SFLOAT;
-			break;
-	}
-	mesh_rasterizer->framebuffer_texture_id = RD::get_singleton()->texture_create(tex_format, {});
-	mesh_rasterizer->framebuffer_id = RD::get_singleton()->framebuffer_create({ mesh_rasterizer->framebuffer_texture_id });
-	mesh_rasterizer->update_vertex();
+	mesh_rasterizer.texture = texture_storage->texture_allocate();
+	texture_storage->mesh_rasterizer_texture_initialize(mesh_rasterizer.texture, p_width, p_height, p_texture_format, p_generate_mipmaps);
+	mesh_rasterizer.framebuffer_texture_id = texture_storage->texture_get_rd_texture(mesh_rasterizer.texture, p_texture_format == RS::RASTERIZED_TEXTURE_FORMAT_RGBA8_SRGB);
+	mesh_rasterizer.framebuffer_id = RD::get_singleton()->framebuffer_create({ mesh_rasterizer.framebuffer_texture_id });
+	mesh_rasterizer.texture_format = p_texture_format;
+
+	mesh_rasterizer_owner.initialize_rid(p_mesh_rasterizer, mesh_rasterizer);
 }
 
 void MeshRasterizerRD::mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color) {
@@ -230,6 +212,8 @@ void MeshRasterizerRD::MeshRasterizerData::update_vertex() {
 
 	Vector3 center = (max + min) / 2;
 	Vector3 s = max - min;
+
+	// Normalize x,y to [-1,1].
 	float scale = 0;
 	if (s.x != 0) {
 		scale = MAX(s.x, scale);
@@ -237,14 +221,13 @@ void MeshRasterizerRD::MeshRasterizerData::update_vertex() {
 	if (s.y != 0) {
 		scale = MAX(s.y, scale);
 	}
-	if (s.z != 0) {
-		scale = MAX(s.z, scale);
-	}
 	float scale_factor = scale == 0 ? 1 : (2 / scale);
 
 	for (int i = 0; i < vertex_array_vec3.size(); i++) {
 		Vector3 v = vertex_array_vec3[i];
-		v = (v - center) * scale_factor;
+		v -= center;
+		v *= scale_factor;
+		// Invert y.
 		v.y = -v.y;
 		vertex_array_vec3.write[i] = v;
 	}
@@ -289,7 +272,7 @@ void MeshRasterizerRD::MeshRasterizerData::update_vertex() {
 	color_data.fill(255);
 	const Color *src = color_array.ptr();
 	for (uint32_t i = 0; i < color_array.size(); i++) {
-		uint8_t color8[4] = { (uint8_t)src->get_r8(), (uint8_t)src->get_g8(), (uint8_t)src->get_b8(), (uint8_t)src->get_a8() };
+		uint8_t color8[4] = { (uint8_t)src[i].get_r8(), (uint8_t)src[i].get_g8(), (uint8_t)src[i].get_b8(), (uint8_t)src[i].get_a8() };
 		memcpy(color_data.ptrw() + i * 4, color8, 4);
 	}
 
@@ -347,34 +330,45 @@ void MeshRasterizerRD::MeshRasterizerData::draw() {
 	RD::get_singleton()->draw_list_draw(draw_list, index_array_id.is_valid(), 1);
 	RD::get_singleton()->draw_list_end();
 
-	// Generate mipmaps.
-	RD::TextureFormat fmt = RD::get_singleton()->texture_get_format(framebuffer_texture_id);
-	if (fmt.mipmaps <= 1) {
+	RD::TextureFormat tex_fmt = RD::get_singleton()->texture_get_format(framebuffer_texture_id);
+	if (tex_fmt.mipmaps <= 1) {
 		return;
 	}
 
-	Ref<Image> img = Image::create_from_data(fmt.width, fmt.height, true, Image::FORMAT_RGBA8, RD::get_singleton()->texture_get_data(framebuffer_texture_id, 0));
+	// Generate mipmaps.
+	Image::Format img_fmt;
+	switch (tex_fmt.format) {
+		case RD::DATA_FORMAT_R16G16B16_SFLOAT:
+			img_fmt = Image::FORMAT_RGBAH;
+			break;
+		case RD::DATA_FORMAT_R32G32B32A32_SFLOAT:
+			img_fmt = Image::FORMAT_RGBAF;
+			break;
+		default:
+			img_fmt = Image::FORMAT_RGBA8;
+	}
+	Ref<Image> img = Image::create_from_data(tex_fmt.width, tex_fmt.height, true, img_fmt, RD::get_singleton()->texture_get_data(framebuffer_texture_id, 0));
 	img->generate_mipmaps();
 	Vector<uint8_t> data = img->get_data();
-	int mipmap_count = fmt.mipmaps;
-	fmt.mipmaps = 1;
+	int mipmap_count = tex_fmt.mipmaps;
+	tex_fmt.mipmaps = 1;
 	for (int i = 1; i < mipmap_count; i++) {
-		Size2i mipmap_size = Size2i(MAX(1u, fmt.width / (1 << i)), MAX(1u, fmt.height / (1 << i)));
-		fmt.width = mipmap_size.x;
-		fmt.height = mipmap_size.y;
+		Size2i mipmap_size = Size2i(MAX(1u, tex_fmt.width / (1 << i)), MAX(1u, tex_fmt.height / (1 << i)));
+		tex_fmt.width = mipmap_size.x;
+		tex_fmt.height = mipmap_size.y;
 		int start = img->get_mipmap_offset(i);
 		Vector<uint8_t> d;
 		d.resize(mipmap_size.x * mipmap_size.y * 4);
 		memcpy(d.ptrw(), data.ptr() + start, d.size());
 
-		RID tex = RD::get_singleton()->texture_create(fmt, {}, { d });
+		RID tex = RD::get_singleton()->texture_create(tex_fmt, {}, { d });
 		Error err = RD::get_singleton()->texture_copy(tex, framebuffer_texture_id, Vector3(), Vector3(), Vector3(mipmap_size.x, mipmap_size.y, 0), 0, i, 0, 0);
 
 		ERR_FAIL_COND_MSG(err != OK, vformat("Failed to generate mipmaps: %s", error_names[err]));
 	}
 }
 
-RID MeshRasterizerRD::mesh_rasterizer_get_rd_texture(RID p_mesh_rasterizer) {
+RID MeshRasterizerRD::mesh_rasterizer_get_texture(RID p_mesh_rasterizer) {
 	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
 	return mesh_rasterizer->framebuffer_texture_id;
 }
@@ -406,6 +400,9 @@ bool MeshRasterizerRD::free(RID p_mesh_rasterizer) {
 void MeshRasterizerRD::_dependency_changed(Dependency::DependencyChangedNotification p_notification, DependencyTracker *p_tracker) {
 	MeshRasterizerData *mesh_rasterizer = (MeshRasterizerData *)p_tracker->userdata;
 	switch (p_notification) {
+		case Dependency::DEPENDENCY_CHANGED_MATERIAL: {
+			mesh_rasterizer->update_material();
+		} break;
 		case Dependency::DEPENDENCY_CHANGED_MATERIAL_PARAM: {
 			if (Engine::get_singleton()->is_editor_hint()) {
 				mesh_rasterizer->draw();
@@ -468,6 +465,8 @@ MeshRasterizerRD::MeshRasterizerRD() {
 		actions.default_filter = ShaderLanguage::FILTER_LINEAR;
 		actions.default_repeat = ShaderLanguage::REPEAT_DISABLE;
 		actions.base_varying_index = 2;
+
+		actions.global_buffer_array_variable = "global_shader_uniforms.data";
 
 		compiler.initialize(actions);
 	}
