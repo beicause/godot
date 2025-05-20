@@ -339,34 +339,30 @@ void MeshRasterizerRD::MeshRasterizerData::draw() {
 	// Generate mipmaps.
 	Image::Format img_fmt;
 	switch (tex_fmt.format) {
-		case RD::DATA_FORMAT_R16G16B16_SFLOAT:
+		case RD::DATA_FORMAT_R16G16B16A16_SFLOAT:
 			img_fmt = Image::FORMAT_RGBAH;
 			break;
 		case RD::DATA_FORMAT_R32G32B32A32_SFLOAT:
 			img_fmt = Image::FORMAT_RGBAF;
 			break;
-		default:
+		case RD::DATA_FORMAT_R8G8B8A8_UNORM:
+		case RD::DATA_FORMAT_R8G8B8A8_SRGB:
 			img_fmt = Image::FORMAT_RGBA8;
+			break;
+		default:
+			ERR_FAIL();
 	}
 	Ref<Image> img = Image::create_from_data(tex_fmt.width, tex_fmt.height, true, img_fmt, RD::get_singleton()->texture_get_data(rd_texture, 0));
 	img->generate_mipmaps();
 	Vector<uint8_t> data = img->get_data();
 	int mipmap_count = tex_fmt.mipmaps;
-	tex_fmt.mipmaps = 1;
+	RID tex = RD::get_singleton()->texture_create(tex_fmt, {}, { data });
 	for (int i = 1; i < mipmap_count; i++) {
 		Size2i mipmap_size = Size2i(MAX(1u, tex_fmt.width / (1 << i)), MAX(1u, tex_fmt.height / (1 << i)));
-		tex_fmt.width = mipmap_size.x;
-		tex_fmt.height = mipmap_size.y;
-		int start = img->get_mipmap_offset(i);
-		Vector<uint8_t> d;
-		d.resize(mipmap_size.x * mipmap_size.y * 4);
-		memcpy(d.ptrw(), data.ptr() + start, d.size());
-
-		RID tex = RD::get_singleton()->texture_create(tex_fmt, {}, { d });
-		Error err = RD::get_singleton()->texture_copy(tex, rd_texture, Vector3(), Vector3(), Vector3(mipmap_size.x, mipmap_size.y, 0), 0, i, 0, 0);
-		RD::get_singleton()->free(tex);
+		Error err = RD::get_singleton()->texture_copy(tex, rd_texture, Vector3(), Vector3(), Vector3(mipmap_size.x, mipmap_size.y, 1), i, i, 0, 0);
 		ERR_FAIL_COND_MSG(err != OK, vformat("Failed to generate mipmaps: %s", error_names[err]));
 	}
+	RD::get_singleton()->free(tex);
 }
 
 RID MeshRasterizerRD::mesh_rasterizer_get_texture(RID p_mesh_rasterizer) {
