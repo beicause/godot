@@ -2428,6 +2428,7 @@
 			<param index="1" name="height" type="int" />
 			<param index="2" name="texture_format" type="int" enum="RenderingServer.RasterizedTextureFormat" />
 			<param index="3" name="generate_mipmaps" type="bool" default="false" />
+			<param index="4" name="samples" type="int" enum="RenderingDevice.TextureSamples" default="0" />
 			<description>
 			</description>
 		</method>

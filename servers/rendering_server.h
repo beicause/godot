@@ -513,19 +513,6 @@ public:
 	virtual void multimesh_set_visible_instances(RID p_multimesh, int p_visible) = 0;
 	virtual int multimesh_get_visible_instances(RID p_multimesh) const = 0;
 
-	/* MESH RASTERIZER API */
-	enum RasterizedTextureFormat {
-		RASTERIZED_TEXTURE_FORMAT_RGBA8,
-		RASTERIZED_TEXTURE_FORMAT_RGBA8_SRGB,
-		RASTERIZED_TEXTURE_FORMAT_RGBAH,
-		RASTERIZED_TEXTURE_FORMAT_RGBAF
-	};
-	virtual RID mesh_rasterizer_create(int p_width, int p_height, RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps = false) = 0;
-	virtual void mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color) = 0;
-	virtual void mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index) = 0;
-	virtual void mesh_rasterizer_set_material(RID p_mesh_rasterizer, RID p_material) = 0;
-	virtual void mesh_rasterizer_draw(RID p_mesh_rasterizer) = 0;
-	virtual RID mesh_rasterizer_get_texture(RID p_mesh_rasterizer) = 0;
 	/* SKELETON API */
 
 	virtual RID skeleton_create() = 0;
@@ -1182,6 +1169,21 @@ public:
 	virtual void viewport_set_vrs_mode(RID p_viewport, ViewportVRSMode p_mode) = 0;
 	virtual void viewport_set_vrs_update_mode(RID p_viewport, ViewportVRSUpdateMode p_mode) = 0;
 	virtual void viewport_set_vrs_texture(RID p_viewport, RID p_texture) = 0;
+
+	/* MESH RASTERIZER API */
+
+	enum RasterizedTextureFormat {
+		RASTERIZED_TEXTURE_FORMAT_RGBA8,
+		RASTERIZED_TEXTURE_FORMAT_RGBA8_SRGB,
+		RASTERIZED_TEXTURE_FORMAT_RGBAH,
+		RASTERIZED_TEXTURE_FORMAT_RGBAF
+	};
+	virtual RID mesh_rasterizer_create(int p_width, int p_height, RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps = false, RD::TextureSamples p_samples = RD::TEXTURE_SAMPLES_1) = 0;
+	virtual void mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color) = 0;
+	virtual void mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index) = 0;
+	virtual void mesh_rasterizer_set_material(RID p_mesh_rasterizer, RID p_material) = 0;
+	virtual void mesh_rasterizer_draw(RID p_mesh_rasterizer) = 0;
+	virtual RID mesh_rasterizer_get_texture(RID p_mesh_rasterizer) = 0;
 
 	/* SKY API */
 

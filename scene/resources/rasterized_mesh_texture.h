@@ -44,6 +44,7 @@ class RasterizedMeshTexture : public Texture2D {
 	Ref<Mesh> mesh;
 	Ref<ShaderMaterial> material;
 	RS::RasterizedTextureFormat texture_format = RS::RASTERIZED_TEXTURE_FORMAT_RGBA8;
+	RD::TextureSamples samples = RD::TEXTURE_SAMPLES_1;
 	bool generate_mipmaps = false;
 
 	RID texture;
@@ -88,6 +89,9 @@ public:
 
 	void set_texture_format(RS::RasterizedTextureFormat p_texture_format);
 	RS::RasterizedTextureFormat get_texture_format() const;
+
+	void set_samples(RD::TextureSamples p_samples);
+	RD::TextureSamples get_samples() const;
 
 	void set_generate_mipmaps(bool p_generate_mipmaps);
 	bool is_generating_mipmaps() const;

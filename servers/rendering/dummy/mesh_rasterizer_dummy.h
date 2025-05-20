@@ -37,7 +37,7 @@ namespace RendererDummy {
 class MeshRasterizerDummy : public MeshRasterizer {
 public:
 	virtual RID mesh_rasterizer_allocate() override { return RID(); }
-	virtual void mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps) override {}
+	virtual void mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps, RD::TextureSamples p_samples) override {}
 	virtual void mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color) override {}
 	virtual void mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index) override {}
 	virtual void mesh_rasterizer_set_material(RID p_mesh_rasterizer, RID p_material) override {}

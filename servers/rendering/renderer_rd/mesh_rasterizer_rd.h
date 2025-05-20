@@ -31,7 +31,6 @@
 #pragma once
 
 #include "servers/rendering/mesh_rasterizer.h"
-#include "servers/rendering/renderer_rd/pipeline_cache_rd.h"
 #include "servers/rendering/renderer_rd/shaders/mesh_rasterizer.glsl.gen.h"
 #include "servers/rendering/renderer_rd/storage_rd/material_storage.h"
 
@@ -52,12 +51,13 @@ private:
 
 	RD::VertexFormatID vertex_format;
 	RD::PipelineColorBlendState pipeline_color_blend_state;
+	Vector<RD::FramebufferPass> render_passes;
 
 	struct RasterizeMeshShaderData : public RendererRD::MaterialStorage::ShaderData {
 		RID version;
 		RID shader_rd;
 		RID base_uniforms;
-		PipelineCacheRD pipeline_cache;
+
 		int cull_modei = RS::CULL_MODE_BACK;
 
 		bool valid = false;
@@ -95,6 +95,8 @@ private:
 		RasterizeMeshShaderData *shader_data = nullptr;
 
 		Color bg_color = Color(0, 0, 0, 0);
+		RD::RenderPrimitive primitive = RD::RENDER_PRIMITIVE_TRIANGLES;
+		RD::TextureSamples samples = RD::TEXTURE_SAMPLES_1;
 
 		RID material;
 		RID mesh;
@@ -102,14 +104,17 @@ private:
 
 		RID texture;
 
+		Pair<uint32_t, RID> pipeline_cache;
+		RID framebuffer_rid;
+
 		RID rd_texture;
-		RID framebuffer_id;
-		RID vertex_array_id;
-		RID index_array_id;
-		RID index_buffer_id;
-		RID vertex_buffer_pos_id;
-		RID vertex_buffer_uv_id;
-		RID vertex_buffer_color_id;
+		RID rd_texture_samples;
+		RID vertex_array_rid;
+		RID index_array_rid;
+		RID index_buffer_rid;
+		RID vertex_buffer_pos_rid;
+		RID vertex_buffer_uv_rid;
+		RID vertex_buffer_color_rid;
 
 		void update_vertex();
 		void update_material();
@@ -127,7 +132,7 @@ private:
 
 public:
 	RID mesh_rasterizer_allocate();
-	void mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps);
+	void mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps, RD::TextureSamples p_samples);
 	void mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color);
 	void mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index);
 	void mesh_rasterizer_set_material(RID p_mesh_rasterizer, RID p_material);
