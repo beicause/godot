@@ -434,17 +434,6 @@ void ShaderMaterial::set_shader(const Ref<Shader> &p_shader) {
 	RID material_rid = _get_material();
 	if (material_rid.is_valid()) {
 		RS::get_singleton()->material_set_shader(material_rid, rid);
-		if (Engine::get_singleton()->is_editor_hint() && rid.is_valid()) {
-			List<PropertyInfo> param_list;
-			RS::get_singleton()->get_shader_parameter_list(rid, &param_list);
-			for (const PropertyInfo &pi : param_list) {
-				Variant default_value = RS::get_singleton()->shader_get_parameter_default(rid, pi.name);
-				RS::get_singleton()->material_set_param(material_rid, pi.name, default_value);
-				param_cache.insert(pi.name, default_value);
-				String info_name = "shader_parameter/" + pi.name;
-				remap_cache.insert(info_name, pi.name);
-			}
-		}
 	}
 
 	notify_property_list_changed(); //properties for shader exposed
