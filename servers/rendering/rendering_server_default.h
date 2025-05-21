@@ -1101,10 +1101,8 @@ public:
 #define server_name RSG::mesh_rasterizer
 
 	FUNCRIDSPLIT5(mesh_rasterizer, int, int, RasterizedTextureFormat, bool, RD::TextureSamples);
-	FUNC2(mesh_rasterizer_set_bg_color, RID, const Color &);
 	FUNC3(mesh_rasterizer_set_mesh, RID, RID, int);
-	FUNC2(mesh_rasterizer_set_material, RID, RID);
-	FUNC1(mesh_rasterizer_draw, RID);
+	FUNC3(mesh_rasterizer_draw, RID, RID, const Color &);
 	FUNC1R(RID, mesh_rasterizer_get_texture, RID);
 
 	/* STATUS INFORMATION */

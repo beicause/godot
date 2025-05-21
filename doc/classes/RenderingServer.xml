@@ -2435,26 +2435,14 @@
 		<method name="mesh_rasterizer_draw">
 			<return type="void" />
 			<param index="0" name="mesh_rasterizer" type="RID" />
+			<param index="1" name="material" type="RID" />
+			<param index="2" name="bg_color" type="Color" />
 			<description>
 			</description>
 		</method>
 		<method name="mesh_rasterizer_get_texture">
 			<return type="RID" />
 			<param index="0" name="mesh_rasterizer" type="RID" />
-			<description>
-			</description>
-		</method>
-		<method name="mesh_rasterizer_set_bg_color">
-			<return type="void" />
-			<param index="0" name="mesh_rasterizer" type="RID" />
-			<param index="1" name="bg_color" type="Color" />
-			<description>
-			</description>
-		</method>
-		<method name="mesh_rasterizer_set_material">
-			<return type="void" />
-			<param index="0" name="mesh_rasterizer" type="RID" />
-			<param index="1" name="material" type="RID" />
 			<description>
 			</description>
 		</method>

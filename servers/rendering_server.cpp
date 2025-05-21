@@ -2479,10 +2479,8 @@ void RenderingServer::_bind_methods() {
 	BIND_ENUM_CONSTANT(RASTERIZED_TEXTURE_FORMAT_RGBAF);
 
 	ClassDB::bind_method(D_METHOD("mesh_rasterizer_create", "width", "height", "texture_format", "generate_mipmaps", "samples"), &RenderingServer::mesh_rasterizer_create, DEFVAL(false), DEFVAL(RD::TEXTURE_SAMPLES_1));
-	ClassDB::bind_method(D_METHOD("mesh_rasterizer_set_bg_color", "mesh_rasterizer", "bg_color"), &RenderingServer::mesh_rasterizer_set_bg_color);
 	ClassDB::bind_method(D_METHOD("mesh_rasterizer_set_mesh", "mesh_rasterizer", "mesh", "surface_index"), &RenderingServer::mesh_rasterizer_set_mesh);
-	ClassDB::bind_method(D_METHOD("mesh_rasterizer_set_material", "mesh_rasterizer", "material"), &RenderingServer::mesh_rasterizer_set_material);
-	ClassDB::bind_method(D_METHOD("mesh_rasterizer_draw", "mesh_rasterizer"), &RenderingServer::mesh_rasterizer_draw);
+	ClassDB::bind_method(D_METHOD("mesh_rasterizer_draw", "mesh_rasterizer", "material", "bg_color"), &RenderingServer::mesh_rasterizer_draw);
 	ClassDB::bind_method(D_METHOD("mesh_rasterizer_get_texture", "mesh_rasterizer"), &RenderingServer::mesh_rasterizer_get_texture);
 
 	/* SKELETON API */

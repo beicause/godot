@@ -138,11 +138,6 @@ void MeshRasterizerRD::mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_w
 	}
 }
 
-void MeshRasterizerRD::mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color) {
-	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
-	mesh_rasterizer->bg_color = p_bg_color;
-}
-
 void MeshRasterizerRD::mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index) {
 	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
 	mesh_rasterizer->mesh = p_mesh;
@@ -153,18 +148,9 @@ void MeshRasterizerRD::mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mes
 	}
 }
 
-void MeshRasterizerRD::mesh_rasterizer_set_material(RID p_mesh_rasterizer, RID p_material) {
+void MeshRasterizerRD::mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_material, const Color &p_bg_color) {
 	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
-	mesh_rasterizer->material = p_material;
-	mesh_rasterizer->update_material();
-	if (p_material.is_valid()) {
-		MaterialStorage::get_singleton()->material_update_dependency(p_material, &mesh_rasterizer->dependency_tracker);
-	}
-}
-
-void MeshRasterizerRD::mesh_rasterizer_draw(RID p_mesh_rasterizer) {
-	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
-	mesh_rasterizer->draw();
+	mesh_rasterizer->draw(p_material, p_bg_color);
 }
 
 static RD::RenderPrimitive _primitive_type_to_render_primitive(RS::PrimitiveType p_primitive) {
@@ -317,22 +303,19 @@ void MeshRasterizerRD::MeshRasterizerData::update_vertex() {
 	vertex_array_rid = RD::get_singleton()->vertex_array_create(vertex_count, singleton->vertex_format, vertex_buffers);
 }
 
-void MeshRasterizerRD::MeshRasterizerData::update_material() {
+void MeshRasterizerRD::MeshRasterizerData::draw(RID p_material, const Color &p_bg_color) {
+	ERR_FAIL_COND(p_material.is_null());
 	MaterialStorage *material_storage = MaterialStorage::get_singleton();
-	if (material.is_valid()) {
-		MaterialStorage::MaterialData *md = material_storage->material_get_data(material, MaterialStorage::SHADER_TYPE_MESH_RASTERIZER);
-		if (md != nullptr) {
-			material_data = static_cast<RasterizeMeshMaterialData *>(md);
-			shader_data = static_cast<RasterizeMeshShaderData *>(material_storage->material_get_shader_data(material));
-			return;
-		}
+	MaterialStorage::MaterialData *md = material_storage->material_get_data(p_material, MaterialStorage::SHADER_TYPE_MESH_RASTERIZER);
+	RasterizeMeshMaterialData *material_data = nullptr;
+	RasterizeMeshShaderData *shader_data = nullptr;
+	if (md != nullptr) {
+		material_data = static_cast<RasterizeMeshMaterialData *>(md);
+		shader_data = static_cast<RasterizeMeshShaderData *>(material_storage->material_get_shader_data(p_material));
 	}
-	material = RID();
-	material_data = singleton->default_material_data;
-	shader_data = singleton->default_shader_data;
-}
+	ERR_FAIL_COND(material_data == nullptr);
+	ERR_FAIL_COND(shader_data == nullptr);
 
-void MeshRasterizerRD::MeshRasterizerData::draw() {
 	MaterialStorage::get_singleton()->_update_global_shader_uniforms(); //must do before materials, so it can queue them for update
 	MaterialStorage::get_singleton()->_update_queued_materials();
 
@@ -365,7 +348,7 @@ void MeshRasterizerRD::MeshRasterizerData::draw() {
 		pipeline_cache = { k, pipeline };
 	}
 
-	LocalVector<Color> clear_colors = { bg_color };
+	LocalVector<Color> clear_colors = { p_bg_color };
 	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(framebuffer_rid, RD::DrawFlags::DRAW_CLEAR_ALL, clear_colors);
 	RD::get_singleton()->draw_list_bind_render_pipeline(draw_list, pipeline);
 
@@ -445,19 +428,8 @@ bool MeshRasterizerRD::free(RID p_mesh_rasterizer) {
 void MeshRasterizerRD::_dependency_changed(Dependency::DependencyChangedNotification p_notification, DependencyTracker *p_tracker) {
 	MeshRasterizerData *mesh_rasterizer = (MeshRasterizerData *)p_tracker->userdata;
 	switch (p_notification) {
-		case Dependency::DEPENDENCY_CHANGED_MATERIAL: {
-			mesh_rasterizer->update_material();
-		} break;
-		case Dependency::DEPENDENCY_CHANGED_MATERIAL_PARAM: {
-			if (Engine::get_singleton()->is_editor_hint()) {
-				mesh_rasterizer->draw();
-			}
-		} break;
 		case Dependency::DEPENDENCY_CHANGED_MESH: {
 			mesh_rasterizer->update_vertex();
-			if (Engine::get_singleton()->is_editor_hint()) {
-				mesh_rasterizer->draw();
-			}
 		} break;
 		default: {
 		}
@@ -469,9 +441,6 @@ void MeshRasterizerRD::_dependency_deleted(const RID &p_dependency, DependencyTr
 	if (p_dependency == mesh_rasterizer->mesh) {
 		mesh_rasterizer->mesh = RID();
 		mesh_rasterizer->update_vertex();
-	} else if (p_dependency == mesh_rasterizer->material) {
-		mesh_rasterizer->material = RID();
-		mesh_rasterizer->update_material();
 	}
 }
 
@@ -481,7 +450,6 @@ MeshRasterizerRD::MeshRasterizerData::MeshRasterizerData() {
 	dependency_tracker.deleted_callback = &MeshRasterizerRD::_dependency_deleted;
 
 	update_vertex();
-	update_material();
 }
 
 MeshRasterizerRD::MeshRasterizerRD() {
@@ -519,16 +487,6 @@ MeshRasterizerRD::MeshRasterizerRD() {
 	String defines = "\n#define SAMPLERS_BINDING_FIRST_INDEX " + itos(SAMPLERS_BINDING_FIRST_INDEX) + "\n";
 	shader_file_rd.initialize({ "" }, defines);
 
-	default_shader = material_storage->shader_allocate();
-	default_material = material_storage->material_allocate();
-	material_storage->shader_initialize(default_shader);
-	material_storage->material_initialize(default_material);
-	material_storage->shader_set_code(default_shader, "shader_type mesh_rasterizer;");
-	material_storage->material_set_shader(default_material, default_shader);
-
-	default_shader_data = static_cast<RasterizeMeshShaderData *>(material_storage->material_get_shader_data(default_material));
-	default_material_data = static_cast<RasterizeMeshMaterialData *>(material_storage->material_get_data(default_material, MaterialStorage::SHADER_TYPE_MESH_RASTERIZER));
-
 	RD::VertexAttribute pos;
 	pos.location = 0,
 	pos.format = RD::DATA_FORMAT_R32G32B32_SFLOAT,
@@ -554,12 +512,6 @@ MeshRasterizerRD::MeshRasterizerRD() {
 	pass.resolve_attachments.append(0);
 	pass.color_attachments.append(1);
 	render_passes = { pass };
-}
-
-void MeshRasterizerRD::free_shader() {
-	MaterialStorage *material_storage = MaterialStorage::get_singleton();
-	material_storage->shader_free(default_shader);
-	material_storage->material_free(default_material);
 }
 
 } //namespace RendererRD

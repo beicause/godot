@@ -44,15 +44,6 @@ private:
 	static MaterialStorage::ShaderData *_create_mesh_rasterizer_shader_funcs();
 	static MaterialStorage::MaterialData *_create_mesh_rasterizer_material_funcs(MaterialStorage::ShaderData *p_shader);
 
-	enum {
-		BASE_UNIFORM_SET,
-		MATERIAL_UNIFORM_SET
-	};
-
-	RD::VertexFormatID vertex_format;
-	RD::PipelineColorBlendState pipeline_color_blend_state;
-	Vector<RD::FramebufferPass> render_passes;
-
 	struct RasterizeMeshShaderData : public RendererRD::MaterialStorage::ShaderData {
 		RID version;
 		RID shader_rd;
@@ -83,13 +74,6 @@ private:
 		virtual bool update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty);
 	};
 
-	MeshRasterizerShaderRD shader_file_rd;
-	RID default_shader;
-	RID default_material;
-	RasterizeMeshShaderData *default_shader_data;
-	RasterizeMeshMaterialData *default_material_data;
-	ShaderCompiler compiler;
-
 	struct PipelineCacheKey {
 		uint64_t shader_id;
 		RD::FramebufferFormatID framebuffer_formt;
@@ -112,14 +96,9 @@ private:
 	};
 
 	struct MeshRasterizerData {
-		RasterizeMeshMaterialData *material_data = nullptr;
-		RasterizeMeshShaderData *shader_data = nullptr;
-
-		Color bg_color = Color(0, 0, 0, 0);
 		RD::RenderPrimitive primitive = RD::RENDER_PRIMITIVE_TRIANGLES;
 		RD::TextureSamples samples = RD::TEXTURE_SAMPLES_1;
 
-		RID material;
 		RID mesh;
 		int surface_index = 0;
 
@@ -139,13 +118,23 @@ private:
 
 		void update_vertex();
 		void update_material();
-		void draw();
+		void draw(RID p_material, const Color &p_bg_color);
 
 		DependencyTracker dependency_tracker;
 
 		MeshRasterizerData();
 	};
 
+	enum {
+		BASE_UNIFORM_SET,
+		MATERIAL_UNIFORM_SET
+	};
+
+	RD::VertexFormatID vertex_format;
+	RD::PipelineColorBlendState pipeline_color_blend_state;
+	Vector<RD::FramebufferPass> render_passes;
+	MeshRasterizerShaderRD shader_file_rd;
+	ShaderCompiler compiler;
 	mutable RID_Owner<MeshRasterizerData, true> mesh_rasterizer_owner;
 
 	static void _dependency_changed(Dependency::DependencyChangedNotification p_notification, DependencyTracker *p_tracker);
@@ -154,14 +143,11 @@ private:
 public:
 	RID mesh_rasterizer_allocate();
 	void mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps, RD::TextureSamples p_samples);
-	void mesh_rasterizer_set_bg_color(RID p_mesh_rasterizer, const Color &p_bg_color);
 	void mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index);
-	void mesh_rasterizer_set_material(RID p_mesh_rasterizer, RID p_material);
-	void mesh_rasterizer_draw(RID p_mesh_rasterizer);
+	void mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_material, const Color &p_bg_color);
 	RID mesh_rasterizer_get_texture(RID p_mesh_rasterizer);
 	bool free(RID p_mesh_rasterizer);
 
-	void free_shader();
 	static MeshRasterizerRD *get_singleton();
 	MeshRasterizerRD();
 };

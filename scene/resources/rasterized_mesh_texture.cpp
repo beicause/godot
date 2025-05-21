@@ -94,19 +94,21 @@ Color RasterizedMeshTexture::get_bg_color() const {
 
 void RasterizedMeshTexture::set_material(const Ref<ShaderMaterial> &p_material) {
 	if (material.is_valid()) {
-		material->disconnect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update_material));
+		material->disconnect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update));
+		material->disconnect(SNAME("shader_parameter_changed"), callable_mp(this, &RasterizedMeshTexture::queue_update));
 		if (material->get_shader().is_valid()) {
-			material->get_shader()->disconnect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update_material));
+			material->get_shader()->disconnect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update));
 		}
 	}
 	material = p_material;
 	if (material.is_valid()) {
-		material->connect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update_material));
+		material->connect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update));
+		material->connect(SNAME("shader_parameter_changed"), callable_mp(this, &RasterizedMeshTexture::queue_update));
 		if (material->get_shader().is_valid()) {
-			material->get_shader()->connect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update_material));
+			material->get_shader()->connect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update));
 		}
 	}
-	queue_update_material();
+	queue_update();
 }
 
 Ref<ShaderMaterial> RasterizedMeshTexture::get_material() const {
@@ -180,12 +182,9 @@ void RasterizedMeshTexture::update() {
 		RS::get_singleton()->mesh_rasterizer_set_mesh(mesh_rasterizer, mesh.is_valid() ? mesh->get_rid() : RID(), surface_index);
 		mesh_dirty = false;
 	}
-	if (rasterizer_dirty || material_dirty) {
-		RS::get_singleton()->mesh_rasterizer_set_material(mesh_rasterizer, material.is_valid() ? material->get_rid() : RID());
-		material_dirty = false;
+	if (material.is_valid()) {
+		RS::get_singleton()->mesh_rasterizer_draw(mesh_rasterizer, material->get_rid(), bg_color);
 	}
-	RS::get_singleton()->mesh_rasterizer_set_bg_color(mesh_rasterizer, bg_color);
-	RS::get_singleton()->mesh_rasterizer_draw(mesh_rasterizer);
 	rasterizer_dirty = false;
 	update_queued = false;
 	emit_changed();
@@ -201,11 +200,6 @@ void RasterizedMeshTexture::queue_update() {
 
 void RasterizedMeshTexture::queue_update_mesh() {
 	mesh_dirty = true;
-	queue_update();
-}
-
-void RasterizedMeshTexture::queue_update_material() {
-	material_dirty = true;
 	queue_update();
 }
 

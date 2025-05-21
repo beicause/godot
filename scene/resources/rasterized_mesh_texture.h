@@ -52,14 +52,12 @@ class RasterizedMeshTexture : public Texture2D {
 
 	bool rasterizer_dirty = false;
 	bool mesh_dirty = false;
-	bool material_dirty = false;
 
 	bool update_queued = false;
 
 	void update();
 	void queue_update();
 	void queue_update_mesh();
-	void queue_update_material();
 
 protected:
 	static void _bind_methods();

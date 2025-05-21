@@ -168,8 +168,6 @@ void RendererCompositorRD::initialize() {
 uint64_t RendererCompositorRD::frame = 1;
 
 void RendererCompositorRD::finalize() {
-	mesh_rasterizer->free_shader();
-
 	memdelete(scene);
 	memdelete(canvas);
 	memdelete(fog);
