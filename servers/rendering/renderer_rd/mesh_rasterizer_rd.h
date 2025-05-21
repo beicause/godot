@@ -118,7 +118,6 @@ private:
 
 		void update_vertex();
 		void update_material();
-		void draw(RID p_material, const Color &p_bg_color);
 
 		DependencyTracker dependency_tracker;
 
