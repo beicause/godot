@@ -90,6 +90,27 @@ private:
 	RasterizeMeshMaterialData *default_material_data;
 	ShaderCompiler compiler;
 
+	struct PipelineCacheKey {
+		uint64_t shader_id;
+		RD::FramebufferFormatID framebuffer_formt;
+		RD::RenderPrimitive primitive;
+		RD::TextureSamples samples;
+
+		bool operator==(const PipelineCacheKey &b) const {
+			if (shader_id != b.shader_id) {
+				return false;
+			} else if (framebuffer_formt != b.framebuffer_formt) {
+				return false;
+			} else if (primitive != b.primitive) {
+				return false;
+			} else if (samples != b.samples) {
+				return false;
+			} else {
+				return true;
+			}
+		}
+	};
+
 	struct MeshRasterizerData {
 		RasterizeMeshMaterialData *material_data = nullptr;
 		RasterizeMeshShaderData *shader_data = nullptr;
@@ -104,7 +125,7 @@ private:
 
 		RID texture;
 
-		Pair<uint32_t, RID> pipeline_cache;
+		Pair<PipelineCacheKey, RID> pipeline_cache;
 		RID framebuffer_rid;
 
 		RID rd_texture;

@@ -339,28 +339,26 @@ void MeshRasterizerRD::MeshRasterizerData::draw() {
 		framebuffer_rid = FramebufferCacheRD::get_singleton()->get_cache(rd_texture);
 	}
 
+	RID pipeline;
+
 	RD::PipelineRasterizationState pipeline_rasterization_state;
 	pipeline_rasterization_state.cull_mode = (RD::PolygonCullMode)shader_data->cull_modei;
 	RD::PipelineMultisampleState pipline_multisample_state;
 	pipline_multisample_state.sample_count = samples;
 	RD::FramebufferFormatID fb_fmt = RD::get_singleton()->framebuffer_get_format(framebuffer_rid);
 
-	uint32_t h = hash_murmur3_one_64(shader_data->shader_rd.get_id());
-	h = hash_murmur3_one_64(fb_fmt, h);
-	h = hash_murmur3_one_32(primitive, h);
-	h = hash_murmur3_one_32(samples, h);
-	h = hash_fmix32(h);
+	PipelineCacheKey k = {
+		shader_data->shader_rd.get_id(), fb_fmt, primitive, samples
+	};
 
-	RID pipeline;
-
-	if (pipeline_cache.first == h) {
+	if (pipeline_cache.first == k) {
 		pipeline = pipeline_cache.second;
 	} else {
 		if (RD::get_singleton()->render_pipeline_is_valid(pipeline_cache.second)) {
 			RD::get_singleton()->free(pipeline_cache.second);
 		}
 		pipeline = RD::get_singleton()->render_pipeline_create(shader_data->shader_rd, fb_fmt, singleton->vertex_format, primitive, pipeline_rasterization_state, pipline_multisample_state, {}, singleton->pipeline_color_blend_state);
-		pipeline_cache = { h, pipeline };
+		pipeline_cache = { k, pipeline };
 	}
 
 	LocalVector<Color> clear_colors = { bg_color };
