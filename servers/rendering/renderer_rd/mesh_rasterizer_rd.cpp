@@ -30,6 +30,7 @@
 
 #include "mesh_rasterizer_rd.h"
 #include "framebuffer_cache_rd.h"
+#include "servers/rendering/renderer_rd/effects/copy_effects.h"
 #include "servers/rendering/renderer_rd/storage_rd/utilities.h"
 
 namespace RendererRD {
@@ -124,13 +125,15 @@ void MeshRasterizerRD::mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_w
 	TextureStorage *texture_storage = TextureStorage::get_singleton();
 	mesh_rasterizer->samples = p_samples;
 	mesh_rasterizer->texture = texture_storage->texture_allocate();
-	texture_storage->mesh_rasterizer_texture_initialize(mesh_rasterizer->texture, p_width, p_height, p_texture_format, p_generate_mipmaps, p_samples > 0);
+	texture_storage->mesh_rasterizer_texture_initialize(mesh_rasterizer->texture, p_width, p_height, p_texture_format, p_generate_mipmaps);
 	mesh_rasterizer->rd_texture = texture_storage->texture_get_rd_texture(mesh_rasterizer->texture, p_texture_format == RS::RASTERIZED_TEXTURE_FORMAT_RGBA8_SRGB);
 
-	if (p_samples > 0) {
+	bool is_msaa = p_samples > RD::TEXTURE_SAMPLES_1;
+	if (is_msaa) {
 		RD::TextureFormat fmt = RD::get_singleton()->texture_get_format(mesh_rasterizer->rd_texture);
 		fmt.samples = p_samples;
-		fmt.is_resolve_buffer = false;
+		fmt.mipmaps = 1;
+		fmt.usage_bits = RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
 		mesh_rasterizer->rd_texture_samples = RD::get_singleton()->texture_create(fmt, {});
 	}
 }
@@ -333,8 +336,9 @@ void MeshRasterizerRD::MeshRasterizerData::draw() {
 	MaterialStorage::get_singleton()->_update_global_shader_uniforms(); //must do before materials, so it can queue them for update
 	MaterialStorage::get_singleton()->_update_queued_materials();
 
-	if (rd_texture_samples.is_valid()) {
-		framebuffer_rid = FramebufferCacheRD::get_singleton()->get_cache_multipass({ rd_texture, rd_texture_samples }, singleton->render_passes);
+	bool is_msaa = samples > RD::TEXTURE_SAMPLES_1;
+	if (is_msaa) {
+		framebuffer_rid = FramebufferCacheRD::get_singleton()->get_cache(rd_texture_samples);
 	} else {
 		framebuffer_rid = FramebufferCacheRD::get_singleton()->get_cache(rd_texture);
 	}
@@ -362,9 +366,6 @@ void MeshRasterizerRD::MeshRasterizerData::draw() {
 	}
 
 	LocalVector<Color> clear_colors = { bg_color };
-	if (samples > 0) {
-		clear_colors.push_back(bg_color);
-	}
 	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(framebuffer_rid, RD::DrawFlags::DRAW_CLEAR_ALL, clear_colors);
 	RD::get_singleton()->draw_list_bind_render_pipeline(draw_list, pipeline);
 
@@ -383,38 +384,30 @@ void MeshRasterizerRD::MeshRasterizerData::draw() {
 	RD::get_singleton()->draw_list_draw(draw_list, index_array_rid.is_valid(), 1);
 	RD::get_singleton()->draw_list_end();
 
+	if (is_msaa) {
+		RD::get_singleton()->texture_resolve_multisample(rd_texture_samples, rd_texture);
+	}
+
 	RD::TextureFormat tex_fmt = RD::get_singleton()->texture_get_format(rd_texture);
 	if (tex_fmt.mipmaps <= 1) {
 		return;
 	}
 
-	// Generate mipmaps.
-	Image::Format img_fmt;
-	switch (tex_fmt.format) {
-		case RD::DATA_FORMAT_R16G16B16A16_SFLOAT:
-			img_fmt = Image::FORMAT_RGBAH;
-			break;
-		case RD::DATA_FORMAT_R32G32B32A32_SFLOAT:
-			img_fmt = Image::FORMAT_RGBAF;
-			break;
-		case RD::DATA_FORMAT_R8G8B8A8_UNORM:
-		case RD::DATA_FORMAT_R8G8B8A8_SRGB:
-			img_fmt = Image::FORMAT_RGBA8;
-			break;
-		default:
-			ERR_FAIL();
-	}
-	Ref<Image> img = Image::create_from_data(tex_fmt.width, tex_fmt.height, true, img_fmt, RD::get_singleton()->texture_get_data(rd_texture, 0));
-	img->generate_mipmaps();
-	Vector<uint8_t> data = img->get_data();
+	// Generate Gaussian Blur Mipmaps.
 	int mipmap_count = tex_fmt.mipmaps;
-	RID tex = RD::get_singleton()->texture_create(tex_fmt, {}, { data });
 	for (int i = 1; i < mipmap_count; i++) {
-		Size2i mipmap_size = Size2i(MAX(1u, tex_fmt.width / (1 << i)), MAX(1u, tex_fmt.height / (1 << i)));
-		Error err = RD::get_singleton()->texture_copy(tex, rd_texture, Vector3(), Vector3(), Vector3(mipmap_size.x, mipmap_size.y, 1), i, i, 0, 0);
-		ERR_FAIL_COND_MSG(err != OK, vformat("Failed to generate mipmaps: %s", error_names[err]));
+		Size2i mipmap_size = Size2i(tex_fmt.width / (1 << i), tex_fmt.height / (1 << i)).maxi(1);
+		RID tex_src = RD::get_singleton()->texture_create_shared_from_slice({}, rd_texture, 0, i - 1);
+		RID tex_dst = RD::get_singleton()->texture_create_shared_from_slice({}, rd_texture, 0, i);
+
+		if (CopyEffects::get_singleton()->get_prefer_raster_effects()) {
+			CopyEffects::get_singleton()->gaussian_blur_raster(tex_src, tex_dst, Rect2i(Vector2i(), mipmap_size), mipmap_size);
+		} else {
+			CopyEffects::get_singleton()->gaussian_blur(tex_src, tex_dst, Rect2i(Vector2i(), mipmap_size), mipmap_size);
+		}
+		RD::get_singleton()->free(tex_src);
+		RD::get_singleton()->free(tex_dst);
 	}
-	RD::get_singleton()->free(tex);
 }
 
 RID MeshRasterizerRD::mesh_rasterizer_get_texture(RID p_mesh_rasterizer) {

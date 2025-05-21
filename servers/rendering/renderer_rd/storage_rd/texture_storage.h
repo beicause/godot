@@ -735,7 +735,7 @@ public:
 
 	/* MESH RASTERIZER API*/
 
-	void mesh_rasterizer_texture_initialize(RID p_rid, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps, bool p_is_resolve_buffer);
+	void mesh_rasterizer_texture_initialize(RID p_rid, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps);
 
 	/* RENDER TARGET API */
 

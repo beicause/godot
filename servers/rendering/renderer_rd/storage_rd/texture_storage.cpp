@@ -3249,7 +3249,7 @@ void TextureStorage::update_decal_buffer(const PagedArray<RID> &p_decals, const 
 
 /* MESH RASTERIZER API */
 
-void TextureStorage::mesh_rasterizer_texture_initialize(RID p_rid, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps, bool p_is_resolve_buffer) {
+void TextureStorage::mesh_rasterizer_texture_initialize(RID p_rid, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps) {
 	uint32_t mipmaps = 1;
 	{
 		uint32_t w = p_width;
@@ -3269,9 +3269,11 @@ void TextureStorage::mesh_rasterizer_texture_initialize(RID p_rid, int p_width, 
 	rd_tex_format.width = p_width;
 	rd_tex_format.height = p_height;
 	rd_tex_format.mipmaps = mipmaps;
-	rd_tex_format.is_resolve_buffer = p_is_resolve_buffer;
 	rd_tex_format.texture_type = RD::TEXTURE_TYPE_2D;
-	rd_tex_format.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT;
+	rd_tex_format.usage_bits = RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_COLOR_ATTACHMENT_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT | RD::TEXTURE_USAGE_CAN_COPY_FROM_BIT | RD::TEXTURE_USAGE_CAN_COPY_TO_BIT;
+	if (!CopyEffects::get_singleton()->get_prefer_raster_effects()) {
+		rd_tex_format.usage_bits |= RD::TEXTURE_USAGE_STORAGE_BIT;
+	}
 
 	switch (p_texture_format) {
 		case RS::RASTERIZED_TEXTURE_FORMAT_RGBA8:
