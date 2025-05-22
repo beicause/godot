@@ -33,6 +33,7 @@
 
 #include "core/config/project_settings.h"
 #include "core/variant/typed_array.h"
+#include "servers/rendering/rendering_device_binds.h"
 #include "servers/rendering/shader_language.h"
 #include "servers/rendering/shader_warnings.h"
 
@@ -2480,7 +2481,7 @@ void RenderingServer::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("mesh_rasterizer_create", "width", "height", "texture_format", "generate_mipmaps", "samples"), &RenderingServer::mesh_rasterizer_create, DEFVAL(false), DEFVAL(RD::TEXTURE_SAMPLES_1));
 	ClassDB::bind_method(D_METHOD("mesh_rasterizer_set_mesh", "mesh_rasterizer", "mesh", "surface_index"), &RenderingServer::mesh_rasterizer_set_mesh);
-	ClassDB::bind_method(D_METHOD("mesh_rasterizer_draw", "mesh_rasterizer", "material", "bg_color"), &RenderingServer::mesh_rasterizer_draw);
+	ClassDB::bind_method(D_METHOD("mesh_rasterizer_draw", "mesh_rasterizer", "material", "bg_color", "clear", "blend_state"), &RenderingServer::mesh_rasterizer_draw, DEFVAL(true), DEFVAL(Ref<RDPipelineColorBlendState>()));
 	ClassDB::bind_method(D_METHOD("mesh_rasterizer_get_texture", "mesh_rasterizer"), &RenderingServer::mesh_rasterizer_get_texture);
 
 	/* SKELETON API */

@@ -1102,7 +1102,7 @@ public:
 
 	FUNCRIDSPLIT5(mesh_rasterizer, int, int, RasterizedTextureFormat, bool, RD::TextureSamples);
 	FUNC3(mesh_rasterizer_set_mesh, RID, RID, int);
-	FUNC3(mesh_rasterizer_draw, RID, RID, const Color &);
+	virtual void mesh_rasterizer_draw(RID p1, RID p2, const Color &p3, bool p4, const Ref<RDPipelineColorBlendState> &p5) override;
 	FUNC1R(RID, mesh_rasterizer_get_texture, RID);
 
 	/* STATUS INFORMATION */

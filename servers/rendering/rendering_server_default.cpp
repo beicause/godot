@@ -433,6 +433,16 @@ void RenderingServerDefault::_call_on_render_thread(const Callable &p_callable) 
 	p_callable.call();
 }
 
+void RenderingServerDefault::mesh_rasterizer_draw(RID p1, RID p2, const Color &p3, bool p4, const Ref<RDPipelineColorBlendState> &p5) {
+	redraw_request();
+	if (Thread ::get_caller_id() != server_thread) {
+		command_queue.push(RenderingServerGlobals ::mesh_rasterizer, &MeshRasterizer ::mesh_rasterizer_draw, p1, p2, p3, p4, p5);
+	} else {
+		command_queue.flush_if_pending();
+		RenderingServerGlobals ::mesh_rasterizer->mesh_rasterizer_draw(p1, p2, p3, p4, p5);
+	}
+}
+
 RenderingServerDefault::RenderingServerDefault(bool p_create_thread) {
 	RenderingServer::init();
 

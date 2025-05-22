@@ -40,7 +40,7 @@ public:
 	virtual RID mesh_rasterizer_allocate() = 0;
 	virtual void mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps, RD::TextureSamples p_samples) = 0;
 	virtual void mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index) = 0;
-	virtual void mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_material, const Color &p_bg_color) = 0;
+	virtual void mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_material, const Color &p_bg_color, bool p_clear = true, const Ref<RDPipelineColorBlendState> &p_blend_state = Ref<RDPipelineColorBlendState>()) = 0;
 	virtual RID mesh_rasterizer_get_texture(RID p_mesh_rasterizer) = 0;
 	virtual bool free(RID p_mesh_rasterizer) = 0;
 

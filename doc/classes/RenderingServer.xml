@@ -2437,6 +2437,8 @@
 			<param index="0" name="mesh_rasterizer" type="RID" />
 			<param index="1" name="material" type="RID" />
 			<param index="2" name="bg_color" type="Color" />
+			<param index="3" name="clear" type="bool" default="true" />
+			<param index="4" name="blend_state" type="RDPipelineColorBlendState" default="null" />
 			<description>
 			</description>
 		</method>

@@ -148,7 +148,7 @@ void MeshRasterizerRD::mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mes
 	}
 }
 
-void MeshRasterizerRD::mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_material, const Color &p_bg_color) {
+void MeshRasterizerRD::mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_material, const Color &p_bg_color, bool p_clear, const Ref<RDPipelineColorBlendState> &p_blend_state) {
 	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
 	ERR_FAIL_COND(p_material.is_null());
 	MaterialStorage *material_storage = MaterialStorage::get_singleton();
@@ -180,8 +180,38 @@ void MeshRasterizerRD::mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_materia
 	pipline_multisample_state.sample_count = mesh_rasterizer->samples;
 	RD::FramebufferFormatID fb_fmt = RD::get_singleton()->framebuffer_get_format(mesh_rasterizer->framebuffer_rid);
 
+	RD::PipelineColorBlendState blend_state;
+	blend_state.attachments.push_back({});
+
+	if (p_blend_state.is_valid()) {
+		blend_state.blend_constant = p_blend_state->get_blend_constant();
+		blend_state.enable_logic_op = p_blend_state->get_enable_logic_op();
+		blend_state.logic_op = p_blend_state->get_logic_op();
+		TypedArray<Ref<RDPipelineColorBlendStateAttachment>> attachments = p_blend_state->get_attachments();
+		if (attachments.size() >= 1) {
+			Ref<RDPipelineColorBlendStateAttachment> attachment = attachments[0];
+			if (attachment.is_valid()) {
+				blend_state.attachments.write[0].enable_blend = attachment->get_enable_blend();
+				blend_state.attachments.write[0].src_color_blend_factor = attachment->get_src_color_blend_factor();
+				blend_state.attachments.write[0].dst_color_blend_factor = attachment->get_dst_color_blend_factor();
+				blend_state.attachments.write[0].color_blend_op = attachment->get_color_blend_op();
+				blend_state.attachments.write[0].src_alpha_blend_factor = attachment->get_src_alpha_blend_factor();
+				blend_state.attachments.write[0].dst_alpha_blend_factor = attachment->get_dst_alpha_blend_factor();
+				blend_state.attachments.write[0].alpha_blend_op = attachment->get_alpha_blend_op();
+				blend_state.attachments.write[0].write_r = attachment->get_write_r();
+				blend_state.attachments.write[0].write_g = attachment->get_write_g();
+				blend_state.attachments.write[0].write_b = attachment->get_write_b();
+				blend_state.attachments.write[0].write_a = attachment->get_write_a();
+			}
+		}
+	}
+
 	PipelineCacheKey k = {
-		shader_data->shader_rd.get_id(), fb_fmt, mesh_rasterizer->primitive, mesh_rasterizer->samples
+		shader_data->shader_rd.get_id(),
+		fb_fmt,
+		mesh_rasterizer->primitive,
+		mesh_rasterizer->samples,
+		blend_state
 	};
 
 	if (mesh_rasterizer->pipeline_cache.first == k) {
@@ -190,12 +220,14 @@ void MeshRasterizerRD::mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_materia
 		if (RD::get_singleton()->render_pipeline_is_valid(mesh_rasterizer->pipeline_cache.second)) {
 			RD::get_singleton()->free(mesh_rasterizer->pipeline_cache.second);
 		}
-		pipeline = RD::get_singleton()->render_pipeline_create(shader_data->shader_rd, fb_fmt, singleton->vertex_format, mesh_rasterizer->primitive, pipeline_rasterization_state, pipline_multisample_state, {}, singleton->pipeline_color_blend_state);
+
+		pipeline = RD::get_singleton()->render_pipeline_create(shader_data->shader_rd, fb_fmt, singleton->vertex_format, mesh_rasterizer->primitive, pipeline_rasterization_state, pipline_multisample_state, {}, blend_state);
+
 		mesh_rasterizer->pipeline_cache = { k, pipeline };
 	}
 
 	LocalVector<Color> clear_colors = { p_bg_color };
-	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(mesh_rasterizer->framebuffer_rid, RD::DrawFlags::DRAW_CLEAR_ALL, clear_colors);
+	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(mesh_rasterizer->framebuffer_rid, p_clear ? RD::DRAW_CLEAR_ALL : RD::DRAW_DEFAULT_ALL, clear_colors);
 	RD::get_singleton()->draw_list_bind_render_pipeline(draw_list, pipeline);
 
 	// Vertex
@@ -501,8 +533,6 @@ MeshRasterizerRD::MeshRasterizerRD() {
 	Vector<RD::VertexAttribute> vertex_attrs = { pos, uv, color };
 
 	vertex_format = RD::get_singleton()->vertex_format_create(vertex_attrs);
-
-	pipeline_color_blend_state.attachments.append({});
 
 	RD::FramebufferPass pass;
 	pass.resolve_attachments.append(0);
