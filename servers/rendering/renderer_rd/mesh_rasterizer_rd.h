@@ -44,6 +44,12 @@ private:
 	static MaterialStorage::ShaderData *_create_mesh_rasterizer_shader_funcs();
 	static MaterialStorage::MaterialData *_create_mesh_rasterizer_material_funcs(MaterialStorage::ShaderData *p_shader);
 
+	RD::PipelineColorBlendState::Attachment attachment_mix;
+	RD::PipelineColorBlendState::Attachment attachment_add;
+	RD::PipelineColorBlendState::Attachment attachment_sub;
+	RD::PipelineColorBlendState::Attachment attachment_mul;
+	RD::PipelineColorBlendState::Attachment attachment_premult_alpha;
+
 	struct RasterizeMeshShaderData : public RendererRD::MaterialStorage::ShaderData {
 		RID version;
 		RID shader_rd;
@@ -79,30 +85,9 @@ private:
 		RD::FramebufferFormatID framebuffer_formt;
 		RD::RenderPrimitive primitive;
 		RD::TextureSamples samples;
-		RD::PipelineColorBlendState blend_state;
+		RS::RasterizerBlendMode blend_mode;
 
 		bool operator==(const PipelineCacheKey &b) const {
-			Vector<RD::PipelineColorBlendState::Attachment> attachments = b.blend_state.attachments;
-			RD::PipelineColorBlendState::Attachment attachment = attachments[0];
-			bool eq = true;
-			eq = eq && blend_state.blend_constant == b.blend_state.blend_constant;
-			eq = eq && blend_state.enable_logic_op == b.blend_state.enable_logic_op;
-			eq = eq && blend_state.logic_op == b.blend_state.logic_op;
-			eq = eq && blend_state.attachments[0].enable_blend == attachment.enable_blend;
-			eq = eq && blend_state.attachments[0].src_color_blend_factor == attachment.src_color_blend_factor;
-			eq = eq && blend_state.attachments[0].dst_color_blend_factor == attachment.dst_color_blend_factor;
-			eq = eq && blend_state.attachments[0].color_blend_op == attachment.color_blend_op;
-			eq = eq && blend_state.attachments[0].src_alpha_blend_factor == attachment.src_alpha_blend_factor;
-			eq = eq && blend_state.attachments[0].dst_alpha_blend_factor == attachment.dst_alpha_blend_factor;
-			eq = eq && blend_state.attachments[0].alpha_blend_op == attachment.alpha_blend_op;
-			eq = eq && blend_state.attachments[0].write_r == attachment.write_r;
-			eq = eq && blend_state.attachments[0].write_g == attachment.write_g;
-			eq = eq && blend_state.attachments[0].write_b == attachment.write_b;
-			eq = eq && blend_state.attachments[0].write_a == attachment.write_a;
-			if (!eq) {
-				return false;
-			}
-
 			if (shader_id != b.shader_id) {
 				return false;
 			} else if (framebuffer_formt != b.framebuffer_formt) {
@@ -110,6 +95,12 @@ private:
 			} else if (primitive != b.primitive) {
 				return false;
 			} else if (samples != b.samples) {
+				return false;
+			} else if (blend_mode != b.blend_mode) {
+				if (b.blend_mode == RS::RASTERIZER_BLEND_MODE_CLEAR) {
+					// No need to recreate pipeline if it clears texture;
+					return true;
+				}
 				return false;
 			} else {
 				return true;
@@ -119,18 +110,13 @@ private:
 
 	struct MeshRasterizerData {
 		RD::RenderPrimitive primitive = RD::RENDER_PRIMITIVE_TRIANGLES;
-		RD::TextureSamples samples = RD::TEXTURE_SAMPLES_1;
 
 		RID mesh;
 		int surface_index = 0;
 
-		RID texture;
-
+		Pair<RID, RID> rd_texture_samples_cache;
 		Pair<PipelineCacheKey, RID> pipeline_cache;
-		RID framebuffer_rid;
 
-		RID rd_texture;
-		RID rd_texture_samples;
 		RID vertex_array_rid;
 		RID index_array_rid;
 		RID index_buffer_rid;
@@ -162,10 +148,9 @@ private:
 
 public:
 	RID mesh_rasterizer_allocate();
-	void mesh_rasterizer_initialize(RID p_mesh_rasterizer, int p_width, int p_height, RS::RasterizedTextureFormat p_texture_format, bool p_generate_mipmaps, RD::TextureSamples p_samples);
-	void mesh_rasterizer_set_mesh(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index);
-	void mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_material, const Color &p_bg_color, bool p_clear = true, const Ref<RDPipelineColorBlendState> &p_blend_state = Ref<RDPipelineColorBlendState>());
-	RID mesh_rasterizer_get_texture(RID p_mesh_rasterizer);
+	void mesh_rasterizer_initialize(RID p_mesh_rasterizer, RID p_mesh, int surface_index);
+	void mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_material, RID p_texture_drawable, RS::RasterizerBlendMode p_blend_mode, const Color &p_bg_color, RD::TextureSamples p_multisample = RD::TEXTURE_SAMPLES_1);
+
 	bool free(RID p_mesh_rasterizer);
 
 	static MeshRasterizerRD *get_singleton();
