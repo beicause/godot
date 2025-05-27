@@ -53,6 +53,7 @@ void SoftBodyRenderingServerHandler::prepare(RID p_mesh, int p_surface) {
 	RS::get_singleton()->mesh_surface_make_offsets_from_format(surface_data.format, surface_data.vertex_count, surface_data.index_count, surface_offsets, vertex_stride, normal_tangent_stride, attrib_stride, skin_stride);
 
 	buffer = surface_data.vertex_data;
+	vertex_count = surface_data.vertex_count;
 	stride = vertex_stride;
 	normal_stride = normal_tangent_stride;
 	offset_vertices = surface_offsets[RS::ARRAY_VERTEX];
@@ -60,6 +61,8 @@ void SoftBodyRenderingServerHandler::prepare(RID p_mesh, int p_surface) {
 }
 
 void SoftBodyRenderingServerHandler::clear() {
+	aabb_prev = AABB();
+	buffer_prev.resize(0);
 	buffer.resize(0);
 	stride = 0;
 	normal_stride = 0;
@@ -78,8 +81,48 @@ void SoftBodyRenderingServerHandler::close() {
 	write_buffer = nullptr;
 }
 
-void SoftBodyRenderingServerHandler::commit_changes() {
-	RS::get_singleton()->mesh_surface_update_vertex_region(mesh, surface, 0, buffer);
+void SoftBodyRenderingServerHandler::fti_pump() {
+	buffer_prev = buffer;
+	aabb_prev = RS::get_singleton()->mesh_get_custom_aabb(mesh);
+}
+
+void SoftBodyRenderingServerHandler::commit_changes(real_t p_interpolation_fraction) {
+	real_t f = p_interpolation_fraction;
+	Vector<uint8_t> buffer_interp = buffer;
+	AABB aabb_interp = aabb;
+
+	if (p_interpolation_fraction < 1) {
+		// AABB.
+		aabb_interp = AABB(aabb_prev.position.lerp(aabb.position, f), aabb_prev.size.lerp(aabb.size, f));
+
+		for (uint32_t i = 0; i < vertex_count; i++) {
+			// Vertex.
+			float *vertex_buffer_prev = reinterpret_cast<float *>(buffer_prev.ptrw() + i * stride + offset_vertices);
+			float *vertex_buffer_interp = reinterpret_cast<float *>(buffer_interp.ptrw() + i * stride + offset_vertices);
+
+			*vertex_buffer_interp = Math::lerp(*vertex_buffer_prev, *vertex_buffer_interp, f);
+			vertex_buffer_interp++;
+			vertex_buffer_prev++;
+			*vertex_buffer_interp = Math::lerp(*vertex_buffer_prev, *vertex_buffer_interp, f);
+			vertex_buffer_interp++;
+			vertex_buffer_prev++;
+			*vertex_buffer_interp = Math::lerp(*vertex_buffer_prev, *vertex_buffer_interp, f);
+
+			// Normal.
+			uint32_t *normal_buffer_prev = reinterpret_cast<uint32_t *>(buffer_prev.ptrw() + i * normal_stride + offset_normal);
+			uint32_t *normal_buffer_interp = reinterpret_cast<uint32_t *>(buffer_interp.ptrw() + i * normal_stride + offset_normal);
+			Vector2 prev = Vector2((normal_buffer_prev[0] & 0xffff) / 65535.0f, (normal_buffer_prev[0] >> 16) / 65535.0f);
+			Vector2 curr = Vector2((normal_buffer_interp[0] & 0xffff) / 65535.0f, (normal_buffer_prev[0] >> 16) / 65535.0f);
+			Vector2 interp = Vector3::octahedron_decode(prev).lerp(Vector3::octahedron_decode(curr), f).octahedron_encode();
+			uint32_t value = 0;
+			value |= (uint16_t)CLAMP(interp.x * 65535, 0, 65535);
+			value |= (uint16_t)CLAMP(interp.y * 65535, 0, 65535) << 16;
+			normal_buffer_interp[0] = value;
+		}
+	}
+
+	RS::get_singleton()->mesh_set_custom_aabb(mesh, aabb_interp);
+	RS::get_singleton()->mesh_surface_update_vertex_region(mesh, surface, 0, buffer_interp);
 }
 
 void SoftBodyRenderingServerHandler::set_vertex(int p_vertex_id, const Vector3 &p_vertex) {
@@ -98,7 +141,7 @@ void SoftBodyRenderingServerHandler::set_normal(int p_vertex_id, const Vector3 &
 }
 
 void SoftBodyRenderingServerHandler::set_aabb(const AABB &p_aabb) {
-	RS::get_singleton()->mesh_set_custom_aabb(mesh, p_aabb);
+	aabb = p_aabb;
 }
 
 SoftBody3D::PinnedPoint::PinnedPoint() {
@@ -274,7 +317,11 @@ void SoftBody3D::_notification(int p_what) {
 			PhysicsServer3D::get_singleton()->soft_body_set_space(physics_rid, space);
 			_prepare_physics_server();
 		} break;
-
+		case NOTIFICATION_INTERNAL_PROCESS: {
+			if (mesh.is_valid() && is_inside_tree()) {
+				_draw_soft_mesh(is_physics_interpolated_and_enabled() ? Engine::get_singleton()->get_physics_interpolation_fraction() : 1);
+			}
+		} break;
 		case NOTIFICATION_READY: {
 			if (!parent_collision_ignore.is_empty()) {
 				add_collision_exception_with(get_node(parent_collision_ignore));
@@ -295,7 +342,11 @@ void SoftBody3D::_notification(int p_what) {
 			set_transform(Transform3D());
 			set_notify_transform(true);
 		} break;
-
+		case NOTIFICATION_RESET_PHYSICS_INTERPOLATION: {
+			if (mesh.is_valid() && is_inside_tree()) {
+				rendering_server_handler->fti_pump();
+			}
+		} break;
 		case NOTIFICATION_VISIBILITY_CHANGED: {
 			_update_pickable();
 		} break;
@@ -389,6 +440,13 @@ void SoftBody3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(DISABLE_MODE_KEEP_ACTIVE);
 }
 
+void SoftBody3D::_physics_interpolated_changed() {
+	if (mesh.is_valid() && is_inside_tree()) {
+		rendering_server_handler->fti_pump();
+	}
+	MeshInstance3D::_physics_interpolated_changed();
+}
+
 PackedStringArray SoftBody3D::get_configuration_warnings() const {
 	PackedStringArray warnings = MeshInstance3D::get_configuration_warnings();
 
@@ -415,7 +473,7 @@ void SoftBody3D::_update_physics_server() {
 	}
 }
 
-void SoftBody3D::_draw_soft_mesh() {
+void SoftBody3D::_draw_soft_mesh(real_t p_interpolation_fraction) {
 	if (mesh.is_null()) {
 		return;
 	}
@@ -438,11 +496,14 @@ void SoftBody3D::_draw_soft_mesh() {
 
 	_update_physics_server();
 
+	if (is_physics_interpolated_and_enabled()) {
+		rendering_server_handler->fti_pump();
+	}
 	rendering_server_handler->open();
 	PhysicsServer3D::get_singleton()->soft_body_update_rendering_server(physics_rid, rendering_server_handler);
 	rendering_server_handler->close();
 
-	rendering_server_handler->commit_changes();
+	rendering_server_handler->commit_changes(p_interpolation_fraction);
 }
 
 void SoftBody3D::_prepare_physics_server() {
@@ -465,12 +526,8 @@ void SoftBody3D::_prepare_physics_server() {
 			mesh_rid = mesh->get_rid();
 		}
 		PhysicsServer3D::get_singleton()->soft_body_set_mesh(physics_rid, mesh_rid);
-		RS::get_singleton()->connect("frame_pre_draw", callable_mp(this, &SoftBody3D::_draw_soft_mesh));
 	} else {
 		PhysicsServer3D::get_singleton()->soft_body_set_mesh(physics_rid, RID());
-		if (RS::get_singleton()->is_connected("frame_pre_draw", callable_mp(this, &SoftBody3D::_draw_soft_mesh))) {
-			RS::get_singleton()->disconnect("frame_pre_draw", callable_mp(this, &SoftBody3D::_draw_soft_mesh));
-		}
 	}
 }
 
@@ -707,6 +764,7 @@ SoftBody3D::SoftBody3D() :
 		physics_rid(PhysicsServer3D::get_singleton()->soft_body_create()) {
 	rendering_server_handler = memnew(SoftBodyRenderingServerHandler);
 	PhysicsServer3D::get_singleton()->body_attach_object_instance_id(physics_rid, get_instance_id());
+	set_process_internal(true);
 }
 
 SoftBody3D::~SoftBody3D() {
