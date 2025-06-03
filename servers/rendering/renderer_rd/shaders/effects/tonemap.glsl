@@ -423,9 +423,9 @@ vec3 apply_glow(vec3 color, vec3 glow) { // apply glow using the selected blendi
 }
 
 vec3 apply_bcs(vec3 color, vec3 bcs) {
-	color = mix(vec3(0.0f), color, bcs.x);
-	color = mix(vec3(0.5f), color, bcs.y);
-	color = mix(vec3(dot(vec3(1.0f), color) * 0.33333f), color, bcs.z);
+	color = mix(vec3(0.0), color, bcs.x);
+	color = mix(vec3(0.1841865185), color, bcs.y); // CIELIB middle gray.
+	color = mix(vec3(dot(vec3(0.2126, 0.7152, 0.0722), color)), color, bcs.z);
 
 	return color;
 }
@@ -883,20 +883,20 @@ void main() {
 			glow = mix(glow, texture(glow_map, uv_interp).rgb * glow, params.glow_map_strength);
 		}
 
-		// high dynamic range -> SRGB
+		// High dynamic range -> LDR.
 		glow = apply_tonemapping(glow, params.white);
 		color.rgb = apply_glow(color.rgb, glow);
 	}
 #endif
 
-	if (bool(params.flags & FLAG_CONVERT_TO_SRGB)) {
-		color.rgb = linear_to_srgb(color.rgb);
-	}
-
 	// Additional effects
 
 	if (bool(params.flags & FLAG_USE_BCS)) {
 		color.rgb = apply_bcs(color.rgb, params.bcs);
+	}
+
+	if (bool(params.flags & FLAG_CONVERT_TO_SRGB)) {
+		color.rgb = linear_to_srgb(color.rgb);
 	}
 
 	if (bool(params.flags & FLAG_USE_COLOR_CORRECTION)) {
