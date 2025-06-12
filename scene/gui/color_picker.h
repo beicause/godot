@@ -110,45 +110,17 @@ public:
 	};
 
 	enum PickerShapeType {
+		SHAPE_NONE = -1,
 		SHAPE_HSV_RECTANGLE,
 		SHAPE_HSV_WHEEL,
 		SHAPE_VHS_CIRCLE,
 		SHAPE_OKHSL_CIRCLE,
-		SHAPE_NONE,
 		SHAPE_OK_HS_RECTANGLE,
 		SHAPE_OK_HL_RECTANGLE,
 
 		SHAPE_MAX
 	};
 
-private:
-	// Ideally, `SHAPE_NONE` should be -1 so that we don't need to convert shape type to index.
-	// In order to avoid breaking compatibility, we have to use these methods for conversion.
-	inline int get_current_shape_index() {
-		return shape_to_index(current_shape);
-	}
-
-	static inline int shape_to_index(PickerShapeType p_shape) {
-		if (p_shape == SHAPE_NONE) {
-			return -1;
-		}
-		if (p_shape > SHAPE_NONE) {
-			return p_shape - 1;
-		}
-		return p_shape;
-	}
-
-	static inline PickerShapeType index_to_shape(int p_index) {
-		if (p_index == -1) {
-			return SHAPE_NONE;
-		}
-		if (p_index >= SHAPE_NONE) {
-			return (PickerShapeType)(p_index + 1);
-		}
-		return (PickerShapeType)p_index;
-	}
-
-public:
 	static const int MODE_SLIDER_COUNT = 3;
 
 	enum SLIDER_EXTRA {

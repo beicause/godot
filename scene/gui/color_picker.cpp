@@ -139,7 +139,7 @@ void ColorPicker::_notification(int p_what) {
 			}
 
 			if (current_shape != SHAPE_NONE) {
-				btn_shape->set_button_icon(shape_popup->get_item_icon(get_current_shape_index()));
+				btn_shape->set_button_icon(shape_popup->get_item_icon(current_shape));
 			}
 
 			for (int i = 0; i < MODE_SLIDER_COUNT; i++) {
@@ -185,7 +185,7 @@ void ColorPicker::_notification(int p_what) {
 		case NOTIFICATION_FOCUS_ENTER:
 		case NOTIFICATION_FOCUS_EXIT: {
 			if (current_shape != SHAPE_NONE) {
-				shapes[get_current_shape_index()]->cursor_editing = false;
+				shapes[current_shape]->cursor_editing = false;
 			}
 		} break;
 
@@ -198,7 +198,7 @@ void ColorPicker::_notification(int p_what) {
 						input->is_action_just_released("ui_down")) {
 					gamepad_event_delay_ms = DEFAULT_GAMEPAD_EVENT_DELAY_MS;
 					if (current_shape == SHAPE_NONE) {
-						shapes[get_current_shape_index()]->echo_multiplier = 1;
+						shapes[current_shape]->echo_multiplier = 1;
 					}
 					accept_event();
 					set_process_internal(false);
@@ -217,7 +217,7 @@ void ColorPicker::_notification(int p_what) {
 							input->is_action_pressed("ui_right") - input->is_action_pressed("ui_left"),
 							input->is_action_pressed("ui_down") - input->is_action_pressed("ui_up"));
 
-					shapes[get_current_shape_index()]->update_cursor(color_change_vector, true);
+					shapes[current_shape]->update_cursor(color_change_vector, true);
 					accept_event();
 				}
 				return;
@@ -371,7 +371,7 @@ void ColorPicker::set_focus_on_line_edit() {
 }
 
 void ColorPicker::set_focus_on_picker_shape() {
-	shapes[get_current_shape_index()]->grab_focus();
+	shapes[current_shape]->grab_focus();
 }
 
 void ColorPicker::_update_controls() {
@@ -412,7 +412,7 @@ void ColorPicker::_update_controls() {
 
 	int i = 0;
 	for (ColorPickerShape *shape : shapes) {
-		bool is_active = get_current_shape_index() == i;
+		bool is_active = current_shape == i;
 		i++;
 
 		if (!shape->is_initialized) {
@@ -675,7 +675,7 @@ void ColorPicker::_copy_normalized_to_hsv_okhsl() {
 }
 
 void ColorPicker::_copy_hsv_okhsl_to_normalized() {
-	if (current_shape != SHAPE_NONE && shapes[get_current_shape_index()]->is_ok_hsl()) {
+	if (current_shape != SHAPE_NONE && shapes[current_shape]->is_ok_hsl()) {
 		color_normalized.set_ok_hsl(ok_hsl_h, ok_hsl_s, ok_hsl_l, color_normalized.a);
 	} else {
 		color_normalized.set_hsv(h, s, v, color_normalized.a);
@@ -841,7 +841,7 @@ void ColorPicker::_update_color(bool p_update_sliders) {
 	_update_text_value();
 
 	if (current_shape != SHAPE_NONE) {
-		for (Control *control : shapes[get_current_shape_index()]->controls) {
+		for (Control *control : shapes[current_shape]->controls) {
 			control->queue_redraw();
 		}
 	}
@@ -952,16 +952,16 @@ Color ColorPicker::get_old_color() const {
 }
 
 void ColorPicker::set_picker_shape(PickerShapeType p_shape) {
-	ERR_FAIL_INDEX(p_shape, SHAPE_MAX);
+	ERR_FAIL_COND(p_shape < SHAPE_NONE || p_shape >= SHAPE_MAX);
 	if (p_shape == current_shape) {
 		return;
 	}
 	if (current_shape != SHAPE_NONE) {
-		shape_popup->set_item_checked(get_current_shape_index(), false);
+		shape_popup->set_item_checked(current_shape, false);
 	}
 	if (p_shape != SHAPE_NONE) {
-		shape_popup->set_item_checked(shape_to_index(p_shape), true);
-		btn_shape->set_button_icon(shape_popup->get_item_icon(shape_to_index(p_shape)));
+		shape_popup->set_item_checked(p_shape, true);
+		btn_shape->set_button_icon(shape_popup->get_item_icon(p_shape));
 	}
 
 	current_shape = p_shape;
@@ -2082,7 +2082,7 @@ void ColorPicker::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "edit_intensity"), "set_edit_intensity", "is_editing_intensity");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "color_mode", PROPERTY_HINT_ENUM, "RGB,HSV,LINEAR,OKHSL"), "set_color_mode", "get_color_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "deferred_mode"), "set_deferred_mode", "is_deferred_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "picker_shape", PROPERTY_HINT_ENUM, "HSV Rectangle,HSV Rectangle Wheel,VHS Circle,OKHSL Circle,OK HS Rectangle:5,OK HL Rectangle,None:4"), "set_picker_shape", "get_picker_shape");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "picker_shape", PROPERTY_HINT_ENUM, "HSV Rectangle,HSV Rectangle Wheel,VHS Circle,OKHSL Circle,OK HS Rectangle,OK HL Rectangle,None:-1"), "set_picker_shape", "get_picker_shape");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "can_add_swatches"), "set_can_add_swatches", "are_swatches_enabled");
 	ADD_GROUP("Customization", "");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "sampler_visible"), "set_sampler_visible", "is_sampler_visible");
@@ -2198,11 +2198,11 @@ ColorPicker::ColorPicker() {
 	{
 		int i = 0;
 		for (const ColorPickerShape *shape : shapes) {
-			shape_popup->add_radio_check_item(shape->get_name(), index_to_shape(i));
+			shape_popup->add_radio_check_item(shape->get_name(), i);
 			i++;
 		}
 	}
-	shape_popup->set_item_checked(get_current_shape_index(), true);
+	shape_popup->set_item_checked(current_shape, true);
 	shape_popup->connect(SceneStringName(id_pressed), callable_mp(this, &ColorPicker::set_picker_shape));
 	shape_popup->connect("about_to_popup", callable_mp(this, &ColorPicker::_block_input_on_popup_show));
 	shape_popup->connect(SNAME("popup_hide"), callable_mp(this, &ColorPicker::_enable_input_on_popup_hide));

@@ -141,13 +141,13 @@
 		<constant name="SHAPE_OKHSL_CIRCLE" value="3" enum="PickerShapeType">
 			HSL OK Color Model circle color space.
 		</constant>
-		<constant name="SHAPE_NONE" value="4" enum="PickerShapeType">
+		<constant name="SHAPE_NONE" value="-1" enum="PickerShapeType">
 			The color space shape and the shape select button are hidden. Can't be selected from the shapes popup.
 		</constant>
-		<constant name="SHAPE_OK_HS_RECTANGLE" value="5" enum="PickerShapeType">
+		<constant name="SHAPE_OK_HS_RECTANGLE" value="4" enum="PickerShapeType">
 			OKHSL Color Model rectangle with constant lightness.
 		</constant>
-		<constant name="SHAPE_OK_HL_RECTANGLE" value="6" enum="PickerShapeType">
+		<constant name="SHAPE_OK_HL_RECTANGLE" value="5" enum="PickerShapeType">
 			OKHSL Color Model rectangle with constant saturation.
 		</constant>
 	</constants>
