@@ -473,18 +473,30 @@ namespace Godot
         /// <returns>The determinant calculated from this projection.</returns>
         public readonly real_t Determinant()
         {
-            return X.W * Y.Z * Z.Y * W.X - X.Z * Y.W * Z.Y * W.X -
-                   X.W * Y.Y * Z.Z * W.X + X.Y * Y.W * Z.Z * W.X +
-                   X.Z * Y.Y * Z.W * W.X - X.Y * Y.Z * Z.W * W.X -
-                   X.W * Y.Z * Z.X * W.Y + X.Z * Y.W * Z.X * W.Y +
-                   X.W * Y.X * Z.Z * W.Y - X.X * Y.W * Z.Z * W.Y -
-                   X.Z * Y.X * Z.W * W.Y + X.X * Y.Z * Z.W * W.Y +
-                   X.W * Y.Y * Z.X * W.Z - X.Y * Y.W * Z.X * W.Z -
-                   X.W * Y.X * Z.Y * W.Z + X.X * Y.W * Z.Y * W.Z +
-                   X.Y * Y.X * Z.W * W.Z - X.X * Y.Y * Z.W * W.Z -
-                   X.Z * Y.Y * Z.X * W.W + X.Y * Y.Z * Z.X * W.W +
-                   X.Z * Y.X * Z.Y * W.W - X.X * Y.Z * Z.Y * W.W -
-                   X.Y * Y.X * Z.Z * W.W + X.X * Y.Y * Z.Z * W.W;
+            // cofactor expansion approach that breaks the problem into smaller subproblems recursively
+            // to compute determinants in a structured and parallelized way. Saves on CPU cycles.
+            // https://en.wikipedia.org/wiki/Laplace_expansion
+            real_t m0 = this[0, 0];
+            real_t m4 = this[1, 0];
+            real_t m8 = this[2, 0];
+            real_t m12 = this[3, 0];
+            real_t m1 = this[0, 1];
+            real_t m5 = this[1, 1];
+            real_t m9 = this[2, 1];
+            real_t m13 = this[3, 1];
+            real_t m2 = this[0, 2];
+            real_t m6 = this[1, 2];
+            real_t m10 = this[2, 2];
+            real_t m14 = this[3, 2];
+            real_t m3 = this[0, 3];
+            real_t m7 = this[1, 3];
+            real_t m11 = this[2, 3];
+            real_t m15 = this[3, 3];
+
+            return (m0 * ((m5 * (m10 * m15 - m11 * m14) - m9 * (m6 * m15 - m7 * m14) + m13 * (m6 * m11 - m7 * m10))) -
+                    m4 * ((m1 * (m10 * m15 - m11 * m14) - m9 * (m2 * m15 - m3 * m14) + m13 * (m2 * m11 - m3 * m10))) +
+                    m8 * ((m1 * (m6 * m15 - m7 * m14) - m5 * (m2 * m15 - m3 * m14) + m13 * (m2 * m7 - m3 * m6))) -
+                    m12 * ((m1 * (m6 * m11 - m7 * m10) - m5 * (m2 * m11 - m3 * m10) + m9 * (m2 * m7 - m3 * m6))));
         }
 
         /// <summary>
