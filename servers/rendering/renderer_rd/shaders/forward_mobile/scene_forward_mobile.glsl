@@ -270,8 +270,11 @@ void vertex_shader(in vec3 vertex,
 		in uint scene_directional_light_count,
 		out vec4 screen_position_output) {
 	vec4 instance_custom = vec4(0.0);
+	vec4 instance_color = vec4(1.0);
+
 #if defined(COLOR_USED)
 	vec4 color_highp = color_attrib;
+	vec4 vertex_color = color_attrib;
 #endif
 
 #ifdef USE_DOUBLE_PRECISION
@@ -356,7 +359,8 @@ void vertex_shader(in vec3 vertex,
 
 		if (sc_multimesh_has_color()) {
 #ifdef COLOR_USED
-			color_highp *= transforms.data[offset];
+			instance_color = transforms.data[offset];
+			color_highp *= instance_color;
 #endif
 			offset += 1;
 		}

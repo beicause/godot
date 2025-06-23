@@ -1165,9 +1165,11 @@ MaterialStorage::MaterialStorage() {
 		actions.renames["TAU"] = String::num(Math::TAU);
 		actions.renames["E"] = String::num(Math::E);
 		actions.renames["AT_LIGHT_PASS"] = "false";
+		actions.renames["INSTANCE_COLOR"] = "instance_color";
 		actions.renames["INSTANCE_CUSTOM"] = "instance_custom";
 
 		actions.renames["COLOR"] = "color";
+		actions.renames["VERTEX_COLOR"] = "vertex_color";
 		actions.renames["NORMAL"] = "normal";
 		actions.renames["NORMAL_MAP"] = "normal_map";
 		actions.renames["NORMAL_MAP_DEPTH"] = "normal_map_depth";
@@ -1244,6 +1246,7 @@ MaterialStorage::MaterialStorage() {
 		actions.renames["UV"] = "uv_interp";
 		actions.renames["UV2"] = "uv2_interp";
 		actions.renames["COLOR"] = "color_interp";
+		actions.renames["VERTEX_COLOR"] = "vertex_color";
 		actions.renames["POINT_SIZE"] = "point_size";
 		actions.renames["INSTANCE_ID"] = "gl_InstanceID";
 		actions.renames["VERTEX_ID"] = "gl_VertexID";
@@ -1292,6 +1295,7 @@ MaterialStorage::MaterialStorage() {
 		actions.renames["AO_LIGHT_AFFECT"] = "ao_light_affect";
 		actions.renames["EMISSION"] = "emission";
 		actions.renames["POINT_COORD"] = "gl_PointCoord";
+		actions.renames["INSTANCE_COLOR"] = "instance_color";
 		actions.renames["INSTANCE_CUSTOM"] = "instance_custom";
 		actions.renames["SCREEN_UV"] = "screen_uv";
 		actions.renames["DEPTH"] = "gl_FragDepth";

@@ -633,6 +633,8 @@ void SceneShaderForwardMobile::init(const String p_defines) {
 		actions.renames["UV"] = "uv_interp";
 		actions.renames["UV2"] = "uv2_interp";
 		actions.renames["COLOR"] = "color_highp";
+		actions.renames["VERTEX_COLOR"] = "vertex_color";
+		actions.renames["INSTANCE_COLOR"] = "instance_color";
 		actions.renames["POINT_SIZE"] = "gl_PointSize";
 		actions.renames["INSTANCE_ID"] = "gl_InstanceIndex";
 		actions.renames["VERTEX_ID"] = "gl_VertexIndex";

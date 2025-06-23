@@ -58,6 +58,9 @@ vec3 srgb_to_linear(vec3 color) {
 
 void main() {
 	vec4 instance_custom = vec4(0.0);
+	vec4 instance_color = vec4(1.0);
+	vec4 vertex_color = vec4(1.0);
+
 #if defined(CUSTOM0_USED)
 	vec4 custom0 = vec4(0.0);
 #endif
@@ -93,6 +96,7 @@ void main() {
 	}
 	uvec4 bones = uvec4(0, 0, 0, 0);
 	vec4 bone_weights = vec4(0.0);
+	vertex_color = color;
 
 #elif defined(USE_ATTRIBUTES)
 
@@ -101,6 +105,7 @@ void main() {
 	if (bool(canvas_data.flags & CANVAS_FLAGS_CONVERT_ATTRIBUTES_TO_LINEAR)) {
 		color.rgb = srgb_to_linear(color.rgb);
 	}
+	vertex_color = color;
 	color *= draw_data.modulation;
 	vec2 uv = uv_attrib;
 
@@ -167,6 +172,7 @@ void main() {
 		instance_custom = transforms.data[offset + 3];
 
 		vertex = new_vertex;
+		instance_color = pcolor;
 		color *= pcolor;
 	} else if (instancing == 1) {
 		uint stride = 2 + bitfieldExtract(params.batch_flags, BATCH_FLAGS_INSTANCING_HAS_COLORS_SHIFT, 1) + bitfieldExtract(params.batch_flags, BATCH_FLAGS_INSTANCING_HAS_CUSTOM_DATA_SHIFT, 1);
@@ -177,7 +183,8 @@ void main() {
 		offset += 2;
 
 		if (bool(params.batch_flags & BATCH_FLAGS_INSTANCING_HAS_COLORS)) {
-			color *= transforms.data[offset];
+			instance_color = transforms.data[offset];
+			color *= instance_color;
 			offset += 1;
 		}
 

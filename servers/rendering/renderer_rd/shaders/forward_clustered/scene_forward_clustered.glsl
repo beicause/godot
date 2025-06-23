@@ -226,8 +226,11 @@ void vertex_shader(vec3 vertex_input,
 #endif
 		in uint instance_index, in uint multimesh_offset, in SceneData scene_data, in mat4 model_matrix, out vec4 screen_pos) {
 	vec4 instance_custom = vec4(0.0);
+	vec4 instance_color = vec4(1.0);
+
 #if defined(COLOR_USED)
 	color_interp = color_attrib;
+	vec4 vertex_color = color_attrib;
 #endif
 
 	mat4 inv_view_matrix = scene_data.inv_view_matrix;

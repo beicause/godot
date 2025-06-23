@@ -146,6 +146,8 @@ void main() {
 	varying_G = read_draw_data_lights;
 
 	vec4 instance_custom = vec4(0.0);
+	vec4 instance_color = vec4(1.0);
+	vec4 vertex_color = vec4(1.0);
 
 #if defined(CUSTOM0_USED)
 	vec4 custom0 = vec4(0.0);
@@ -175,15 +177,16 @@ void main() {
 		color.xy = unpackHalf2x16(read_draw_data_color_c_rg);
 		color.zw = unpackHalf2x16(read_draw_data_color_c_ba);
 	}
+	vertex_color = color;
 
 #elif defined(USE_ATTRIBUTES)
 	vec2 vertex = vertex_attrib;
+	vertex_color = color_attrib;
 	vec4 color = color_attrib * read_draw_data_modulation;
 	vec2 uv = uv_attrib;
 
 #ifdef USE_INSTANCING
 	if (bool(batch_flags & BATCH_FLAGS_INSTANCING_HAS_COLORS)) {
-		vec4 instance_color;
 		instance_color.xy = unpackHalf2x16(uint(instance_color_custom_data.x));
 		instance_color.zw = unpackHalf2x16(uint(instance_color_custom_data.y));
 		color *= instance_color;
