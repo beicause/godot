@@ -543,6 +543,11 @@ static bool _are_formats_compatible(Image::Format p_format0, Image::Format p_for
 }
 
 void Image::convert(Format p_new_format) {
+	if (format == FORMAT_L8 && p_new_format == FORMAT_R8) {
+		format = p_new_format;
+		return;
+	}
+
 	ERR_FAIL_INDEX_MSG(p_new_format, FORMAT_MAX, vformat("The Image format specified (%d) is out of range. See Image's Format enum.", p_new_format));
 
 	if (data.is_empty() || p_new_format == format) {
