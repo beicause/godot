@@ -35,6 +35,9 @@
 class MeshDataTool : public RefCounted {
 	GDCLASS(MeshDataTool, RefCounted);
 
+	const static inline uint32_t custom_mask[RS::ARRAY_CUSTOM_COUNT] = { Mesh::ARRAY_FORMAT_CUSTOM0, Mesh::ARRAY_FORMAT_CUSTOM1, Mesh::ARRAY_FORMAT_CUSTOM2, Mesh::ARRAY_FORMAT_CUSTOM3 };
+	const static inline uint32_t custom_shift[RS::ARRAY_CUSTOM_COUNT] = { Mesh::ARRAY_FORMAT_CUSTOM0_SHIFT, Mesh::ARRAY_FORMAT_CUSTOM1_SHIFT, Mesh::ARRAY_FORMAT_CUSTOM2_SHIFT, Mesh::ARRAY_FORMAT_CUSTOM3_SHIFT };
+
 	uint64_t format = 0;
 	struct Vertex {
 		Vector3 vertex;
@@ -47,6 +50,7 @@ class MeshDataTool : public RefCounted {
 		Vector<float> weights;
 		Vector<int> edges;
 		Vector<int> faces;
+		Color custom[RS::ARRAY_CUSTOM_COUNT];
 		Variant meta;
 	};
 
@@ -112,6 +116,9 @@ public:
 
 	Vector<float> get_vertex_weights(int p_idx) const;
 	void set_vertex_weights(int p_idx, const Vector<float> &p_weights);
+
+	Color get_vertex_custom(int p_idx, int p_which) const;
+	void set_vertex_custom(int p_idx, int p_which, const Color &p_custom, Mesh::ArrayCustomFormat p_format);
 
 	Variant get_vertex_meta(int p_idx) const;
 	void set_vertex_meta(int p_idx, const Variant &p_meta);

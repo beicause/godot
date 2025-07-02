@@ -193,6 +193,13 @@
 				Returns the total number of vertices in [Mesh].
 			</description>
 		</method>
+		<method name="get_vertex_custom" qualifiers="const">
+			<return type="Color" />
+			<param index="0" name="idx" type="int" />
+			<param index="1" name="which" type="int" />
+			<description>
+			</description>
+		</method>
 		<method name="get_vertex_edges" qualifiers="const">
 			<return type="PackedInt32Array" />
 			<param index="0" name="idx" type="int" />
@@ -294,6 +301,15 @@
 			<param index="1" name="color" type="Color" />
 			<description>
 				Sets the color of the given vertex.
+			</description>
+		</method>
+		<method name="set_vertex_custom">
+			<return type="void" />
+			<param index="0" name="idx" type="int" />
+			<param index="1" name="which" type="int" />
+			<param index="2" name="custom" type="Color" />
+			<param index="3" name="format" type="int" enum="Mesh.ArrayCustomFormat" />
+			<description>
 			</description>
 		</method>
 		<method name="set_vertex_meta">

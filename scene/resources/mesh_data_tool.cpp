@@ -113,6 +113,19 @@ Error MeshDataTool::create_from_surface(const Ref<ArrayMesh> &p_mesh, int p_surf
 		we = arrays[Mesh::ARRAY_WEIGHTS].operator Vector<float>().ptr();
 	}
 
+	Vector<float> cx[RS::ARRAY_CUSTOM_COUNT];
+	for (int i = 0; i < RS::ARRAY_CUSTOM_COUNT; i++) {
+		bool is_byte = arrays[RS::ARRAY_CUSTOM0 + i].get_type() == Variant::PACKED_BYTE_ARRAY;
+		if (is_byte) {
+			format &= ~custom_mask[i];
+			format &= ~(Mesh::ARRAY_FORMAT_CUSTOM_MASK << custom_shift[i]);
+		}
+		ERR_CONTINUE_MSG(is_byte, "Extracting Byte/Half formats is not supported");
+		if (arrays[RS::ARRAY_CUSTOM0 + i].get_type() == Variant::PACKED_FLOAT32_ARRAY) {
+			cx[i] = arrays[Mesh::ARRAY_CUSTOM0 + i];
+		}
+	}
+
 	vertices.resize(vcount);
 
 	for (int i = 0; i < vcount; i++) {
@@ -148,6 +161,14 @@ Error MeshDataTool::create_from_surface(const Ref<ArrayMesh> &p_mesh, int p_surf
 			v.bones.push_back(bo[i * 4 + 3]);
 		}
 
+		for (int i = 0; i < RS::ARRAY_CUSTOM_COUNT; i++) {
+			if (!cx[i].is_empty()) {
+				int cc = cx[i].size() / vcount;
+				for (int k = 0; k < cc; k++) {
+					v.custom[i][k] = cx[i][i * cc + k];
+				}
+			}
+		}
 		vertices.write[i] = v;
 	}
 
@@ -326,6 +347,149 @@ Error MeshDataTool::commit_to_surface(const Ref<ArrayMesh> &p_mesh, uint64_t p_c
 		arr[Mesh::ARRAY_WEIGHTS] = w;
 	}
 
+	for (int i = 0; i < RS::ARRAY_CUSTOM_COUNT; i++) {
+		if (!(format & custom_mask[i])) {
+			continue;
+		}
+		Vector<Vertex> vertex_array = vertices;
+		int varr_len = vertex_array.size();
+		int fmt = Mesh::ARRAY_CUSTOM0 + i;
+		int data_fmt = (format >> custom_shift[i]) & Mesh::ARRAY_FORMAT_CUSTOM_MASK;
+
+		switch (data_fmt) {
+			case Mesh::ARRAY_CUSTOM_RGBA8_UNORM: {
+				Vector<uint8_t> array;
+				array.resize(varr_len * 4);
+				uint8_t *w = array.ptrw();
+
+				for (uint32_t idx = 0; idx < vertex_array.size(); idx++) {
+					const Vertex &v = vertex_array[idx];
+
+					const Color &c = v.custom[i];
+					w[idx * 4 + 0] = CLAMP(int32_t(c.r * 255.0), 0, 255);
+					w[idx * 4 + 1] = CLAMP(int32_t(c.g * 255.0), 0, 255);
+					w[idx * 4 + 2] = CLAMP(int32_t(c.b * 255.0), 0, 255);
+					w[idx * 4 + 3] = CLAMP(int32_t(c.a * 255.0), 0, 255);
+				}
+
+				arr[fmt] = array;
+			} break;
+			case Mesh::ARRAY_CUSTOM_RGBA8_SNORM: {
+				Vector<uint8_t> array;
+				array.resize(varr_len * 4);
+				uint8_t *w = array.ptrw();
+
+				for (uint32_t idx = 0; idx < vertex_array.size(); idx++) {
+					const Vertex &v = vertex_array[idx];
+
+					const Color &c = v.custom[i];
+					w[idx * 4 + 0] = uint8_t(int8_t(CLAMP(int32_t(c.r * 127.0), -128, 127)));
+					w[idx * 4 + 1] = uint8_t(int8_t(CLAMP(int32_t(c.g * 127.0), -128, 127)));
+					w[idx * 4 + 2] = uint8_t(int8_t(CLAMP(int32_t(c.b * 127.0), -128, 127)));
+					w[idx * 4 + 3] = uint8_t(int8_t(CLAMP(int32_t(c.a * 127.0), -128, 127)));
+				}
+
+				arr[fmt] = array;
+			} break;
+			case Mesh::ARRAY_CUSTOM_RG_HALF: {
+				Vector<uint8_t> array;
+				array.resize(varr_len * 4);
+				uint16_t *w = (uint16_t *)array.ptrw();
+
+				for (uint32_t idx = 0; idx < vertex_array.size(); idx++) {
+					const Vertex &v = vertex_array[idx];
+
+					const Color &c = v.custom[i];
+					w[idx * 2 + 0] = Math::make_half_float(c.r);
+					w[idx * 2 + 1] = Math::make_half_float(c.g);
+				}
+
+				arr[fmt] = array;
+			} break;
+			case Mesh::ARRAY_CUSTOM_RGBA_HALF: {
+				Vector<uint8_t> array;
+				array.resize(varr_len * 8);
+				uint16_t *w = (uint16_t *)array.ptrw();
+
+				for (uint32_t idx = 0; idx < vertex_array.size(); idx++) {
+					const Vertex &v = vertex_array[idx];
+
+					const Color &c = v.custom[i];
+					w[idx * 4 + 0] = Math::make_half_float(c.r);
+					w[idx * 4 + 1] = Math::make_half_float(c.g);
+					w[idx * 4 + 2] = Math::make_half_float(c.b);
+					w[idx * 4 + 3] = Math::make_half_float(c.a);
+				}
+
+				arr[fmt] = array;
+			} break;
+			case Mesh::ARRAY_CUSTOM_R_FLOAT: {
+				Vector<float> array;
+				array.resize(varr_len);
+				float *w = (float *)array.ptrw();
+
+				for (uint32_t idx = 0; idx < vertex_array.size(); idx++) {
+					const Vertex &v = vertex_array[idx];
+
+					const Color &c = v.custom[i];
+					w[idx] = c.r;
+				}
+
+				arr[fmt] = array;
+			} break;
+			case Mesh::ARRAY_CUSTOM_RG_FLOAT: {
+				Vector<float> array;
+				array.resize(varr_len * 2);
+				float *w = (float *)array.ptrw();
+
+				for (uint32_t idx = 0; idx < vertex_array.size(); idx++) {
+					const Vertex &v = vertex_array[idx];
+
+					const Color &c = v.custom[i];
+					w[idx * 2 + 0] = c.r;
+					w[idx * 2 + 1] = c.g;
+				}
+
+				arr[fmt] = array;
+			} break;
+			case Mesh::ARRAY_CUSTOM_RGB_FLOAT: {
+				Vector<float> array;
+				array.resize(varr_len * 3);
+				float *w = (float *)array.ptrw();
+
+				for (uint32_t idx = 0; idx < vertex_array.size(); idx++) {
+					const Vertex &v = vertex_array[idx];
+
+					const Color &c = v.custom[i];
+					w[idx * 3 + 0] = c.r;
+					w[idx * 3 + 1] = c.g;
+					w[idx * 3 + 2] = c.b;
+				}
+
+				arr[fmt] = array;
+			} break;
+			case Mesh::ARRAY_CUSTOM_RGBA_FLOAT: {
+				Vector<float> array;
+				array.resize(varr_len * 4);
+				float *w = (float *)array.ptrw();
+
+				for (uint32_t idx = 0; idx < vertex_array.size(); idx++) {
+					const Vertex &v = vertex_array[idx];
+
+					const Color &c = v.custom[i];
+					w[idx * 4 + 0] = c.r;
+					w[idx * 4 + 1] = c.g;
+					w[idx * 4 + 2] = c.b;
+					w[idx * 4 + 3] = c.a;
+				}
+
+				arr[fmt] = array;
+			} break;
+			default: {
+			}
+		}
+	}
+
 	Ref<ArrayMesh> ncmesh = p_mesh;
 	int sc = ncmesh->get_surface_count();
 	ncmesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, arr, TypedArray<Array>(), Dictionary(), p_compression_flags);
@@ -437,6 +601,20 @@ void MeshDataTool::set_vertex_weights(int p_idx, const Vector<float> &p_weights)
 	ERR_FAIL_COND(p_weights.size() != 4);
 	vertices.write[p_idx].weights = p_weights;
 	format |= Mesh::ARRAY_FORMAT_WEIGHTS;
+}
+
+Color MeshDataTool::get_vertex_custom(int p_idx, int p_which) const {
+	ERR_FAIL_INDEX_V(p_idx, vertices.size(), Color());
+	return vertices[p_idx].custom[p_which];
+}
+
+void MeshDataTool::set_vertex_custom(int p_idx, int p_which, const Color &p_custom, Mesh::ArrayCustomFormat p_format) {
+	ERR_FAIL_INDEX(p_idx, vertices.size());
+	ERR_FAIL_INDEX(p_which, RS::ARRAY_CUSTOM_COUNT);
+	vertices.write[p_idx].custom[p_which] = p_custom;
+	format |= custom_mask[p_which];
+	format &= ~(Mesh::ARRAY_FORMAT_CUSTOM_MASK << custom_shift[p_which]);
+	format |= p_format << custom_shift[p_which];
 }
 
 Variant MeshDataTool::get_vertex_meta(int p_idx) const {
@@ -553,6 +731,9 @@ void MeshDataTool::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("set_vertex_weights", "idx", "weights"), &MeshDataTool::set_vertex_weights);
 	ClassDB::bind_method(D_METHOD("get_vertex_weights", "idx"), &MeshDataTool::get_vertex_weights);
+
+	ClassDB::bind_method(D_METHOD("set_vertex_custom", "idx", "which", "custom", "format"), &MeshDataTool::set_vertex_custom);
+	ClassDB::bind_method(D_METHOD("get_vertex_custom", "idx", "which"), &MeshDataTool::get_vertex_custom);
 
 	ClassDB::bind_method(D_METHOD("set_vertex_meta", "idx", "meta"), &MeshDataTool::set_vertex_meta);
 	ClassDB::bind_method(D_METHOD("get_vertex_meta", "idx"), &MeshDataTool::get_vertex_meta);
