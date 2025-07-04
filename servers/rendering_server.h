@@ -1184,8 +1184,8 @@ public:
 
 	/* MESH RASTERIZER API */
 
-	virtual RID mesh_rasterizer_create(RID p_mesh, int p_surface_index) = 0;
-	virtual void mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_material, RID p_texture_drawable, Ref<RasterizerBlendState> p_blend_state, const Color &p_clear_color, RD::TextureSamples p_multisample = RD::TEXTURE_SAMPLES_1) = 0;
+	virtual RID mesh_rasterizer_create(RID p_mesh, RID p_material, uint32_t p_surface_index) = 0;
+	virtual void mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_texture_drawable, Ref<RasterizerBlendState> p_blend_state, const Color &p_clear_color, RD::TextureSamples p_multisample = RD::TEXTURE_SAMPLES_1) = 0;
 
 	/* SKY API */
 

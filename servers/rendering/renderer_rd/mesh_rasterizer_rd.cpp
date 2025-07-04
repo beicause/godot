@@ -30,6 +30,7 @@
 
 #include "mesh_rasterizer_rd.h"
 #include "framebuffer_cache_rd.h"
+#include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
 #include "servers/rendering/renderer_rd/storage_rd/utilities.h"
 
 namespace RendererRD {
@@ -109,6 +110,10 @@ Pair<ShaderRD *, RID> MeshRasterizerRD::RasterizeMeshShaderData::get_native_shad
 	return { &singleton->shader_file_rd, version };
 }
 
+uint64_t MeshRasterizerRD::RasterizeMeshShaderData::get_vertex_input_mask() {
+	return RD::get_singleton()->shader_get_vertex_input_attribute_mask(shader_rd);
+}
+
 MeshRasterizerRD::RasterizeMeshShaderData::~RasterizeMeshShaderData() {
 	MeshRasterizerRD *rasterizer = MeshRasterizerRD::get_singleton();
 	rasterizer->shader_file_rd.version_free(version);
@@ -134,35 +139,30 @@ RID MeshRasterizerRD::mesh_rasterizer_allocate() {
 	return mesh_rasterizer_owner.allocate_rid();
 }
 
-void MeshRasterizerRD::mesh_rasterizer_initialize(RID p_mesh_rasterizer, RID p_mesh, int p_surface_index) {
+void MeshRasterizerRD::mesh_rasterizer_initialize(RID p_mesh_rasterizer, RID p_mesh, RID p_material, uint32_t p_surface_index) {
 	mesh_rasterizer_owner.initialize_rid(p_mesh_rasterizer);
 	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
+
+	MaterialStorage *material_storage = MaterialStorage::get_singleton();
+	MaterialStorage::MaterialData *md = material_storage->material_get_data(p_material, MaterialStorage::SHADER_TYPE_MESH_RASTERIZER);
+	if (md != nullptr) {
+		mesh_rasterizer->material_data = static_cast<RasterizeMeshMaterialData *>(md);
+		mesh_rasterizer->shader_data = static_cast<RasterizeMeshShaderData *>(material_storage->material_get_shader_data(p_material));
+	}
 	mesh_rasterizer->mesh = p_mesh;
 	mesh_rasterizer->surface_index = p_surface_index;
-	mesh_rasterizer->update_vertex();
+	mesh_rasterizer->update_mesh();
 	if (p_mesh.is_valid()) {
 		Utilities::get_singleton()->base_update_dependency(p_mesh, &mesh_rasterizer->dependency_tracker);
 	}
 }
 
-void MeshRasterizerRD::mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_material, RID p_texture_drawable, Ref<RasterizerBlendState> p_blend_state, const Color &p_bg_color, RD::TextureSamples p_multisample) {
+void MeshRasterizerRD::mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_texture_drawable, Ref<RasterizerBlendState> p_blend_state, const Color &p_bg_color, RD::TextureSamples p_multisample) {
 	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
 	ERR_FAIL_COND(p_mesh_rasterizer.is_null());
-	ERR_FAIL_COND(p_material.is_null());
 
 	MaterialStorage::get_singleton()->_update_global_shader_uniforms(); //must do before materials, so it can queue them for update
 	MaterialStorage::get_singleton()->_update_queued_materials();
-
-	MaterialStorage *material_storage = MaterialStorage::get_singleton();
-	MaterialStorage::MaterialData *md = material_storage->material_get_data(p_material, MaterialStorage::SHADER_TYPE_MESH_RASTERIZER);
-	RasterizeMeshMaterialData *material_data = nullptr;
-	RasterizeMeshShaderData *shader_data = nullptr;
-	if (md != nullptr) {
-		material_data = static_cast<RasterizeMeshMaterialData *>(md);
-		shader_data = static_cast<RasterizeMeshShaderData *>(material_storage->material_get_shader_data(p_material));
-	}
-	ERR_FAIL_COND(material_data == nullptr);
-	ERR_FAIL_COND(shader_data == nullptr);
 
 	TextureStorage *texture_storage = TextureStorage::get_singleton();
 	RID rd_texture = texture_storage->texture_get_rd_texture(p_texture_drawable, false);
@@ -195,7 +195,7 @@ void MeshRasterizerRD::mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_materia
 	}
 
 	RD::PipelineRasterizationState rasterization_state;
-	rasterization_state.cull_mode = (RD::PolygonCullMode)shader_data->cull_modei;
+	rasterization_state.cull_mode = (RD::PolygonCullMode)mesh_rasterizer->shader_data->cull_modei;
 	RD::PipelineMultisampleState pipline_multisample_state;
 	pipline_multisample_state.sample_count = p_multisample;
 	RD::FramebufferFormatID fb_fmt = RD::get_singleton()->framebuffer_get_format(framebuffer_rid);
@@ -206,26 +206,7 @@ void MeshRasterizerRD::mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_materia
 		p_blend_state->get_rd_blend_state(blend_state);
 	}
 
-	PipelineCacheKey k = {
-		shader_data->shader_rd.get_id(),
-		fb_fmt,
-		mesh_rasterizer->primitive,
-		p_multisample,
-		p_blend_state
-	};
-
-	RID pipeline;
-	if (RD::get_singleton()->render_pipeline_is_valid(mesh_rasterizer->pipeline_cache.second) && mesh_rasterizer->pipeline_cache.first == k) {
-		pipeline = mesh_rasterizer->pipeline_cache.second;
-	} else {
-		if (RD::get_singleton()->render_pipeline_is_valid(mesh_rasterizer->pipeline_cache.second)) {
-			RD::get_singleton()->free(mesh_rasterizer->pipeline_cache.second);
-		}
-
-		pipeline = RD::get_singleton()->render_pipeline_create(shader_data->shader_rd, fb_fmt, singleton->vertex_format, mesh_rasterizer->primitive, rasterization_state, pipline_multisample_state, {}, blend_state);
-
-		mesh_rasterizer->pipeline_cache = { k, pipeline };
-	}
+	RID pipeline = RD::get_singleton()->render_pipeline_create(mesh_rasterizer->shader_data->shader_rd, fb_fmt, mesh_rasterizer->vertex_format, mesh_rasterizer->primitive, rasterization_state, pipline_multisample_state, {}, blend_state);
 
 	LocalVector<Color> clear_colors = { p_bg_color };
 	RD::DrawListID draw_list = RD::get_singleton()->draw_list_begin(framebuffer_rid, p_blend_state.is_null() ? RD::DRAW_CLEAR_ALL : RD::DRAW_DEFAULT_ALL, clear_colors);
@@ -238,9 +219,9 @@ void MeshRasterizerRD::mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_materia
 	}
 
 	// Uniforms
-	RD::get_singleton()->draw_list_bind_uniform_set(draw_list, shader_data->base_uniforms, BASE_UNIFORM_SET);
-	if (material_data->material_uniforms.is_valid()) {
-		RD::get_singleton()->draw_list_bind_uniform_set(draw_list, material_data->material_uniforms, MATERIAL_UNIFORM_SET);
+	RD::get_singleton()->draw_list_bind_uniform_set(draw_list, mesh_rasterizer->shader_data->base_uniforms, BASE_UNIFORM_SET);
+	if (mesh_rasterizer->material_data->material_uniforms.is_valid()) {
+		RD::get_singleton()->draw_list_bind_uniform_set(draw_list, mesh_rasterizer->material_data->material_uniforms, MATERIAL_UNIFORM_SET);
 	}
 
 	RD::get_singleton()->draw_list_draw(draw_list, mesh_rasterizer->index_array_rid.is_valid(), 1);
@@ -269,138 +250,23 @@ static RD::RenderPrimitive _primitive_type_to_render_primitive(RS::PrimitiveType
 	}
 }
 
-void MeshRasterizerRD::MeshRasterizerData::update_vertex() {
-	Variant vertex_array = Vector<Vector3>{ Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0) };
-	Vector<int> index_array;
-	Vector<Vector2> uv_array;
-	Vector<Color> color_array;
-
-	if (mesh.is_valid() && surface_index < RS::get_singleton()->mesh_get_surface_count(mesh)) {
-		RS::SurfaceData surface = RS::get_singleton()->mesh_get_surface(mesh, surface_index);
-
-		primitive = _primitive_type_to_render_primitive(surface.primitive);
+void MeshRasterizerRD::MeshRasterizerData::update_mesh() {
+	MeshStorage *mesh_storage = MeshStorage::get_singleton();
+	bool is_valid = false;
+	if (mesh.is_valid() && surface_index < (uint32_t)mesh_storage->mesh_get_surface_count(mesh)) {
+		void *surface = mesh_storage->mesh_get_surface(mesh, surface_index);
+		primitive = _primitive_type_to_render_primitive(mesh_storage->mesh_surface_get_primitive(surface));
 		if (primitive != RD::RENDER_PRIMITIVE_MAX) {
-			Array surface_array = RS::get_singleton()->mesh_surface_get_arrays(mesh, surface_index);
-
-			vertex_array = surface_array[RS::ARRAY_VERTEX];
-			index_array = surface_array[RS::ARRAY_INDEX];
-			uv_array = surface_array[RS::ARRAY_TEX_UV];
-			color_array = surface_array[RS::ARRAY_COLOR];
+			index_array_rid = mesh_storage->mesh_surface_get_index_array(&surface, 0);
+			uint64_t input_mask = shader_data->get_vertex_input_mask();
+			mesh_storage->mesh_surface_get_vertex_arrays_and_format(&surface, input_mask, false, vertex_array_rid, vertex_format);
+			is_valid = true;
 		}
 	}
-
-	Vector<Vector3> vertex_array_vec3;
-	Vector<uint8_t> vertex_data;
-
-	if (vertex_array.get_type() == Variant::PACKED_VECTOR2_ARRAY) {
-		// Flip 2D Mesh y-axis and convert to 3D.
-		Vector<Vector2> array_vec2 = vertex_array;
-		vertex_array_vec3.resize(array_vec2.size());
-		for (int i = 0; i < array_vec2.size(); i++) {
-			Vector2 vec2 = array_vec2[i];
-			vertex_array_vec3.write[i] = Vector3(vec2.x, -vec2.y, 0);
-		}
-	} else {
-		vertex_array_vec3 = vertex_array;
+	if (!is_valid) {
+		index_array_rid = RID();
+		vertex_array_rid = RID();
 	}
-
-	Vector3 max = Vector3(std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest());
-	Vector3 min = Vector3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
-
-	for (int i = 0; i < vertex_array_vec3.size(); i++) {
-		Vector3 v = vertex_array_vec3[i];
-		max.x = MAX(max.x, v.x);
-		max.y = MAX(max.y, v.y);
-		max.z = MAX(max.z, v.z);
-		min.x = MIN(min.x, v.x);
-		min.y = MIN(min.y, v.y);
-		min.z = MIN(min.z, v.z);
-	}
-
-	Vector3 center = (max + min) / 2;
-	Vector3 s = max - min;
-
-	// Normalize x,y,z to [-1,1]. We will normalize z to [0,1] and flip y in glsl.
-	float scale = 0;
-	if (s.x != 0) {
-		scale = MAX(s.x, scale);
-	}
-	if (s.y != 0) {
-		scale = MAX(s.y, scale);
-	}
-	if (s.z != 0) {
-		scale = MAX(s.z, scale);
-	}
-	float scale_factor = scale == 0 ? 1 : (2 / scale);
-
-	for (int i = 0; i < vertex_array_vec3.size(); i++) {
-		Vector3 v = vertex_array_vec3[i];
-		v -= center;
-		v *= scale_factor;
-		vertex_array_vec3.write[i] = v;
-	}
-
-	uint32_t vertex_count = vertex_array_vec3.size();
-
-	vertex_data.resize(sizeof(float) * 3 * vertex_count);
-	memcpy(vertex_data.ptrw(), vertex_array_vec3.ptr(), vertex_data.size());
-
-	bool is_index_16 = vertex_count <= 0xffff;
-	Vector<int16_t> index_array_16;
-	if (is_index_16) {
-		index_array_16.resize(index_array.size());
-		for (int i = 0; i < index_array.size(); i++) {
-			index_array_16.write[i] = index_array[i];
-		}
-	}
-	if (!index_array.is_empty()) {
-		Vector<uint8_t> index_data;
-		index_data.resize((is_index_16 ? sizeof(int16_t) : sizeof(int32_t)) * index_array.size());
-		if (is_index_16) {
-			memcpy(index_data.ptrw(), index_array_16.ptr(), index_data.size());
-		} else {
-			memcpy(index_data.ptrw(), index_array.ptr(), index_data.size());
-		}
-
-		if (index_buffer_rid.is_valid()) {
-			RD::get_singleton()->free(index_buffer_rid);
-		}
-		index_buffer_rid = RD::get_singleton()->index_buffer_create(index_array.size(), is_index_16 ? RD::INDEX_BUFFER_FORMAT_UINT16 : RD::INDEX_BUFFER_FORMAT_UINT32, index_data);
-
-		index_array_rid = RD::get_singleton()->index_array_create(index_buffer_rid, 0, index_array.size());
-	}
-	Vector<uint8_t> uv_data;
-	uv_data.resize_initialized(sizeof(float) * 2 * vertex_count);
-	if (!uv_array.is_empty()) {
-		memcpy(uv_data.ptrw(), uv_array.ptr(), uv_data.size());
-	}
-
-	Vector<uint8_t> color_data;
-	color_data.resize(vertex_count * 4);
-	uint8_t *color_data_ptr = color_data.ptrw();
-	memset(color_data_ptr, 255, color_data.size());
-	const Color *src = color_array.ptr();
-	for (uint32_t i = 0; i < color_array.size(); i++) {
-		uint8_t color8[4] = { (uint8_t)src[i].get_r8(), (uint8_t)src[i].get_g8(), (uint8_t)src[i].get_b8(), (uint8_t)src[i].get_a8() };
-		memcpy(color_data_ptr + i * 4, color8, 4);
-	}
-
-	if (vertex_buffer_pos_rid.is_valid()) {
-		RD::get_singleton()->free(vertex_buffer_pos_rid);
-	}
-	if (vertex_buffer_uv_rid.is_valid()) {
-		RD::get_singleton()->free(vertex_buffer_uv_rid);
-	}
-	if (vertex_buffer_color_rid.is_valid()) {
-		RD::get_singleton()->free(vertex_buffer_color_rid);
-	}
-	vertex_buffer_pos_rid = RD::get_singleton()->vertex_buffer_create(vertex_data.size(), vertex_data);
-	vertex_buffer_uv_rid = RD::get_singleton()->vertex_buffer_create(uv_data.size(), uv_data);
-	vertex_buffer_color_rid = RD::get_singleton()->vertex_buffer_create(color_data.size(), color_data);
-
-	Vector<RID> vertex_buffers = { vertex_buffer_pos_rid, vertex_buffer_uv_rid, vertex_buffer_color_rid };
-
-	vertex_array_rid = RD::get_singleton()->vertex_array_create(vertex_count, singleton->vertex_format, vertex_buffers);
 }
 
 bool MeshRasterizerRD::free(RID p_mesh_rasterizer) {
@@ -411,18 +277,6 @@ bool MeshRasterizerRD::free(RID p_mesh_rasterizer) {
 	if (mesh_rasterizer->rd_texture_samples_cache.second.is_valid()) {
 		RD::get_singleton()->free(mesh_rasterizer->rd_texture_samples_cache.second);
 	}
-	if (mesh_rasterizer->index_buffer_rid.is_valid()) {
-		RD::get_singleton()->free(mesh_rasterizer->index_buffer_rid);
-	}
-	if (mesh_rasterizer->vertex_buffer_pos_rid.is_valid()) {
-		RD::get_singleton()->free(mesh_rasterizer->vertex_buffer_pos_rid);
-	}
-	if (mesh_rasterizer->vertex_buffer_uv_rid.is_valid()) {
-		RD::get_singleton()->free(mesh_rasterizer->vertex_buffer_uv_rid);
-	}
-	if (mesh_rasterizer->vertex_buffer_color_rid.is_valid()) {
-		RD::get_singleton()->free(mesh_rasterizer->vertex_buffer_color_rid);
-	}
 	mesh_rasterizer_owner.free(p_mesh_rasterizer);
 	return true;
 }
@@ -431,7 +285,7 @@ void MeshRasterizerRD::_dependency_changed(Dependency::DependencyChangedNotifica
 	MeshRasterizerData *mesh_rasterizer = (MeshRasterizerData *)p_tracker->userdata;
 	switch (p_notification) {
 		case Dependency::DEPENDENCY_CHANGED_MESH: {
-			mesh_rasterizer->update_vertex();
+			mesh_rasterizer->update_mesh();
 		} break;
 		default: {
 		}
@@ -442,7 +296,7 @@ void MeshRasterizerRD::_dependency_deleted(const RID &p_dependency, DependencyTr
 	MeshRasterizerData *mesh_rasterizer = (MeshRasterizerData *)p_tracker->userdata;
 	if (p_dependency == mesh_rasterizer->mesh) {
 		mesh_rasterizer->mesh = RID();
-		mesh_rasterizer->update_vertex();
+		mesh_rasterizer->update_mesh();
 	}
 }
 
@@ -450,8 +304,6 @@ MeshRasterizerRD::MeshRasterizerData::MeshRasterizerData() {
 	dependency_tracker.userdata = this;
 	dependency_tracker.changed_callback = &MeshRasterizerRD::_dependency_changed;
 	dependency_tracker.deleted_callback = &MeshRasterizerRD::_dependency_deleted;
-
-	update_vertex();
 }
 
 MeshRasterizerRD::MeshRasterizerRD() {
@@ -466,25 +318,46 @@ MeshRasterizerRD::MeshRasterizerRD() {
 	{
 		//shader compiler
 		ShaderCompiler::DefaultIdentifierActions actions;
+
+		actions.renames["VERTEX"] = "vertex_interp";
+		actions.renames["NORMAL"] = "normal_interp";
+		actions.renames["TANGENT"] = "tangent_interp";
+		actions.renames["BINORMAL"] = "binormal_interp";
 		actions.renames["POSITION"] = "position";
-		actions.renames["UV"] = "uv";
-		actions.renames["COLOR"] = "color";
+		actions.renames["UV"] = "uv_interp";
+		actions.renames["UV2"] = "uv2_interp";
+		actions.renames["COLOR"] = "color_interp";
+
 		actions.renames["POINT_SIZE"] = "gl_PointSize";
+		actions.renames["VERTEX_ID"] = "gl_VertexIndex";
 		actions.renames["FRAGCOORD"] = "gl_FragCoord";
 		actions.renames["POINT_COORD"] = "gl_PointCoord";
 		actions.renames["FRONT_FACING"] = "gl_FrontFacing";
-		actions.renames["VERTEX_ID"] = "gl_VertexIndex";
 
 		actions.renames["PI"] = String::num(Math::PI);
 		actions.renames["TAU"] = String::num(Math::TAU);
 		actions.renames["E"] = String::num(Math::E);
+
+		actions.usage_defines["NORMAL"] = "#define NORMAL_USED\n";
+		actions.usage_defines["TANGENT"] = "#define TANGENT_USED\n";
+		actions.usage_defines["BINORMAL"] = "@TANGENT";
+		actions.usage_defines["UV"] = "#define UV_USED\n";
+		actions.usage_defines["UV2"] = "#define UV2_USED\n";
+		actions.usage_defines["BONE_INDICES"] = "#define BONES_USED\n";
+		actions.usage_defines["BONE_WEIGHTS"] = "#define WEIGHTS_USED\n";
+		actions.usage_defines["CUSTOM0"] = "#define CUSTOM0_USED\n";
+		actions.usage_defines["CUSTOM1"] = "#define CUSTOM1_USED\n";
+		actions.usage_defines["CUSTOM2"] = "#define CUSTOM2_USED\n";
+		actions.usage_defines["CUSTOM3"] = "#define CUSTOM3_USED\n";
+		actions.usage_defines["COLOR"] = "#define COLOR_USED\n";
+		actions.usage_defines["POSITION"] = "#define OVERRIDE_POSITION\n";
 
 		actions.base_texture_binding_index = 1;
 		actions.texture_layout_set = MATERIAL_UNIFORM_SET;
 		actions.base_uniform_string = "material.";
 		actions.default_filter = ShaderLanguage::FILTER_LINEAR;
 		actions.default_repeat = ShaderLanguage::REPEAT_DISABLE;
-		actions.base_varying_index = 2;
+		actions.base_varying_index = 7;
 
 		actions.global_buffer_array_variable = "global_shader_uniforms.data";
 
@@ -493,25 +366,6 @@ MeshRasterizerRD::MeshRasterizerRD() {
 
 	String defines = "\n#define SAMPLERS_BINDING_FIRST_INDEX " + itos(SAMPLERS_BINDING_FIRST_INDEX) + "\n";
 	shader_file_rd.initialize({ "" }, defines);
-
-	RD::VertexAttribute pos;
-	pos.location = 0,
-	pos.format = RD::DATA_FORMAT_R32G32B32_SFLOAT,
-	pos.stride = sizeof(float) * 3;
-
-	RD::VertexAttribute uv;
-	uv.location = 1,
-	uv.format = RD::DATA_FORMAT_R32G32_SFLOAT,
-	uv.stride = sizeof(float) * 2;
-
-	RD::VertexAttribute color;
-	color.location = 2,
-	color.format = RD::DATA_FORMAT_R8G8B8A8_UNORM,
-	color.stride = sizeof(uint8_t) * 4;
-
-	Vector<RD::VertexAttribute> vertex_attrs = { pos, uv, color };
-
-	vertex_format = RD::get_singleton()->vertex_format_create(vertex_attrs);
 
 	RD::FramebufferPass pass;
 	pass.resolve_attachments.append(0);

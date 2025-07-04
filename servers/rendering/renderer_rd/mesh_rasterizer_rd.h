@@ -64,6 +64,8 @@ private:
 		virtual RS::ShaderNativeSourceCode get_native_source_code() const;
 		virtual Pair<ShaderRD *, RID> get_native_shader_and_version() const;
 
+		uint64_t get_vertex_input_mask();
+
 		~RasterizeMeshShaderData();
 	};
 
@@ -76,51 +78,22 @@ private:
 		virtual bool update_parameters(const HashMap<StringName, Variant> &p_parameters, bool p_uniform_dirty, bool p_textures_dirty);
 	};
 
-	struct PipelineCacheKey {
-		uint64_t shader_id;
-		RD::FramebufferFormatID framebuffer_formt;
-		RD::RenderPrimitive primitive;
-		RD::TextureSamples samples;
-		Ref<RasterizerBlendState> blend_state;
-
-		bool operator==(const PipelineCacheKey &b) const {
-			if (shader_id != b.shader_id) {
-				return false;
-			} else if (framebuffer_formt != b.framebuffer_formt) {
-				return false;
-			} else if (primitive != b.primitive) {
-				return false;
-			} else if (samples != b.samples) {
-				return false;
-			} else if (b.blend_state.is_null()) {
-				// No need to recreate pipeline if it clears texture.
-				return true;
-			} else if (blend_state.is_null()) {
-				return false;
-			} else {
-				return blend_state->equal(b.blend_state);
-			}
-		}
-	};
-
 	struct MeshRasterizerData {
 		RD::RenderPrimitive primitive = RD::RENDER_PRIMITIVE_TRIANGLES;
 
 		RID mesh;
-		int surface_index = 0;
+		uint32_t surface_index = 0;
 
 		Pair<RID, RID> rd_texture_samples_cache;
-		Pair<PipelineCacheKey, RID> pipeline_cache;
 
 		RID vertex_array_rid;
+		RD::VertexFormatID vertex_format = RD::VertexFormatID();
 		RID index_array_rid;
-		RID index_buffer_rid;
-		RID vertex_buffer_pos_rid;
-		RID vertex_buffer_uv_rid;
-		RID vertex_buffer_color_rid;
 
-		void update_vertex();
-		void update_material();
+		RasterizeMeshMaterialData *material_data = nullptr;
+		RasterizeMeshShaderData *shader_data = nullptr;
+
+		void update_mesh();
 
 		DependencyTracker dependency_tracker;
 
@@ -132,7 +105,6 @@ private:
 		MATERIAL_UNIFORM_SET
 	};
 
-	RD::VertexFormatID vertex_format;
 	Vector<RD::FramebufferPass> render_passes;
 	MeshRasterizerShaderRD shader_file_rd;
 	ShaderCompiler compiler;
@@ -143,8 +115,8 @@ private:
 
 public:
 	RID mesh_rasterizer_allocate();
-	void mesh_rasterizer_initialize(RID p_mesh_rasterizer, RID p_mesh, int surface_index);
-	void mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_material, RID p_texture_drawable, Ref<RasterizerBlendState> p_blend_state, const Color &p_bg_color, RD::TextureSamples p_multisample = RD::TEXTURE_SAMPLES_1);
+	void mesh_rasterizer_initialize(RID p_mesh_rasterizer, RID p_mesh, RID p_material, uint32_t p_surface_index);
+	void mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_texture_drawable, Ref<RasterizerBlendState> p_blend_state, const Color &p_bg_color, RD::TextureSamples p_multisample = RD::TEXTURE_SAMPLES_1);
 
 	bool free(RID p_mesh_rasterizer);
 

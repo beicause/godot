@@ -522,8 +522,13 @@ ShaderTypes::ShaderTypes() {
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["constants"].built_ins["TAU"] = constt(ShaderLanguage::TYPE_FLOAT);
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["constants"].built_ins["E"] = constt(ShaderLanguage::TYPE_FLOAT);
 
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].built_ins["VERTEX"] = ShaderLanguage::TYPE_VEC3;
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].built_ins["NORMAL"] = ShaderLanguage::TYPE_VEC3;
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].built_ins["TANGENT"] = ShaderLanguage::TYPE_VEC3;
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].built_ins["BINORMAL"] = ShaderLanguage::TYPE_VEC3;
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].built_ins["POSITION"] = ShaderLanguage::TYPE_VEC4;
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].built_ins["UV"] = ShaderLanguage::TYPE_VEC2;
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].built_ins["UV2"] = ShaderLanguage::TYPE_VEC2;
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].built_ins["COLOR"] = ShaderLanguage::TYPE_VEC4;
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].built_ins["POINT_SIZE"] = ShaderLanguage::TYPE_FLOAT;
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].built_ins["VERTEX_ID"] = constt(ShaderLanguage::TYPE_INT);
@@ -531,7 +536,12 @@ ShaderTypes::ShaderTypes() {
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].can_discard = true;
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["vertex"].main_function = true;
 
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].built_ins["VERTEX"] = constt(ShaderLanguage::TYPE_VEC3);
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].built_ins["NORMAL"] = constt(ShaderLanguage::TYPE_VEC3);
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].built_ins["TANGENT"] = constt(ShaderLanguage::TYPE_VEC3);
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].built_ins["BINORMAL"] = constt(ShaderLanguage::TYPE_VEC3);
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].built_ins["UV"] = constt(ShaderLanguage::TYPE_VEC2);
+	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].built_ins["UV2"] = constt(ShaderLanguage::TYPE_VEC2);
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].built_ins["COLOR"] = ShaderLanguage::TYPE_VEC4;
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].built_ins["FRAGCOORD"] = constt(ShaderLanguage::TYPE_VEC4);
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].built_ins["FRONT_FACING"] = constt(ShaderLanguage::TYPE_BOOL);
@@ -540,7 +550,7 @@ ShaderTypes::ShaderTypes() {
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].can_discard = true;
 	shader_modes[RS::SHADER_MESH_RASTERIZER].functions["fragment"].main_function = true;
 
-	// rasterize mesh render modes
+	// mesh rasterizer render modes
 	{
 		shader_modes[RS::SHADER_MESH_RASTERIZER].modes.push_back({ PNAME("cull"), "back", "front", "disabled" });
 	}

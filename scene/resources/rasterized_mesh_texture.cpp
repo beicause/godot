@@ -174,11 +174,11 @@ void RasterizedMeshTexture::update_texture() {
 		if (mesh_rasterizer.is_valid()) {
 			RS::get_singleton()->free(mesh_rasterizer);
 		}
-		mesh_rasterizer = RS::get_singleton()->mesh_rasterizer_create(mesh.is_valid() ? mesh->get_rid() : RID(), surface_index);
+		mesh_rasterizer = RS::get_singleton()->mesh_rasterizer_create(mesh.is_valid() ? mesh->get_rid() : RID(), material->get_rid(), surface_index);
 		mesh_dirty = false;
 	}
 	if (material.is_valid()) {
-		RS::get_singleton()->mesh_rasterizer_draw(mesh_rasterizer, material->get_rid(), texture, Ref<RasterizerBlendState>(), bg_color, multisample);
+		RS::get_singleton()->mesh_rasterizer_draw(mesh_rasterizer, texture, Ref<RasterizerBlendState>(), bg_color, multisample);
 		if (generate_mipmaps) {
 			RS::get_singleton()->texture_drawable_generate_mipmaps(texture);
 		}

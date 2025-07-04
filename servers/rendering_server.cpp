@@ -2498,8 +2498,8 @@ void RenderingServer::_bind_methods() {
 
 	/* MESH RASTERIZER API */
 
-	ClassDB::bind_method(D_METHOD("mesh_rasterizer_create", "mesh", "surface_index"), &RenderingServer::mesh_rasterizer_create);
-	ClassDB::bind_method(D_METHOD("mesh_rasterizer_draw", "mesh_rasterizer", "material", "texture_drawable", "blend_state", "clear_color", "multisamples"), &RenderingServer::mesh_rasterizer_draw, DEFVAL(RD::TEXTURE_SAMPLES_1));
+	ClassDB::bind_method(D_METHOD("mesh_rasterizer_create", "mesh", "material", "surface_index"), &RenderingServer::mesh_rasterizer_create);
+	ClassDB::bind_method(D_METHOD("mesh_rasterizer_draw", "mesh_rasterizer", "texture_drawable", "blend_state", "clear_color", "multisamples"), &RenderingServer::mesh_rasterizer_draw, DEFVAL(RD::TEXTURE_SAMPLES_1));
 
 	/* SKELETON API */
 
