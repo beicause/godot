@@ -85,7 +85,7 @@ void _unpack_vertex_attributes(vec4 p_vertex_in,
 #endif
 		out vec3 r_tangent,
 		out vec3 r_binormal,
-#endif,
+#endif
 		out vec3 r_vertex) {
 
 	r_vertex = vertex_angle_attrib.xyz;
@@ -178,7 +178,8 @@ void main() {
 #endif
 			vertex_interp);
 
-	vec4 position = vec4(vertex_attrib, 1);
+	vec4 position = vec4(vertex_interp, 1);
+	vec4 color = color_interp;
 
 	{
 #CODE : VERTEX
@@ -201,27 +202,27 @@ global_shader_uniforms;
 
 /* Varyings */
 
-layout(location = 0) out vec3 vertex_interp;
+layout(location = 0) in vec3 vertex_interp;
 
 #ifdef NORMAL_USED
-layout(location = 1) out vec3 normal_interp;
+layout(location = 1) in vec3 normal_interp;
 #endif
 
 #if defined(COLOR_USED)
-layout(location = 2) out vec4 color_interp;
+layout(location = 2) in vec4 color_interp;
 #endif
 
 #ifdef UV_USED
-layout(location = 3) out vec2 uv_interp;
+layout(location = 3) in vec2 uv_interp;
 #endif
 
 #if defined(UV2_USED)
-layout(location = 4) out vec2 uv2_interp;
+layout(location = 4) in vec2 uv2_interp;
 #endif
 
 #if defined(TANGENT_USED)
-layout(location = 5) out vec3 tangent_interp;
-layout(location = 6) out vec3 binormal_interp;
+layout(location = 5) in vec3 tangent_interp;
+layout(location = 6) in vec3 binormal_interp;
 #endif
 
 #ifdef MATERIAL_UNIFORMS_USED
@@ -238,9 +239,11 @@ material;
 layout(location = 0) out vec4 frag_color;
 
 void main() {
+	vec4 color = color_interp;
+
 	{
 #CODE : FRAGMENT
 	}
 
-	frag_color = color_attrib;
+	frag_color = color;
 }

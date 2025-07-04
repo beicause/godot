@@ -145,10 +145,10 @@ void MeshRasterizerRD::mesh_rasterizer_initialize(RID p_mesh_rasterizer, RID p_m
 
 	MaterialStorage *material_storage = MaterialStorage::get_singleton();
 	MaterialStorage::MaterialData *md = material_storage->material_get_data(p_material, MaterialStorage::SHADER_TYPE_MESH_RASTERIZER);
-	if (md != nullptr) {
-		mesh_rasterizer->material_data = static_cast<RasterizeMeshMaterialData *>(md);
-		mesh_rasterizer->shader_data = static_cast<RasterizeMeshShaderData *>(material_storage->material_get_shader_data(p_material));
-	}
+	ERR_FAIL_NULL(md);
+	mesh_rasterizer->material_data = static_cast<RasterizeMeshMaterialData *>(md);
+	mesh_rasterizer->shader_data = static_cast<RasterizeMeshShaderData *>(material_storage->material_get_shader_data(p_material));
+	ERR_FAIL_COND(mesh_rasterizer->shader_data->shader_rd.is_null());
 	mesh_rasterizer->mesh = p_mesh;
 	mesh_rasterizer->surface_index = p_surface_index;
 	mesh_rasterizer->update_mesh();
@@ -160,6 +160,7 @@ void MeshRasterizerRD::mesh_rasterizer_initialize(RID p_mesh_rasterizer, RID p_m
 void MeshRasterizerRD::mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_texture_drawable, Ref<RasterizerBlendState> p_blend_state, const Color &p_bg_color, RD::TextureSamples p_multisample) {
 	MeshRasterizerData *mesh_rasterizer = mesh_rasterizer_owner.get_or_null(p_mesh_rasterizer);
 	ERR_FAIL_COND(p_mesh_rasterizer.is_null());
+	ERR_FAIL_COND(mesh_rasterizer->vertex_array_rid.is_null());
 
 	MaterialStorage::get_singleton()->_update_global_shader_uniforms(); //must do before materials, so it can queue them for update
 	MaterialStorage::get_singleton()->_update_queued_materials();
@@ -326,7 +327,7 @@ MeshRasterizerRD::MeshRasterizerRD() {
 		actions.renames["POSITION"] = "position";
 		actions.renames["UV"] = "uv_interp";
 		actions.renames["UV2"] = "uv2_interp";
-		actions.renames["COLOR"] = "color_interp";
+		actions.renames["COLOR"] = "color";
 
 		actions.renames["POINT_SIZE"] = "gl_PointSize";
 		actions.renames["VERTEX_ID"] = "gl_VertexIndex";
