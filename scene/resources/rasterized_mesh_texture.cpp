@@ -160,7 +160,7 @@ void RasterizedMeshTexture::force_draw() {
 		RID new_texture = RS::get_singleton()->texture_drawable_create(size.width, size.height, texture_format, generate_mipmaps);
 		RS::get_singleton()->texture_replace(texture, new_texture);
 	}
-	if (material.is_valid()) {
+	if (material.is_valid() && mesh.is_valid()) {
 		RS::get_singleton()->texture_drawable_draw_mesh(texture, material->get_rid(), mesh->get_rid(), surface_index, bg_color);
 		if (generate_mipmaps) {
 			RS::get_singleton()->texture_drawable_generate_mipmaps(texture);

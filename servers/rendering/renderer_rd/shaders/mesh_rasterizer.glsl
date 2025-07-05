@@ -157,15 +157,6 @@ material;
 invariant gl_Position;
 
 void main() {
-	vec3 vertex_interp;
-#ifdef NORMAL_USED
-	vec3 normal_interp;
-#endif
-#if defined(NORMAL_USED) || defined(TANGENT_USED)
-	vec3 tangent_interp;
-	vec3 binormal_interp;
-#endif
-
 	_unpack_vertex_attributes(
 			vertex_angle_attrib,
 #if defined(NORMAL_USED) || defined(TANGENT_USED)
@@ -178,13 +169,24 @@ void main() {
 #endif
 			vertex_interp);
 
+#ifdef COLOR_USED
+	vec4 color = color_attrib;
+#endif
+#ifdef UV_USED
+	uv_interp = uv_attrib;
+#endif
+#ifdef UV2_USED
+	uv2_interp = uv2_attrib;
+#endif
 	vec4 position = vec4(vertex_interp, 1);
-	vec4 color = color_interp;
 
 	{
 #CODE : VERTEX
 	}
 
+#ifdef COLOR_USED
+	color_interp = color;
+#endif
 	gl_Position = position;
 }
 
@@ -239,7 +241,10 @@ material;
 layout(location = 0) out vec4 frag_color;
 
 void main() {
-	vec4 color = color_interp;
+	vec4 color = vec4(1.0);
+#ifdef COLOR_USED
+	color = color_interp;
+#endif
 
 	{
 #CODE : FRAGMENT

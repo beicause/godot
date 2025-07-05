@@ -31,7 +31,7 @@
 #include "mesh_rasterizer_rd.h"
 #include "framebuffer_cache_rd.h"
 #include "servers/rendering/renderer_rd/storage_rd/mesh_storage.h"
-#include "servers/rendering/renderer_rd/storage_rd/utilities.h"
+#include "servers/rendering/renderer_rd/uniform_set_cache_rd.h"
 
 namespace RendererRD {
 
@@ -83,10 +83,11 @@ void MeshRasterizerRD::RasterizeMeshShaderData::set_code(const String &p_code) {
 		u.uniform_type = RD::UNIFORM_TYPE_STORAGE_BUFFER;
 		u.binding = 0;
 		u.append_id(RendererRD::MaterialStorage::get_singleton()->global_shader_uniforms_get_storage_buffer());
-
-		Vector<RD::Uniform> us = { u };
+		LocalVector<RD::Uniform> us = { u };
+		// Samplers.
 		MaterialStorage::get_singleton()->samplers_rd_get_default().append_uniforms(us, SAMPLERS_BINDING_FIRST_INDEX);
-		base_uniforms = RD::get_singleton()->uniform_set_create(us, singleton->shader_file_rd.version_get_shader(version, 0), BASE_UNIFORM_SET);
+
+		base_uniforms = UniformSetCacheRD::get_singleton()->get_cache_vec(singleton->shader_file_rd.version_get_shader(version, 0), BASE_UNIFORM_SET, us);
 	}
 
 	shader_rd = singleton->shader_file_rd.version_get_shader(version, 0);
@@ -173,9 +174,9 @@ void MeshRasterizerRD::texture_drawable_draw_mesh(RID p_texture_drawable, RID p_
 	RD::RenderPrimitive primitive = _primitive_type_to_render_primitive(mesh_storage->mesh_surface_get_primitive(surface));
 	ERR_FAIL_COND(primitive == RD::RENDER_PRIMITIVE_MAX);
 
-	index_array_rid = mesh_storage->mesh_surface_get_index_array(&surface, 0);
+	index_array_rid = mesh_storage->mesh_surface_get_index_array(surface, 0);
 	uint64_t input_mask = shader_data->get_vertex_input_mask();
-	mesh_storage->mesh_surface_get_vertex_arrays_and_format(&surface, input_mask, false, vertex_array_rid, vertex_format);
+	mesh_storage->mesh_surface_get_vertex_arrays_and_format(surface, input_mask, false, vertex_array_rid, vertex_format);
 
 	TextureStorage *texture_storage = TextureStorage::get_singleton();
 	RID rd_texture = texture_storage->texture_get_rd_texture(p_texture_drawable, false);
