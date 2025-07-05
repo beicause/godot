@@ -248,6 +248,7 @@ public:
 
 	FUNCRIDTEX4(texture_drawable, int, int, RD::DataFormat, bool);
 	FUNC1(texture_drawable_generate_mipmaps, RID);
+	FUNC5(texture_drawable_draw_mesh, RID, RID, RID, uint32_t, const Color &);
 
 	/* SHADER API */
 
@@ -1118,15 +1119,6 @@ public:
 #define server_name RSG::rasterizer
 
 	FUNC4S(set_boot_image, const Ref<Image> &, const Color &, bool, bool)
-
-	/* MESH RASTERIZER API */
-#undef ServerName
-#undef server_name
-#define ServerName MeshRasterizer
-#define server_name RSG::mesh_rasterizer
-
-	FUNCRIDSPLIT3(mesh_rasterizer, RID, RID, uint32_t);
-	FUNC5(mesh_rasterizer_draw, RID, RID, Ref<RasterizerBlendState>, const Color &, RD::TextureSamples);
 
 	/* STATUS INFORMATION */
 

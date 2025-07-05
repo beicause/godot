@@ -70,13 +70,13 @@ void RasterizedMeshTexture::set_height(int p_height) {
 
 void RasterizedMeshTexture::set_mesh(const Ref<Mesh> &p_mesh) {
 	if (mesh.is_valid()) {
-		mesh->disconnect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update_mesh));
+		mesh->disconnect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update));
 	}
 	mesh = p_mesh;
 	if (mesh.is_valid()) {
-		mesh->connect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update_mesh));
+		mesh->connect_changed(callable_mp(this, &RasterizedMeshTexture::queue_update));
 	}
-	queue_update_mesh();
+	queue_update();
 }
 
 Ref<Mesh> RasterizedMeshTexture::get_mesh() const {
@@ -117,7 +117,7 @@ Ref<ShaderMaterial> RasterizedMeshTexture::get_material() const {
 
 void RasterizedMeshTexture::set_surface_index(int p_surface_index) {
 	surface_index = p_surface_index;
-	queue_update_mesh();
+	queue_update();
 }
 
 int RasterizedMeshTexture::get_surface_index() const {
@@ -132,15 +132,6 @@ void RasterizedMeshTexture::set_texture_format(RD::DataFormat p_texture_format) 
 
 RD::DataFormat RasterizedMeshTexture::get_texture_format() const {
 	return texture_format;
-}
-
-void RasterizedMeshTexture::set_multisample(RD::TextureSamples p_multisample) {
-	multisample = p_multisample;
-	queue_update();
-}
-
-RD::TextureSamples RasterizedMeshTexture::get_multisample() const {
-	return multisample;
 }
 
 void RasterizedMeshTexture::set_generate_mipmaps(bool p_generate_mipmaps) {
@@ -158,11 +149,10 @@ RasterizedMeshTexture::RasterizedMeshTexture() {
 }
 
 RasterizedMeshTexture::~RasterizedMeshTexture() {
-	RS::get_singleton()->free(mesh_rasterizer);
 	RS::get_singleton()->free(texture);
 }
 
-void RasterizedMeshTexture::update_texture() {
+void RasterizedMeshTexture::force_draw() {
 	if (!update_queued) {
 		return;
 	}
@@ -170,21 +160,13 @@ void RasterizedMeshTexture::update_texture() {
 		RID new_texture = RS::get_singleton()->texture_drawable_create(size.width, size.height, texture_format, generate_mipmaps);
 		RS::get_singleton()->texture_replace(texture, new_texture);
 	}
-	if (mesh_dirty) {
-		if (mesh_rasterizer.is_valid()) {
-			RS::get_singleton()->free(mesh_rasterizer);
-		}
-		mesh_rasterizer = RS::get_singleton()->mesh_rasterizer_create(mesh.is_valid() ? mesh->get_rid() : RID(), material->get_rid(), surface_index);
-		mesh_dirty = false;
-	}
 	if (material.is_valid()) {
-		RS::get_singleton()->mesh_rasterizer_draw(mesh_rasterizer, texture, Ref<RasterizerBlendState>(), bg_color, multisample);
+		RS::get_singleton()->texture_drawable_draw_mesh(texture, material->get_rid(), mesh->get_rid(), surface_index, bg_color);
 		if (generate_mipmaps) {
 			RS::get_singleton()->texture_drawable_generate_mipmaps(texture);
 		}
 	}
 	texture_dirty = false;
-	rasterizer_dirty = false;
 	update_queued = false;
 	emit_changed();
 }
@@ -193,13 +175,8 @@ void RasterizedMeshTexture::queue_update() {
 	if (update_queued) {
 		return;
 	}
-	callable_mp(this, &RasterizedMeshTexture::update_texture).call_deferred();
+	callable_mp(this, &RasterizedMeshTexture::force_draw).call_deferred();
 	update_queued = true;
-}
-
-void RasterizedMeshTexture::queue_update_mesh() {
-	mesh_dirty = true;
-	queue_update();
 }
 
 void RasterizedMeshTexture::_bind_methods() {
@@ -215,11 +192,9 @@ void RasterizedMeshTexture::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_surface_index"), &RasterizedMeshTexture::get_surface_index);
 	ClassDB::bind_method(D_METHOD("set_texture_format", "texture_format"), &RasterizedMeshTexture::set_texture_format);
 	ClassDB::bind_method(D_METHOD("get_texture_format"), &RasterizedMeshTexture::get_texture_format);
-	ClassDB::bind_method(D_METHOD("set_multisample", "multisample"), &RasterizedMeshTexture::set_multisample);
-	ClassDB::bind_method(D_METHOD("get_multisample"), &RasterizedMeshTexture::get_multisample);
 	ClassDB::bind_method(D_METHOD("set_generate_mipmaps", "generate_mipmaps"), &RasterizedMeshTexture::set_generate_mipmaps);
 	ClassDB::bind_method(D_METHOD("is_generating_mipmaps"), &RasterizedMeshTexture::is_generating_mipmaps);
-	ClassDB::bind_method(D_METHOD("update_texture"), &RasterizedMeshTexture::update_texture);
+	ClassDB::bind_method(D_METHOD("force_draw"), &RasterizedMeshTexture::force_draw);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "width", PROPERTY_HINT_RANGE, "1,2048,or_greater,suffix:px"), "set_width", "get_width");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "height", PROPERTY_HINT_RANGE, "1,2048,or_greater,suffix:px"), "set_height", "get_height");
@@ -235,6 +210,5 @@ void RasterizedMeshTexture::_bind_methods() {
 
 																						  RD::DATA_FORMAT_R8G8B8A8_UNORM, RD::DATA_FORMAT_R16G16B16A16_SFLOAT, RD::DATA_FORMAT_R32G32B32A32_SFLOAT)),
 			"set_texture_format", "get_texture_format");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "multisample", PROPERTY_HINT_ENUM, "1x,2x,4x,8x"), "set_multisample", "get_multisample");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "generate_mipmaps"), "set_generate_mipmaps", "is_generating_mipmaps");
 }

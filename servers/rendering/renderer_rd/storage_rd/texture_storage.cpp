@@ -33,6 +33,7 @@
 #include "../effects/copy_effects.h"
 #include "../framebuffer_cache_rd.h"
 #include "material_storage.h"
+#include "servers/rendering/renderer_rd/mesh_rasterizer_rd.h"
 #include "servers/rendering/renderer_rd/renderer_scene_render_rd.h"
 
 using namespace RendererRD;
@@ -3339,6 +3340,10 @@ void RendererRD::TextureStorage::texture_drawable_generate_mipmaps(RID p_texture
 		RD::get_singleton()->free(tex_src);
 		RD::get_singleton()->free(tex_dst);
 	}
+}
+
+void RendererRD::TextureStorage::texture_drawable_draw_mesh(RID p_texture_drawable, RID p_material, RID p_mesh, uint32_t p_surface_index, const Color &p_bg_color) {
+	MeshRasterizerRD::get_singleton()->texture_drawable_draw_mesh(p_texture_drawable, p_material, p_mesh, p_surface_index, p_bg_color);
 }
 
 /* RENDER TARGET API */

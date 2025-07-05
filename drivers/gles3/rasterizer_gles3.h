@@ -40,7 +40,6 @@
 #include "environment/gi.h"
 #include "rasterizer_canvas_gles3.h"
 #include "rasterizer_scene_gles3.h"
-#include "servers/rendering/dummy/mesh_rasterizer_dummy.h"
 #include "servers/rendering/renderer_compositor.h"
 #include "storage/config.h"
 #include "storage/light_storage.h"
@@ -81,7 +80,6 @@ protected:
 	GLES3::FeedEffects *feed_effects = nullptr;
 	RasterizerCanvasGLES3 *canvas = nullptr;
 	RasterizerSceneGLES3 *scene = nullptr;
-	RendererDummy::MeshRasterizerDummy mesh_rasterizer;
 
 	static RasterizerGLES3 *singleton;
 
@@ -94,7 +92,6 @@ public:
 	RendererMeshStorage *get_mesh_storage() { return mesh_storage; }
 	RendererParticlesStorage *get_particles_storage() { return particles_storage; }
 	RendererTextureStorage *get_texture_storage() { return texture_storage; }
-	MeshRasterizer *get_mesh_rasterizer() { return &mesh_rasterizer; }
 	RendererGI *get_gi() { return gi; }
 	RendererFog *get_fog() { return fog; }
 	RendererCanvasRender *get_canvas() { return canvas; }

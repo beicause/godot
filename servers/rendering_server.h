@@ -1181,11 +1181,7 @@ public:
 
 	virtual RID texture_drawable_create(int p_width, int p_height, RD::DataFormat p_texture_format, bool p_use_mipmaps = false) = 0;
 	virtual void texture_drawable_generate_mipmaps(RID p_texture_drawable) = 0;
-
-	/* MESH RASTERIZER API */
-
-	virtual RID mesh_rasterizer_create(RID p_mesh, RID p_material, uint32_t p_surface_index) = 0;
-	virtual void mesh_rasterizer_draw(RID p_mesh_rasterizer, RID p_texture_drawable, Ref<RasterizerBlendState> p_blend_state, const Color &p_clear_color, RD::TextureSamples p_multisample = RD::TEXTURE_SAMPLES_1) = 0;
+	virtual void texture_drawable_draw_mesh(RID p_texture_drawable, RID p_material, RID p_mesh, uint32_t p_surface_index, const Color &p_bg_color) = 0;
 
 	/* SKY API */
 

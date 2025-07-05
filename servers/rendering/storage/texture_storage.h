@@ -140,6 +140,7 @@ public:
 
 	virtual void texture_drawable_initialize(RID p_texture_drawable, int p_width, int p_height, RD::DataFormat p_texture_format, bool p_use_mipmaps = false) = 0;
 	virtual void texture_drawable_generate_mipmaps(RID p_texture_drawable) = 0;
+	virtual void texture_drawable_draw_mesh(RID p_texture_drawable, RID p_material, RID p_mesh, uint32_t p_surface_index, const Color &p_bg_color) = 0;
 
 	/* RENDER TARGET */
 

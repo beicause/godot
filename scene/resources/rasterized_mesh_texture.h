@@ -44,21 +44,16 @@ class RasterizedMeshTexture : public Texture2D {
 	Ref<Mesh> mesh;
 	Ref<ShaderMaterial> material;
 	RD::DataFormat texture_format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
-	RD::TextureSamples multisample = RD::TEXTURE_SAMPLES_1;
 	bool generate_mipmaps = false;
 
 	RID texture;
-	RID mesh_rasterizer;
 
 	bool texture_dirty = true;
-	bool rasterizer_dirty = true;
-	bool mesh_dirty = false;
 
 	bool update_queued = false;
 
-	void update_texture();
+	void force_draw();
 	void queue_update();
-	void queue_update_mesh();
 
 protected:
 	static void _bind_methods();

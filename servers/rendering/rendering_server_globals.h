@@ -32,7 +32,6 @@
 
 #include "servers/rendering/environment/renderer_fog.h"
 #include "servers/rendering/environment/renderer_gi.h"
-#include "servers/rendering/mesh_rasterizer.h"
 #include "servers/rendering/renderer_canvas_cull.h"
 #include "servers/rendering/renderer_canvas_render.h"
 #include "servers/rendering/rendering_method.h"
@@ -63,7 +62,6 @@ public:
 	static RendererCameraAttributes *camera_attributes;
 	static RendererCanvasRender *canvas_render;
 	static RendererCompositor *rasterizer;
-	static MeshRasterizer *mesh_rasterizer;
 
 	static RendererCanvasCull *canvas;
 	static RendererViewport *viewport;
