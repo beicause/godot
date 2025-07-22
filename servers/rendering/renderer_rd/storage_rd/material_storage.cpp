@@ -2303,6 +2303,9 @@ void MaterialStorage::material_set_param(RID p_material, const StringName &p_par
 
 	if (p_value.get_type() == Variant::NIL) {
 		material->params.erase(p_param);
+	} else if (p_value.get_type() == Variant::ARRAY) {
+		// We will clear the Array in `material_free`, so duplicate it.
+		material->params[p_param] = Array(p_value).duplicate();
 	} else {
 		ERR_FAIL_COND(p_value.get_type() == Variant::OBJECT); //object not allowed
 		material->params[p_param] = p_value;
