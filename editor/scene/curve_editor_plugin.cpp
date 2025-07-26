@@ -127,6 +127,8 @@ void CurveEdit::_notification(int p_what) {
 			tangent_radius = Math::round(BASE_TANGENT_RADIUS * get_theme_default_base_scale() * gizmo_scale);
 			tangent_hover_radius = Math::round(BASE_TANGENT_HOVER_RADIUS * get_theme_default_base_scale() * gizmo_scale);
 			tangent_length = Math::round(BASE_TANGENT_LENGTH * get_theme_default_base_scale());
+			arrow_radius = Math::round(BASE_ARROW_RADIUS * get_theme_default_base_scale() * gizmo_scale);
+			arrow_hover_radius = Math::round(BASE_ARROW_HOVER_RADIUS * get_theme_default_base_scale() * gizmo_scale);
 		} break;
 		case NOTIFICATION_ACCESSIBILITY_UPDATE: {
 			RID ae = get_accessibility_element();
@@ -216,14 +218,23 @@ void CurveEdit::gui_input(const Ref<InputEvent> &p_event) {
 		// Selecting or creating points.
 		if (mb->get_button_index() == MouseButton::LEFT) {
 			if (grabbing == GRAB_NONE) {
-				selected_tangent_index = get_tangent_at(mpos);
-				if (selected_tangent_index == TANGENT_NONE) {
-					set_selected_index(get_point_at(mpos));
+				selected_arrow_index = get_arrow_at(mpos);
+				if (selected_arrow_index == ARROW_NONE) {
+					selected_tangent_index = get_tangent_at(mpos);
+					if (selected_tangent_index == TANGENT_NONE) {
+						set_selected_index(get_point_at(mpos));
+					}
+				} else {
+					grabbing = GRAB_ARROW;
+					selected_tangent_index = TANGENT_NONE;
 				}
 				queue_redraw();
 			}
 
-			if (selected_index != -1) {
+			if (grabbing == GRAB_ARROW) {
+				initial_grab_data = curve->get_data();
+				initial_grab_curve_range = Vector4(curve->get_min_domain(), curve->get_max_domain(), curve->get_min_value(), curve->get_max_value());
+			} else if (selected_index != -1) {
 				// If an existing point/tangent was grabbed, remember a few things about it.
 				grabbing = GRAB_MOVE;
 				initial_grab_pos = curve->get_point_position(selected_index);
@@ -274,6 +285,10 @@ void CurveEdit::gui_input(const Ref<InputEvent> &p_event) {
 			curve->remove_point(selected_index);
 			add_point(new_pos);
 			grabbing = GRAB_NONE;
+		} else if (grabbing == GRAB_ARROW) {
+			// Finish moving arrow handle.
+			set_curve_data();
+			grabbing = GRAB_NONE;
 		}
 		queue_redraw();
 	}
@@ -283,7 +298,19 @@ void CurveEdit::gui_input(const Ref<InputEvent> &p_event) {
 		Vector2 mpos = mm->get_position();
 
 		if (grabbing != GRAB_NONE && curve.is_valid()) {
-			if (selected_index != -1) {
+			if (grabbing == GRAB_ARROW) {
+				// Drag arrow.
+				real_t step = 0.1 * mm->get_relative().x;
+				if (selected_arrow_index == ARROW_HORIZONTAL_LEFT) {
+					remap_domain(curve->get_min_domain() + step, curve->get_max_domain());
+				} else if (selected_arrow_index == ARROW_HORIZONTAL_RIGHT) {
+					remap_domain(curve->get_min_domain(), curve->get_max_domain() + step);
+				} else if (selected_arrow_index == ARROW_VERTICAL_BOTTOM) {
+					remap_value(curve->get_min_value() + step, curve->get_max_value());
+				} else if (selected_arrow_index == ARROW_VERTICAL_TOP) {
+					remap_value(curve->get_min_value(), curve->get_max_value() + step);
+				}
+			} else if (selected_index != -1) {
 				if (selected_tangent_index == TANGENT_NONE) {
 					// Drag point.
 					Vector2 new_pos = get_world_pos(mpos).clamp(Vector2(curve->get_min_domain(), curve->get_min_value()), Vector2(curve->get_max_domain(), curve->get_max_value()));
@@ -355,6 +382,7 @@ void CurveEdit::gui_input(const Ref<InputEvent> &p_event) {
 			// Grab mode is GRAB_NONE, so do hovering logic.
 			hovered_index = get_point_at(mpos);
 			hovered_tangent_index = get_tangent_at(mpos);
+			hovered_arrow_index = get_arrow_at(mpos);
 			queue_redraw();
 		}
 	}
@@ -468,6 +496,21 @@ CurveEdit::TangentIndex CurveEdit::get_tangent_at(const Vector2 &p_pos) const {
 	return TANGENT_NONE;
 }
 
+CurveEdit::ArrowIndex CurveEdit::get_arrow_at(const Vector2 &p_pos) const {
+	if (curve.is_null()) {
+		return ARROW_NONE;
+	}
+
+	for (int i = 0; i < ARROW_MAX; i++) {
+		const Vector2 arrow = arrow_centers[i];
+		if (p_pos.distance_to(arrow) < arrow_hover_radius) {
+			return (ArrowIndex)i;
+		}
+	}
+
+	return ARROW_NONE;
+}
+
 // FIXME: This function should be bounded better.
 float CurveEdit::get_offset_without_collision(int p_current_index, float p_offset, bool p_prioritize_right) {
 	float safe_offset = p_offset;
@@ -563,6 +606,48 @@ void CurveEdit::set_point_position(int p_index, const Vector2 &p_pos) {
 	undo_redo->add_undo_method(*curve, "set_point_value", p_index, initial_grab_pos.y);
 	undo_redo->add_undo_method(*curve, "set_point_offset", p_index, initial_grab_pos.x);
 	undo_redo->add_undo_method(this, "set_selected_index", initial_grab_index);
+	undo_redo->commit_action();
+}
+
+void CurveEdit::remap_domain(real_t p_new_min, real_t p_new_max) {
+	if (curve->get_domain_range() < 0.01) {
+		return;
+	}
+	for (int i = 0; i < curve->get_point_count(); i++) {
+		Vector2 p = curve->get_point_position(i);
+		p.x = Math::remap(p.x, curve->get_min_domain(), curve->get_max_domain(), p_new_min, p_new_max);
+		curve->set_point_offset(i, p.x);
+	}
+	curve->set_min_domain(p_new_min);
+	curve->set_max_domain(p_new_max);
+}
+
+void CurveEdit::remap_value(real_t p_new_min, real_t p_new_max) {
+	if (curve->get_value_range() < 0.01) {
+		return;
+	}
+	for (int i = 0; i < curve->get_point_count(); i++) {
+		Vector2 p = curve->get_point_position(i);
+		p.y = Math::remap(p.y, curve->get_min_value(), curve->get_max_value(), p_new_min, p_new_max);
+		curve->set_point_value(i, p.y);
+	}
+	curve->set_min_value(p_new_min);
+	curve->set_max_value(p_new_max);
+}
+
+void CurveEdit::set_curve_data() {
+	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	undo_redo->create_action(TTR("Scale Curve Range"));
+	undo_redo->add_do_method(*curve, "_set_data", curve->get_data());
+	undo_redo->add_do_method(*curve, "set_min_domain", curve->get_min_domain());
+	undo_redo->add_do_method(*curve, "set_max_domain", curve->get_max_domain());
+	undo_redo->add_do_method(*curve, "set_min_value", curve->get_min_value());
+	undo_redo->add_do_method(*curve, "set_max_value", curve->get_max_value());
+	undo_redo->add_undo_method(*curve, "_set_data", initial_grab_data);
+	undo_redo->add_undo_method(*curve, "set_min_domain", initial_grab_curve_range[0]);
+	undo_redo->add_undo_method(*curve, "set_max_domain", initial_grab_curve_range[1]);
+	undo_redo->add_undo_method(*curve, "set_min_value", initial_grab_curve_range[2]);
+	undo_redo->add_undo_method(*curve, "set_max_value", initial_grab_curve_range[3]);
 	undo_redo->commit_action();
 }
 
@@ -772,6 +857,38 @@ void CurveEdit::plot_curve_accurate(float p_step, const Color &p_line_color, con
 	}
 }
 
+Vector<Vector2> CurveEdit::_get_arrow_polygon(ArrowIndex p_index, int p_arrow_size) {
+	const Vector2 min_edge_v = get_view_pos(Vector2(curve->get_min_domain(), curve->get_min_value()));
+	const Vector2 max_edge_v = get_view_pos(Vector2(curve->get_max_domain(), curve->get_max_value()));
+	const float margin = 3 * EDSCALE;
+	switch (p_index) {
+		case ARROW_HORIZONTAL_LEFT: {
+			Vector2 arrow_hl = Vector2(min_edge_v.x, p_arrow_size + margin);
+			arrow_centers[p_index] = arrow_hl - Vector2(0, p_arrow_size / 2);
+			return { arrow_hl, arrow_hl + Vector2(p_arrow_size / 2, -p_arrow_size), arrow_hl + Vector2(-p_arrow_size / 2, -p_arrow_size) };
+		} break;
+		case ARROW_HORIZONTAL_RIGHT: {
+			Vector2 arrow_hr = Vector2(max_edge_v.x, p_arrow_size + margin);
+			arrow_centers[p_index] = arrow_hr - Vector2(0, p_arrow_size / 2);
+			return { arrow_hr, arrow_hr + Vector2(p_arrow_size / 2, -p_arrow_size), arrow_hr + Vector2(-p_arrow_size / 2, -p_arrow_size) };
+		} break;
+		case ARROW_VERTICAL_BOTTOM: {
+			Vector2 arrow_vb = Vector2(p_arrow_size + margin, min_edge_v.y);
+			arrow_centers[p_index] = arrow_vb - Vector2(p_arrow_size / 2, 0);
+			return { arrow_vb, arrow_vb + Vector2(-p_arrow_size, -p_arrow_size / 2), arrow_vb + Vector2(-p_arrow_size, p_arrow_size / 2) };
+		} break;
+		case ARROW_VERTICAL_TOP: {
+			Vector2 arrow_vt = Vector2(p_arrow_size + margin, max_edge_v.y);
+			arrow_centers[p_index] = arrow_vt - Vector2(p_arrow_size / 2, 0);
+			return { arrow_vt, arrow_vt + Vector2(-p_arrow_size, -p_arrow_size / 2), arrow_vt + Vector2(-p_arrow_size, p_arrow_size / 2) };
+
+		} break;
+		default: {
+			ERR_FAIL_V({});
+		} break;
+	}
+}
+
 void CurveEdit::_redraw() {
 	if (curve.is_null()) {
 		return;
@@ -779,10 +896,32 @@ void CurveEdit::_redraw() {
 
 	update_view_transform();
 
+	const Color grid_color_primary = get_theme_color(SNAME("mono_color"), EditorStringName(Editor)) * Color(1, 1, 1, 0.25);
+	const Color grid_color = get_theme_color(SNAME("mono_color"), EditorStringName(Editor)) * Color(1, 1, 1, 0.1);
+	const Color line_color = get_theme_color(SceneStringName(font_color), EditorStringName(Editor));
+	const Color edge_line_color = get_theme_color(SceneStringName(font_color), EditorStringName(Editor)) * Color(1, 1, 1, 0.75);
+	const Color selected_point_color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
+
 	// Draw background.
 
 	Vector2 view_size = get_rect().size;
 	draw_style_box(get_theme_stylebox(SceneStringName(panel), SNAME("Tree")), Rect2(Point2(), view_size));
+
+	// Draw 4 arrows.
+
+	draw_set_transform_matrix(Transform2D());
+	const float arrow_size = arrow_radius * 2;
+
+	const Vector<Color> arrow_colors = { line_color, line_color, line_color };
+	const Vector<Color> arrow_colors_hovered = { selected_point_color, selected_point_color, selected_point_color };
+	draw_polygon(_get_arrow_polygon(ARROW_HORIZONTAL_LEFT, arrow_size), hovered_arrow_index == ARROW_HORIZONTAL_LEFT ? arrow_colors_hovered : arrow_colors);
+	draw_polygon(_get_arrow_polygon(ARROW_HORIZONTAL_RIGHT, arrow_size), hovered_arrow_index == ARROW_HORIZONTAL_RIGHT ? arrow_colors_hovered : arrow_colors);
+	draw_polygon(_get_arrow_polygon(ARROW_VERTICAL_BOTTOM, arrow_size), hovered_arrow_index == ARROW_VERTICAL_BOTTOM ? arrow_colors_hovered : arrow_colors);
+	draw_polygon(_get_arrow_polygon(ARROW_VERTICAL_TOP, arrow_size), hovered_arrow_index == ARROW_VERTICAL_TOP ? arrow_colors_hovered : arrow_colors);
+
+	if (selected_arrow_index != ARROW_NONE) {
+		draw_polyline(_get_arrow_polygon(selected_arrow_index, arrow_size + 5 * EDSCALE), line_color);
+	}
 
 	// Draw primary grid.
 	draw_set_transform_matrix(_world_to_view);
@@ -790,16 +929,15 @@ void CurveEdit::_redraw() {
 	Vector2 min_edge = get_world_pos(Vector2(0, view_size.y));
 	Vector2 max_edge = get_world_pos(Vector2(view_size.x, 0));
 
-	const Color grid_color_primary = get_theme_color(SNAME("mono_color"), EditorStringName(Editor)) * Color(1, 1, 1, 0.25);
-	const Color grid_color = get_theme_color(SNAME("mono_color"), EditorStringName(Editor)) * Color(1, 1, 1, 0.1);
-
 	const Vector2i grid_steps = Vector2i(4, 2);
 	const Vector2 step_size = Vector2(curve->get_domain_range(), curve->get_value_range()) / grid_steps;
+	// Avoid overlapping with arrows to prevent alpha blending.
+	Vector2 min_x_max_y = get_world_pos(Vector2(_get_arrow_polygon(ARROW_VERTICAL_BOTTOM, arrow_size)[0].x, _get_arrow_polygon(ARROW_HORIZONTAL_LEFT, arrow_size)[0].y));
 
-	draw_line(Vector2(min_edge.x, curve->get_min_value()), Vector2(max_edge.x, curve->get_min_value()), grid_color_primary);
-	draw_line(Vector2(max_edge.x, curve->get_max_value()), Vector2(min_edge.x, curve->get_max_value()), grid_color_primary);
-	draw_line(Vector2(curve->get_min_domain(), min_edge.y), Vector2(curve->get_min_domain(), max_edge.y), grid_color_primary);
-	draw_line(Vector2(curve->get_max_domain(), max_edge.y), Vector2(curve->get_max_domain(), min_edge.y), grid_color_primary);
+	draw_line(Vector2(min_x_max_y.x, curve->get_min_value()), Vector2(max_edge.x, curve->get_min_value()), grid_color_primary);
+	draw_line(Vector2(max_edge.x, curve->get_max_value()), Vector2(min_x_max_y.x, curve->get_max_value()), grid_color_primary);
+	draw_line(Vector2(curve->get_min_domain(), min_edge.y), Vector2(curve->get_min_domain(), min_x_max_y.y), grid_color_primary);
+	draw_line(Vector2(curve->get_max_domain(), min_x_max_y.y), Vector2(curve->get_max_domain(), min_edge.y), grid_color_primary);
 
 	for (int i = 1; i < grid_steps.x; i++) {
 		real_t x = curve->get_min_domain() + i * step_size.x;
@@ -823,7 +961,7 @@ void CurveEdit::_redraw() {
 
 	for (int i = 0; i <= grid_steps.x; ++i) {
 		real_t x = curve->get_min_domain() + i * step_size.x;
-		draw_string(font, get_view_pos(Vector2(x, curve->get_min_value())) + Vector2(pad, font_height - pad), String::num(x, 2), HORIZONTAL_ALIGNMENT_CENTER, -1, font_size, text_color);
+		draw_string(font, get_view_pos(Vector2(x, curve->get_min_value())) + Vector2(pad, font_height - pad), String::num(x, 2), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, text_color);
 	}
 
 	for (int i = 0; i <= grid_steps.y; ++i) {
@@ -832,9 +970,6 @@ void CurveEdit::_redraw() {
 	}
 
 	// Draw curve in view coordinates. Curve world-to-view point conversion happens in plot_curve_accurate().
-
-	const Color line_color = get_theme_color(SceneStringName(font_color), EditorStringName(Editor));
-	const Color edge_line_color = get_theme_color(SceneStringName(font_color), EditorStringName(Editor)) * Color(1, 1, 1, 0.75);
 
 	plot_curve_accurate(STEP_SIZE, line_color, edge_line_color);
 
@@ -858,7 +993,6 @@ void CurveEdit::_redraw() {
 
 	if (selected_index >= 0) {
 		const Vector2 point_pos = curve->get_point_position(selected_index);
-		const Color selected_point_color = get_theme_color(SNAME("accent_color"), EditorStringName(Editor));
 
 		// Draw tangents if not dragging a point, or if holding a point without having moved it yet.
 		if (grabbing == GRAB_NONE || initial_grab_pos == point_pos || selected_tangent_index != TANGENT_NONE) {
