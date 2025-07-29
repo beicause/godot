@@ -65,9 +65,9 @@ void ColorModeRGB::_greater_value_inputted() {
 			color_prev.components[i] = sliders[i]->get_value() / 255.0;
 		}
 	}
-	Color linear_color = color_prev.srgb_to_linear();
-	float multiplier = MAX(1, MAX(MAX(linear_color.r, linear_color.g), linear_color.b));
-	Color srgb = Color(linear_color.r / multiplier, linear_color.g / multiplier, linear_color.b / multiplier, linear_color.a).linear_to_srgb();
+	Color linear_color = color_prev.srgb_to_linear_highp();
+	double multiplier = MAX(1.0, MAX(MAX(linear_color.r, linear_color.g), linear_color.b));
+	Color srgb = Color(linear_color.r / multiplier, linear_color.g / multiplier, linear_color.b / multiplier, linear_color.a).linear_to_srgb_highp();
 	sliders[0]->set_value_no_signal(srgb.r * 255);
 	sliders[1]->set_value_no_signal(srgb.g * 255);
 	sliders[2]->set_value_no_signal(srgb.b * 255);
@@ -233,7 +233,7 @@ float ColorModeLinear::get_slider_max(int idx) const {
 
 float ColorModeLinear::get_slider_value(int idx) const {
 	ERR_FAIL_INDEX_V_MSG(idx, get_slider_count(), 0, "Couldn't get slider value.");
-	Color color = color_picker->color_normalized.srgb_to_linear();
+	Color color = color_picker->color_normalized.srgb_to_linear_highp();
 	return color.components[idx];
 }
 
@@ -251,20 +251,20 @@ Color ColorModeLinear::get_color() const {
 	for (int i = 0; i < 4; i++) {
 		color.components[i] = values[i];
 	}
-	return color.linear_to_srgb();
+	return color.linear_to_srgb_highp();
 }
 
 void ColorModeLinear::_greater_value_inputted() {
 	HSlider **sliders = color_picker->sliders;
 	Color color_prev = color_picker->color;
-	Color linear_color = color_prev.srgb_to_linear();
+	Color linear_color = color_prev.srgb_to_linear_highp();
 	for (int i = 0; i < 3; i++) {
-		if (sliders[i]->get_value() > 1 + CMP_EPSILON) {
+		if (sliders[i]->get_value() > 1.0) {
 			linear_color.components[i] = sliders[i]->get_value();
 		}
 	}
 
-	float multiplier = MAX(1, MAX(MAX(linear_color.r, linear_color.g), linear_color.b));
+	double multiplier = MAX(1.0, MAX(MAX(linear_color.r, linear_color.g), linear_color.b));
 
 	sliders[0]->set_value_no_signal(linear_color.r / multiplier);
 	sliders[1]->set_value_no_signal(linear_color.g / multiplier);

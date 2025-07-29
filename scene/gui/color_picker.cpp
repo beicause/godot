@@ -680,14 +680,14 @@ void ColorPicker::_copy_hsv_okhsl_to_normalized() {
 }
 
 Color ColorPicker::_color_apply_intensity(const Color &col) const {
-	Color linear_color = col.srgb_to_linear();
+	Color linear_color = col.srgb_to_linear_highp();
 	Color result;
-	float multiplier = Math::pow(2, intensity);
+	double multiplier = Math::pow(2.0, intensity);
 	for (int i = 0; i < 3; i++) {
 		result.components[i] = linear_color.components[i] * multiplier;
 	}
 	result.a = col.a;
-	return result.linear_to_srgb();
+	return result.linear_to_srgb_highp();
 }
 
 void ColorPicker::_normalized_apply_intensity_to_color() {
@@ -695,13 +695,13 @@ void ColorPicker::_normalized_apply_intensity_to_color() {
 }
 
 void ColorPicker::_copy_color_to_normalized_and_intensity() {
-	Color linear_color = color.srgb_to_linear();
-	float multiplier = MAX(1, MAX(MAX(linear_color.r, linear_color.g), linear_color.b));
+	Color linear_color = color.srgb_to_linear_highp();
+	double multiplier = MAX(1.0, MAX(MAX(linear_color.r, linear_color.g), linear_color.b));
 	for (int i = 0; i < 3; i++) {
 		color_normalized.components[i] = linear_color.components[i] / multiplier;
 	}
 	color_normalized.a = linear_color.a;
-	color_normalized = color_normalized.linear_to_srgb();
+	color_normalized = color_normalized.linear_to_srgb_highp();
 	intensity = Math::log2(multiplier);
 }
 

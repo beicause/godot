@@ -306,7 +306,7 @@ private:
 	bool hsv_cached = false;
 	bool okhsl_cached = false;
 
-	float intensity = 0.0;
+	double intensity = 0.0;
 
 	struct ThemeCache {
 		float base_scale = 1.0;
