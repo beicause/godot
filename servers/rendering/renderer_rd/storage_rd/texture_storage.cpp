@@ -1499,7 +1499,7 @@ Ref<Image> TextureStorage::texture_2d_get(RID p_texture) const {
 	ERR_FAIL_NULL_V(tex, Ref<Image>());
 
 #ifdef TOOLS_ENABLED
-	if (tex->image_cache_2d.is_valid() && !tex->is_render_target) {
+	if (tex->image_cache_2d.is_valid() && !tex->is_render_target && !tex->drawable_texture) {
 		return tex->image_cache_2d;
 	}
 #endif
@@ -1544,7 +1544,7 @@ Ref<Image> TextureStorage::texture_2d_get(RID p_texture) const {
 	}
 
 #ifdef TOOLS_ENABLED
-	if (Engine::get_singleton()->is_editor_hint() && !tex->is_render_target) {
+	if (Engine::get_singleton()->is_editor_hint() && !tex->is_render_target && !tex->drawable_texture) {
 		tex->image_cache_2d = image;
 	}
 #endif
