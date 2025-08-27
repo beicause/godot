@@ -220,7 +220,7 @@ xcuserdata/
 !misc/misc/dist/apple_embedded_xcode/godot.xcodeproj/project.pbxproj
 
 # Zed
-.zed/
+#.zed/
 
 ##############################
 ### Visual Studio specific ###
