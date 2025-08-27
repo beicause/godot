@@ -1,0 +1,22 @@
+// Project tasks configuration. See https://zed.dev/docs/tasks for documentation.
+//
+[
+	{
+		"label": "build editor_linux_debug",
+		"command": "overlay use dev.nu;dev",
+		"args": ["editor_linux_debug"],
+		"shell": {
+			"program": "nu"
+		},
+		"tags": ["nu build"]
+	},
+	{
+		"label": "build editor_linux_opt",
+		"command": "overlay use dev.nu;dev",
+		"args": ["editor_linux_opt"],
+		"shell": {
+			"program": "nu"
+		},
+		"tags": ["nu build"]
+	}
+]

@@ -1,0 +1,91 @@
+// Project-local debug tasks
+//
+// For more documentation on how to configure debug tasks,
+// see: https://zed.dev/docs/debugger
+[
+	{
+		"adapter": "CodeLLDB",
+		"request": "attach",
+		"label": "Debug attach dev godot",
+		"program": "bin/godot.linuxbsd.editor.dev.x86_64.llvm"
+	},
+	{
+		"adapter": "CodeLLDB",
+		"request": "attach",
+		"label": "Debug attach opt godot",
+		"program": "bin/godot.linuxbsd.editor.x86_64.llvm"
+	},
+	{
+		"adapter": "CodeLLDB",
+		"request": "launch",
+		"label": "Debug unit tests",
+		"program": "bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+		"args": ["--test"]
+	},
+	{
+		"adapter": "CodeLLDB",
+		"request": "launch",
+		"label": "Debug doctool",
+		"program": "bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+		"args": ["--doctool"]
+	},
+	{
+		"adapter": "CodeLLDB",
+		"request": "launch",
+		"label": "Debug regression-test-project",
+		"program": "bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+		"args": ["--path", "/home/luo/games/regression-test-project"]
+	},
+	{
+		"adapter": "CodeLLDB",
+		"request": "launch",
+		"label": "Debug game",
+		"program": "bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+		"args": ["--path", "/home/luo/games/new-game-project"]
+	},
+	{
+		"adapter": "CodeLLDB",
+		"request": "launch",
+		"label": "Debug editor",
+		"program": "bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+		"args": ["--editor", "--path", "/home/luo/games/new-game-project"]
+	},
+	{
+		"adapter": "CodeLLDB",
+		"request": "launch",
+		"label": "Debug rust itest",
+		"program": "bin/godot.linuxbsd.editor.x86_64.llvm",
+		"args": [
+			"--headless",
+			"--verbose",
+			"--path",
+			"/home/luo/gdext/itest/godot"
+		]
+	},
+	{
+		"adapter": "CodeLLDB",
+		"request": "launch",
+		"label": "Debug game XL",
+		"program": "bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+		"args": ["--path", "/home/luo/games/XkLkQyDcProject/godot/"]
+	},
+	{
+		"adapter": "CodeLLDB",
+		"request": "launch",
+		"label": "Debug editor XL",
+		"program": "bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+		"args": ["--editor", "--path", "/home/luo/games/XkLkQyDcProject/godot/"]
+	},
+	{
+		"adapter": "CodeLLDB",
+		"request": "launch",
+		"label": "Debug asset processor XL",
+		"program": "bin/godot.linuxbsd.editor.dev.x86_64.llvm",
+		"args": [
+			"--path",
+			"/home/luo/games/XkLkQyDcProject/godot/",
+			"--scene",
+			"scene/asset_processor.tscn"
+		]
+	}
+]
