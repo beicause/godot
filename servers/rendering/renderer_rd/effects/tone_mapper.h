@@ -111,7 +111,7 @@ public:
 			GLOW_MODE_SCREEN,
 			GLOW_MODE_SOFTLIGHT,
 			GLOW_MODE_REPLACE,
-			GLOW_MODE_MIX
+			GLOW_MODE_MIX,
 		};
 
 		GlowMode glow_mode = GLOW_MODE_ADD;
